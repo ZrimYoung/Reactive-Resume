@@ -26,7 +26,7 @@ import type { TemplateProps } from "../types/template";
 
 const Header = () => {
   const basics = useArtboardStore((state) => state.resume.basics);
-  const borderRadius = useArtboardStore((state) => state.resume.basics.picture.borderRadius);
+  const borderRadius = useArtboardStore((state) => state.resume.basics.picture.borderRadius || 0);
 
   return (
     <div

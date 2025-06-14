@@ -5,7 +5,7 @@ import { ResumeDto } from "@reactive-resume/dto";
 import { ErrorMessage } from "@reactive-resume/utils";
 import retry from "async-retry";
 import { PDFDocument } from "pdf-lib";
-import { connect } from "puppeteer";
+import { Browser, launch } from "puppeteer";
 
 import { Config } from "../config/schema";
 import { StorageService } from "../storage/storage.service";
@@ -14,29 +14,44 @@ import { StorageService } from "../storage/storage.service";
 export class PrinterService {
   private readonly logger = new Logger(PrinterService.name);
 
-  private readonly browserURL: string;
-
-  private readonly ignoreHTTPSErrors: boolean;
+  private browser: Browser | null = null;
 
   constructor(
     private readonly configService: ConfigService<Config>,
     private readonly storageService: StorageService,
     private readonly httpService: HttpService,
-  ) {
-    const chromeUrl = this.configService.getOrThrow<string>("CHROME_URL");
-    const chromeToken = this.configService.getOrThrow<string>("CHROME_TOKEN");
-
-    this.browserURL = `${chromeUrl}?token=${chromeToken}`;
-    this.ignoreHTTPSErrors = this.configService.getOrThrow<boolean>("CHROME_IGNORE_HTTPS_ERRORS");
-  }
+  ) {}
 
   private async getBrowser() {
     try {
-      return await connect({
-        browserWSEndpoint: this.browserURL,
-        acceptInsecureCerts: this.ignoreHTTPSErrors,
-      });
+      // 如果浏览器实例不存在或已断开连接，则创建新实例
+      if (!this.browser?.connected) {
+        this.logger.log('启动本地 Puppeteer 浏览器实例...');
+        
+        this.browser = await launch({
+          headless: true,
+          args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--no-first-run',
+            '--no-zygote',
+            '--disable-gpu',
+            '--disable-background-timer-throttling',
+            '--disable-backgrounding-occluded-windows',
+            '--disable-renderer-backgrounding',
+            '--disable-features=TranslateUI',
+            '--disable-ipc-flooding-protection',
+          ],
+        });
+        
+        this.logger.log('Puppeteer 浏览器实例已启动');
+      }
+      
+      return this.browser;
     } catch (error) {
+      this.logger.error('无法启动 Puppeteer 浏览器:', error);
       throw new InternalServerErrorException(
         ErrorMessage.InvalidBrowserConnection,
         (error as Error).message,
@@ -47,7 +62,6 @@ export class PrinterService {
   async getVersion() {
     const browser = await this.getBrowser();
     const version = await browser.version();
-    await browser.disconnect();
     return version;
   }
 
@@ -58,14 +72,14 @@ export class PrinterService {
       retries: 3,
       randomize: true,
       onRetry: (_, attempt) => {
-        this.logger.log(`Retrying to print resume #${resume.id}, attempt #${attempt}`);
+        this.logger.log(`重试打印简历 #${resume.id}，第 ${attempt} 次尝试`);
       },
     });
 
     const duration = Number(performance.now() - start).toFixed(0);
-    const numberPages = resume.data.metadata.layout.length;
+    const numberPages = resume.data.metadata?.layout?.length || 1;
 
-    this.logger.debug(`Chrome took ${duration}ms to print ${numberPages} page(s)`);
+    this.logger.debug(`PDF 生成耗时 ${duration}ms，共 ${numberPages} 页`);
 
     return url;
   }
@@ -78,14 +92,14 @@ export class PrinterService {
       randomize: true,
       onRetry: (_, attempt) => {
         this.logger.log(
-          `Retrying to generate preview of resume #${resume.id}, attempt #${attempt}`,
+          `重试生成简历预览 #${resume.id}，第 ${attempt} 次尝试`,
         );
       },
     });
 
     const duration = Number(performance.now() - start).toFixed(0);
 
-    this.logger.debug(`Chrome took ${duration}ms to generate preview`);
+    this.logger.debug(`预览生成耗时 ${duration}ms`);
 
     return url;
   }
@@ -96,36 +110,12 @@ export class PrinterService {
       const page = await browser.newPage();
 
       const publicUrl = this.configService.getOrThrow<string>("PUBLIC_URL");
-      const storageUrl = this.configService.getOrThrow<string>("STORAGE_URL");
 
-      let url = publicUrl;
-
-      if ([publicUrl, storageUrl].some((url) => /https?:\/\/localhost(:\d+)?/.test(url))) {
-        // Switch client URL from `http[s]://localhost[:port]` to `http[s]://host.docker.internal[:port]` in development
-        // This is required because the browser is running in a container and the client is running on the host machine.
-        url = url.replace(
-          /localhost(:\d+)?/,
-          (_match, port) => `host.docker.internal${port ?? ""}`,
-        );
-
-        await page.setRequestInterception(true);
-
-        // Intercept requests of `localhost` to `host.docker.internal` in development
-        page.on("request", (request) => {
-          if (request.url().startsWith(storageUrl)) {
-            const modifiedUrl = request
-              .url()
-              .replace(/localhost(:\d+)?/, (_match, port) => `host.docker.internal${port ?? ""}`);
-
-            void request.continue({ url: modifiedUrl });
-          } else {
-            void request.continue();
-          }
-        });
-      }
+      // 本地模式下不需要 host.docker.internal 转换
+      const url = publicUrl;
 
       // Set the data of the resume to be printed in the browser's session storage
-      const numberPages = resume.data.metadata.layout.length;
+      const numberPages = resume.data.metadata?.layout?.length || 1;
 
       await page.evaluateOnNewDocument((data) => {
         window.localStorage.setItem("resume", JSON.stringify(data));
@@ -150,7 +140,7 @@ export class PrinterService {
         }, pageElement);
 
         // Apply custom CSS, if enabled
-        const css = resume.data.metadata.css;
+        const css = resume.data.metadata?.css || { visible: false, value: "" };
 
         if (css.visible) {
           await page.evaluate((cssValue: string) => {
@@ -195,13 +185,12 @@ export class PrinterService {
         resume.title,
       );
 
-      // Close all the pages and disconnect from the browser
+      // Close the page but keep browser instance for reuse
       await page.close();
-      await browser.disconnect();
 
       return resumeUrl;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error('生成PDF时出错:', error);
 
       throw new InternalServerErrorException(
         ErrorMessage.ResumePrinterError,
@@ -211,61 +200,56 @@ export class PrinterService {
   }
 
   async generatePreview(resume: ResumeDto) {
-    const browser = await this.getBrowser();
-    const page = await browser.newPage();
+    try {
+      const browser = await this.getBrowser();
+      const page = await browser.newPage();
 
-    const publicUrl = this.configService.getOrThrow<string>("PUBLIC_URL");
-    const storageUrl = this.configService.getOrThrow<string>("STORAGE_URL");
+      const publicUrl = this.configService.getOrThrow<string>("PUBLIC_URL");
 
-    let url = publicUrl;
+      // 本地模式下不需要 host.docker.internal 转换
+      const url = publicUrl;
 
-    if ([publicUrl, storageUrl].some((url) => /https?:\/\/localhost(:\d+)?/.test(url))) {
-      // Switch client URL from `http[s]://localhost[:port]` to `http[s]://host.docker.internal[:port]` in development
-      // This is required because the browser is running in a container and the client is running on the host machine.
-      url = url.replace(/localhost(:\d+)?/, (_match, port) => `host.docker.internal${port ?? ""}`);
+      // Set the data of the resume to be printed in the browser's session storage
+      await page.evaluateOnNewDocument((data) => {
+        window.localStorage.setItem("resume", JSON.stringify(data));
+      }, resume.data);
 
-      await page.setRequestInterception(true);
+      await page.setViewport({ width: 794, height: 1123 });
 
-      // Intercept requests of `localhost` to `host.docker.internal` in development
-      page.on("request", (request) => {
-        if (request.url().startsWith(storageUrl)) {
-          const modifiedUrl = request
-            .url()
-            .replace(/localhost(:\d+)?/, (_match, port) => `host.docker.internal${port ?? ""}`);
+      await page.goto(`${url}/artboard/preview`, { waitUntil: "networkidle0" });
 
-          void request.continue({ url: modifiedUrl });
-        } else {
-          void request.continue();
-        }
-      });
+      // Save the JPEG to storage and return the URL
+      // Store the URL in cache for future requests, under the previously generated hash digest
+      const uint8array = await page.screenshot({ quality: 80, type: "jpeg" });
+      const buffer = Buffer.from(uint8array);
+
+      // Generate a hash digest of the resume data, this hash will be used to check if the resume has been updated
+      const previewUrl = await this.storageService.uploadObject(
+        resume.userId,
+        "previews",
+        buffer,
+        resume.id,
+      );
+
+      // Close the page but keep browser instance for reuse
+      await page.close();
+
+      return previewUrl;
+    } catch (error) {
+      this.logger.error('生成预览时出错:', error);
+      
+      throw new InternalServerErrorException(
+        ErrorMessage.ResumePrinterError,
+        (error as Error).message,
+      );
     }
+  }
 
-    // Set the data of the resume to be printed in the browser's session storage
-    await page.evaluateOnNewDocument((data) => {
-      window.localStorage.setItem("resume", JSON.stringify(data));
-    }, resume.data);
-
-    await page.setViewport({ width: 794, height: 1123 });
-
-    await page.goto(`${url}/artboard/preview`, { waitUntil: "networkidle0" });
-
-    // Save the JPEG to storage and return the URL
-    // Store the URL in cache for future requests, under the previously generated hash digest
-    const uint8array = await page.screenshot({ quality: 80, type: "jpeg" });
-    const buffer = Buffer.from(uint8array);
-
-    // Generate a hash digest of the resume data, this hash will be used to check if the resume has been updated
-    const previewUrl = await this.storageService.uploadObject(
-      resume.userId,
-      "previews",
-      buffer,
-      resume.id,
-    );
-
-    // Close all the pages and disconnect from the browser
-    await page.close();
-    await browser.disconnect();
-
-    return previewUrl;
+  // 清理资源的方法
+  async onModuleDestroy() {
+    if (this.browser) {
+      await this.browser.close();
+      this.logger.log('Puppeteer 浏览器实例已关闭');
+    }
   }
 }

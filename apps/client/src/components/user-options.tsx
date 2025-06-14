@@ -3,13 +3,10 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
   KeyboardShortcut,
 } from "@reactive-resume/ui";
 import { useNavigate } from "react-router";
-
-import { useLogout } from "../services/auth";
 
 type Props = {
   children: React.ReactNode;
@@ -17,7 +14,6 @@ type Props = {
 
 export const UserOptions = ({ children }: Props) => {
   const navigate = useNavigate();
-  const { logout } = useLogout();
 
   return (
     <DropdownMenu>
@@ -32,12 +28,6 @@ export const UserOptions = ({ children }: Props) => {
           {t`Settings`}
           {/* eslint-disable-next-line lingui/no-unlocalized-strings */}
           <KeyboardShortcut>⇧S</KeyboardShortcut>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => logout()}>
-          {t`Logout`}
-          {/* eslint-disable-next-line lingui/no-unlocalized-strings */}
-          <KeyboardShortcut>⇧Q</KeyboardShortcut>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

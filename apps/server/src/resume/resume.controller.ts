@@ -9,10 +9,8 @@ import {
   Param,
   Patch,
   Post,
-  UseGuards,
 } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
-import { User as UserEntity } from "@prisma/client";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 import {
   CreateResumeDto,
@@ -24,13 +22,10 @@ import { resumeDataSchema } from "@reactive-resume/schema";
 import { ErrorMessage } from "@reactive-resume/utils";
 import { zodToJsonSchema } from "zod-to-json-schema";
 
-import { User } from "@/server/user/decorators/user.decorator";
-
-import { OptionalGuard } from "../auth/guards/optional.guard";
-import { TwoFactorGuard } from "../auth/guards/two-factor.guard";
-import { Resume } from "./decorators/resume.decorator";
-import { ResumeGuard } from "./guards/resume.guard";
 import { ResumeService } from "./resume.service";
+
+// 本地用户ID常量
+const LOCAL_USER_ID = "local-user-id";
 
 @ApiTags("Resume")
 @Controller("resume")
@@ -43,10 +38,9 @@ export class ResumeController {
   }
 
   @Post()
-  @UseGuards(TwoFactorGuard)
-  async create(@User() user: UserEntity, @Body() createResumeDto: CreateResumeDto) {
+  async create(@Body() createResumeDto: CreateResumeDto) {
     try {
-      return await this.resumeService.create(user.id, createResumeDto);
+      return await this.resumeService.create(LOCAL_USER_ID, createResumeDto);
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError && error.code === "P2002") {
         throw new BadRequestException(ErrorMessage.ResumeSlugAlreadyExists);
@@ -58,11 +52,10 @@ export class ResumeController {
   }
 
   @Post("import")
-  @UseGuards(TwoFactorGuard)
-  async import(@User() user: UserEntity, @Body() importResumeDto: unknown) {
+  async import(@Body() importResumeDto: unknown) {
     try {
       const result = importResumeSchema.parse(importResumeDto);
-      return await this.resumeService.import(user.id, result);
+      return await this.resumeService.import(LOCAL_USER_ID, result);
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError && error.code === "P2002") {
         throw new BadRequestException(ErrorMessage.ResumeSlugAlreadyExists);
@@ -74,60 +67,49 @@ export class ResumeController {
   }
 
   @Get()
-  @UseGuards(TwoFactorGuard)
-  findAll(@User() user: UserEntity) {
-    return this.resumeService.findAll(user.id);
+  findAll() {
+    return this.resumeService.findAll(LOCAL_USER_ID);
   }
 
   @Get(":id")
-  @UseGuards(TwoFactorGuard, ResumeGuard)
-  findOne(@Resume() resume: ResumeDto) {
-    return resume;
+  findOne(@Param("id") id: string) {
+    return this.resumeService.findOne(id, LOCAL_USER_ID);
   }
 
   @Get(":id/statistics")
-  @UseGuards(TwoFactorGuard)
   findOneStatistics(@Param("id") id: string) {
     return this.resumeService.findOneStatistics(id);
   }
 
   @Get("/public/:username/:slug")
-  @UseGuards(OptionalGuard)
-  findOneByUsernameSlug(
-    @Param("username") username: string,
-    @Param("slug") slug: string,
-    @User("id") userId: string,
-  ) {
-    return this.resumeService.findOneByUsernameSlug(username, slug, userId);
+  findOneByUsernameSlug(@Param("username") username: string, @Param("slug") slug: string) {
+    return this.resumeService.findOneByUsernameSlug(username, slug, LOCAL_USER_ID);
   }
 
   @Patch(":id")
-  @UseGuards(TwoFactorGuard)
-  update(
-    @User() user: UserEntity,
-    @Param("id") id: string,
-    @Body() updateResumeDto: UpdateResumeDto,
-  ) {
-    return this.resumeService.update(user.id, id, updateResumeDto);
+  update(@Param("id") id: string, @Body() updateResumeDto: UpdateResumeDto) {
+    return this.resumeService.update(LOCAL_USER_ID, id, updateResumeDto);
   }
 
   @Patch(":id/lock")
-  @UseGuards(TwoFactorGuard)
-  lock(@User() user: UserEntity, @Param("id") id: string, @Body("set") set = true) {
-    return this.resumeService.lock(user.id, id, set);
+  lock(@Param("id") id: string, @Body("set") set = true) {
+    return this.resumeService.lock(LOCAL_USER_ID, id, set);
   }
 
   @Delete(":id")
-  @UseGuards(TwoFactorGuard)
-  remove(@User() user: UserEntity, @Param("id") id: string) {
-    return this.resumeService.remove(user.id, id);
+  remove(@Param("id") id: string) {
+    return this.resumeService.remove(LOCAL_USER_ID, id);
   }
 
-  @Get("/print/:id")
-  @UseGuards(OptionalGuard, ResumeGuard)
-  async printResume(@User("id") userId: string | undefined, @Resume() resume: ResumeDto) {
+  @Get("print/:id")
+  async printResume(@Param("id") id: string) {
     try {
-      const url = await this.resumeService.printResume(resume, userId);
+      const resume = await this.resumeService.findOne(id, LOCAL_USER_ID);
+      const resumeWithParsedData = {
+        ...resume,
+        data: typeof resume.data === "string" ? JSON.parse(resume.data) : resume.data,
+      } as ResumeDto;
+      const url = await this.resumeService.printResume(resumeWithParsedData, LOCAL_USER_ID);
 
       return { url };
     } catch (error) {
@@ -136,11 +118,15 @@ export class ResumeController {
     }
   }
 
-  @Get("/print/:id/preview")
-  @UseGuards(TwoFactorGuard, ResumeGuard)
-  async printPreview(@Resume() resume: ResumeDto) {
+  @Get("print/:id/preview")
+  async printPreview(@Param("id") id: string) {
     try {
-      const url = await this.resumeService.printPreview(resume);
+      const resume = await this.resumeService.findOne(id, LOCAL_USER_ID);
+      const resumeWithParsedData = {
+        ...resume,
+        data: typeof resume.data === "string" ? JSON.parse(resume.data) : resume.data,
+      } as ResumeDto;
+      const url = await this.resumeService.printPreview(resumeWithParsedData);
 
       return { url };
     } catch (error) {

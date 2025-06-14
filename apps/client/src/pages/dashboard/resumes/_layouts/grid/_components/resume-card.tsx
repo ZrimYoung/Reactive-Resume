@@ -33,7 +33,7 @@ export const ResumeCard = ({ resume }: Props) => {
   const { open } = useDialog<ResumeDto>("resume");
   const { open: lockOpen } = useDialog<ResumeDto>("lock");
 
-  const template = resume.data.metadata.template;
+  const template = resume?.data?.metadata?.template || "rhyhorn";
   const lastUpdated = dayjs().to(resume.updatedAt);
 
   const onOpen = () => {

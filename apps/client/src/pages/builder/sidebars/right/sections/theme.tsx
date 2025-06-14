@@ -10,7 +10,9 @@ import { SectionIcon } from "../shared/section-icon";
 
 export const ThemeSection = () => {
   const setValue = useResumeStore((state) => state.setValue);
-  const theme = useResumeStore((state) => state.resume.data.metadata.theme);
+  const theme = useResumeStore((state) => state.resume?.data?.metadata?.theme);
+
+  if (!theme) return null;
 
   return (
     <section id="theme" className="grid gap-y-6">

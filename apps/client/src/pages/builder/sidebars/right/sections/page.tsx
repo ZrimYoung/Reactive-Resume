@@ -16,7 +16,9 @@ import { SectionIcon } from "../shared/section-icon";
 
 export const PageSection = () => {
   const setValue = useResumeStore((state) => state.setValue);
-  const page = useResumeStore((state) => state.resume.data.metadata.page);
+  const page = useResumeStore((state) => state.resume?.data?.metadata?.page);
+
+  if (!page) return null;
 
   return (
     <section id="page" className="grid gap-y-6">

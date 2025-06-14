@@ -7,10 +7,10 @@ import { useArtboardStore } from "../store/artboard";
 import { getTemplate } from "../templates";
 
 export const PreviewLayout = () => {
-  const layout = useArtboardStore((state) => state.resume.metadata.layout);
-  const template = useArtboardStore((state) => state.resume.metadata.template as Template);
+  const layout = useArtboardStore((state) => state.resume.metadata?.layout || [[[], []]]);
+  const template = useArtboardStore((state) => state.resume.metadata?.template || "rhyhorn");
 
-  const Template = useMemo(() => getTemplate(template), [template]);
+  const Template = useMemo(() => getTemplate(template as Template), [template]);
 
   return (
     <>

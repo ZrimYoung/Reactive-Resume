@@ -1,3 +1,6 @@
+import * as fs from "node:fs";
+import path from "node:path";
+
 import { Injectable } from "@nestjs/common";
 import { HealthIndicator, HealthIndicatorResult } from "@nestjs/terminus";
 
@@ -9,9 +12,13 @@ export class StorageHealthIndicator extends HealthIndicator {
     super();
   }
 
-  async isHealthy(): Promise<HealthIndicatorResult> {
+  isHealthy(): HealthIndicatorResult {
     try {
-      await this.storageService.bucketExists();
+      // 检查本地存储目录是否存在
+      const uploadsDir = path.join(process.cwd(), "uploads");
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
 
       return this.getStatus("storage", true);
     } catch (error: unknown) {

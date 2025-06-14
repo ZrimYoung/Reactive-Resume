@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { t } from "@lingui/macro";
-import { Check, UploadSimple, Warning } from "@phosphor-icons/react";
+import { UploadSimple } from "@phosphor-icons/react";
 import type { UpdateUserDto } from "@reactive-resume/dto";
 import { updateUserSchema } from "@reactive-resume/dto";
 import {
@@ -8,7 +8,6 @@ import {
   buttonVariants,
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -16,13 +15,12 @@ import {
   Input,
 } from "@reactive-resume/ui";
 import { cn } from "@reactive-resume/utils";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 
 import { UserAvatar } from "@/client/components/user-avatar";
 import { useToast } from "@/client/hooks/use-toast";
-import { useResendVerificationEmail } from "@/client/services/auth";
 import { useUploadImage } from "@/client/services/storage";
 import { useUpdateUser, useUser } from "@/client/services/user";
 
@@ -31,7 +29,6 @@ export const AccountSettings = () => {
   const { toast } = useToast();
   const { updateUser, loading } = useUpdateUser();
   const { uploadImage, loading: isUploading } = useUploadImage();
-  const { resendVerificationEmail } = useResendVerificationEmail();
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -63,19 +60,16 @@ export const AccountSettings = () => {
   const onSubmit = async (data: UpdateUserDto) => {
     if (!user) return;
 
-    // Check if email has changed and display a toast message to confirm the email change
-    if (user.email !== data.email) {
-      toast({
-        variant: "info",
-        title: t`Check your email for the confirmation link to update your email address.`,
-      });
-    }
-
     await updateUser({
       name: data.name,
       email: data.email,
       picture: data.picture,
       username: data.username,
+    });
+
+    toast({
+      variant: "success",
+      title: t`Your account information has been updated successfully.`,
     });
 
     form.reset(data);
@@ -89,12 +83,6 @@ export const AccountSettings = () => {
 
       await updateUser({ picture: url });
     }
-  };
-
-  const onResendVerificationEmail = async () => {
-    const data = await resendVerificationEmail();
-
-    toast({ variant: "success", title: data.message });
   };
 
   if (!user) return null;
@@ -182,46 +170,18 @@ export const AccountSettings = () => {
                 <FormControl>
                   <Input type="email" autoComplete="email" className="lowercase" {...field} />
                 </FormControl>
-                <FormDescription
-                  className={cn(
-                    "flex items-center gap-x-1.5 font-medium opacity-100",
-                    user.emailVerified ? "text-success-accent" : "text-warning-accent",
-                  )}
-                >
-                  {user.emailVerified ? <Check size={12} /> : <Warning size={12} />}
-                  {user.emailVerified ? t`Verified` : t`Unverified`}
-                  {!user.emailVerified && (
-                    <Button
-                      variant="link"
-                      className="h-auto text-xs"
-                      onClick={onResendVerificationEmail}
-                    >
-                      {t`Resend email confirmation link`}
-                    </Button>
-                  )}
-                </FormDescription>
               </FormItem>
             )}
           />
 
-          <AnimatePresence presenceAffectsLayout>
-            {form.formState.isDirty && (
-              <motion.div
-                layout
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
-                className="flex items-center space-x-2 self-center sm:col-start-2"
-              >
-                <Button type="submit" disabled={loading}>
-                  {t`Save Changes`}
-                </Button>
-                <Button type="reset" variant="ghost" onClick={onReset}>
-                  {t`Discard`}
-                </Button>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          <div className="flex items-center space-x-2 self-center sm:col-start-2">
+            <Button type="submit" disabled={loading}>
+              {t`Save Changes`}
+            </Button>
+            <Button type="reset" variant="ghost" onClick={onReset}>
+              {t`Reset`}
+            </Button>
+          </div>
         </form>
       </Form>
     </div>

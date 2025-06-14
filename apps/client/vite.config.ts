@@ -11,10 +11,14 @@ export default defineConfig({
   build: {
     sourcemap: true,
     emptyOutDir: true,
+    rollupOptions: {
+      external: ["fs", "path", "url", "source-map-js"],
+    },
   },
 
   define: {
     appVersion: JSON.stringify(process.env.npm_package_version),
+    global: "globalThis",
   },
 
   server: {

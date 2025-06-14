@@ -4,7 +4,6 @@ import {
   InternalServerErrorException,
   Logger,
 } from "@nestjs/common";
-import { Prisma } from "@prisma/client";
 import { CreateResumeDto, ImportResumeDto, ResumeDto, UpdateResumeDto } from "@reactive-resume/dto";
 import { defaultResumeData, ResumeData } from "@reactive-resume/schema";
 import type { DeepPartial } from "@reactive-resume/utils";
@@ -26,18 +25,18 @@ export class ResumeService {
   ) {}
 
   async create(userId: string, createResumeDto: CreateResumeDto) {
-    const { name, email, picture } = await this.prisma.user.findUniqueOrThrow({
+    const { name, email } = await this.prisma.user.findUniqueOrThrow({
       where: { id: userId },
-      select: { name: true, email: true, picture: true },
+      select: { name: true, email: true },
     });
 
     const data = deepmerge(defaultResumeData, {
-      basics: { name, email, picture: { url: picture ?? "" } },
+      basics: { name, email, picture: { url: "" } },
     } satisfies DeepPartial<ResumeData>);
 
     return this.prisma.resume.create({
       data: {
-        data,
+        data: JSON.stringify(data),
         userId,
         title: createResumeDto.title,
         visibility: createResumeDto.visibility,
@@ -53,23 +52,36 @@ export class ResumeService {
       data: {
         userId,
         visibility: "private",
-        data: importResumeDto.data,
+        data: JSON.stringify(importResumeDto.data),
         title: importResumeDto.title ?? randomTitle,
         slug: importResumeDto.slug ?? slugify(randomTitle),
       },
     });
   }
 
-  findAll(userId: string) {
-    return this.prisma.resume.findMany({ where: { userId }, orderBy: { updatedAt: "desc" } });
+  async findAll(userId: string) {
+    const resumes = await this.prisma.resume.findMany({
+      where: { userId },
+      orderBy: { updatedAt: "desc" },
+    });
+
+    return resumes.map((resume) => ({
+      ...resume,
+      data: typeof resume.data === "string" ? JSON.parse(resume.data) : resume.data,
+    }));
   }
 
-  findOne(id: string, userId?: string) {
-    if (userId) {
-      return this.prisma.resume.findUniqueOrThrow({ where: { userId_id: { userId, id } } });
-    }
+  async findOne(id: string, userId?: string) {
+    let resume;
 
-    return this.prisma.resume.findUniqueOrThrow({ where: { id } });
+    resume = await (userId
+      ? this.prisma.resume.findUniqueOrThrow({ where: { userId_id: { userId, id } } })
+      : this.prisma.resume.findUniqueOrThrow({ where: { id } }));
+
+    return {
+      ...resume,
+      data: typeof resume.data === "string" ? JSON.parse(resume.data) : resume.data,
+    };
   }
 
   async findOneStatistics(id: string) {
@@ -110,20 +122,32 @@ export class ResumeService {
 
       if (locked) throw new BadRequestException(ErrorMessage.ResumeLocked);
 
-      return await this.prisma.resume.update({
+      const updatedResume = await this.prisma.resume.update({
         data: {
           title: updateResumeDto.title,
           slug: updateResumeDto.slug,
           visibility: updateResumeDto.visibility,
-          data: updateResumeDto.data as Prisma.JsonObject,
+          data:
+            typeof updateResumeDto.data === "string"
+              ? updateResumeDto.data
+              : JSON.stringify(updateResumeDto.data),
         },
         where: { userId_id: { userId, id } },
       });
+
+      return {
+        ...updatedResume,
+        data:
+          typeof updatedResume.data === "string"
+            ? JSON.parse(updatedResume.data)
+            : updatedResume.data,
+      };
     } catch (error) {
       if (error.code === "P2025") {
         Logger.error(error);
         throw new InternalServerErrorException(error);
       }
+      throw error;
     }
   }
 

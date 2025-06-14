@@ -1,6 +1,6 @@
-console.log('=== Electron 应用开始启动 ===');
-console.log('当前工作目录:', process.cwd());
-console.log('当前文件路径:', __filename);
+console.log('=== Electron Application Starting ===');
+console.log('Current working directory:', process.cwd());
+console.log('Current file path:', __filename);
 
 const { app, BrowserWindow, Menu, screen } = require('electron');
 const { spawn } = require('child_process');
@@ -8,7 +8,7 @@ const path = require('path');
 const isDev = require('electron-is-dev');
 
 console.log('isDev:', isDev);
-console.log('平台:', process.platform);
+console.log('Platform:', process.platform);
 
 let mainWindow;
 let serverProcess;
@@ -40,13 +40,13 @@ function checkServerConnection() {
 }
 
 async function createWindow() {
-  console.log('正在创建 Electron 窗口...');
+  console.log('Creating Electron window...');
   
   // Get primary display dimensions
   const primaryDisplay = screen.getPrimaryDisplay();
   const { width, height } = primaryDisplay.workAreaSize;
   
-  console.log(`屏幕尺寸: ${width}x${height}`);
+  console.log(`Screen size: ${width}x${height}`);
   
   // Create browser window
   mainWindow = new BrowserWindow({
@@ -74,27 +74,27 @@ async function createWindow() {
     closable: true,
   });
 
-  console.log('窗口对象已创建');
+  console.log('Window object created');
 
   const startUrl = 'http://localhost:5173';
   
-  // 检查服务器连接
-  console.log('检查开发服务器连接...');
+  // Check server connection
+  console.log('Checking dev server connection...');
   const isServerRunning = await checkServerConnection();
   
   if (isServerRunning) {
-    console.log('开发服务器已连接，直接加载应用');
+    console.log('Dev server connected, loading app directly');
     mainWindow.loadURL(startUrl);
   } else {
-    console.log('开发服务器未响应，显示等待页面');
+    console.log('Dev server not responding, showing waiting page');
     
-    // 显示等待页面，使用正确的编码
+    // Show waiting page with correct encoding
     const waitingPage = `
       <!DOCTYPE html>
       <html>
       <head>
         <meta charset="UTF-8">
-        <title>Reactive Resume - 启动中</title>
+        <title>Reactive Resume - Starting</title>
         <style>
           body {
             font-family: 'Microsoft YaHei', 'SimHei', Arial, sans-serif;
@@ -142,36 +142,36 @@ async function createWindow() {
       <body>
         <h1>🚀 Reactive Resume</h1>
         <div class="spinner"></div>
-        <p>正在启动应用...</p>
-        <p class="status">正在等待开发服务器启动...</p>
-        <button onclick="window.location.reload()">重新检查</button>
+        <p>Starting application...</p>
+        <p class="status">Waiting for dev server to start...</p>
+        <button onclick="window.location.reload()">Retry</button>
         
         <script>
           let attempts = 0;
-          const maxAttempts = 30; // 最多尝试30次（30秒）
+          const maxAttempts = 30; // Max 30 attempts (30 seconds)
           
           function checkServer() {
             attempts++;
-            console.log('检查服务器，尝试次数:', attempts);
+            console.log('Checking server, attempt:', attempts);
             
             fetch('http://localhost:5173')
               .then(() => {
-                console.log('服务器已就绪');
+                console.log('Server ready');
                 window.location.href = 'http://localhost:5173';
               })
               .catch(() => {
                 if (attempts < maxAttempts) {
                   document.querySelector('.status').textContent = 
-                    '正在等待开发服务器启动... (尝试 ' + attempts + '/' + maxAttempts + ')';
+                    'Waiting for dev server to start... (attempt ' + attempts + '/' + maxAttempts + ')';
                   setTimeout(checkServer, 1000);
                 } else {
                   document.querySelector('.status').innerHTML = 
-                    '⚠️ 无法连接到开发服务器<br>请确保开发服务器正在运行在端口 5173';
+                    '⚠️ Cannot connect to dev server<br>Please ensure dev server is running on port 5173';
                 }
               });
           }
           
-          // 3秒后开始检查
+          // Start checking after 3 seconds
           setTimeout(checkServer, 3000);
         </script>
       </body>
@@ -181,26 +181,26 @@ async function createWindow() {
     mainWindow.loadURL('data:text/html;charset=UTF-8,' + encodeURIComponent(waitingPage));
   }
 
-  // 页面加载完成事件
+  // Page load complete event
   mainWindow.webContents.once('did-finish-load', () => {
-    console.log('页面加载完成');
+    console.log('Page load completed');
     mainWindow.show();
     mainWindow.focus();
   });
 
-  // 页面加载失败事件
+  // Page load failed event
   mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
-    console.log(`页面加载失败: ${errorCode} - ${errorDescription}`);
-    console.log(`失败的URL: ${validatedURL}`);
+    console.log(`Page load failed: ${errorCode} - ${errorDescription}`);
+    console.log(`Failed URL: ${validatedURL}`);
     
-    // 只有当尝试加载开发服务器失败时才显示错误页面
+    // Only show error page when trying to load dev server fails
     if (validatedURL.includes('localhost:5173')) {
       const errorPage = `
         <!DOCTYPE html>
         <html>
         <head>
           <meta charset="UTF-8">
-          <title>连接失败</title>
+          <title>Connection Failed</title>
           <style>
             body {
               font-family: 'Microsoft YaHei', 'SimHei', Arial, sans-serif;
@@ -235,15 +235,15 @@ async function createWindow() {
         </head>
         <body>
           <div class="error-container">
-            <h1>⚠️ 无法连接到开发服务器</h1>
-            <p>请确保开发服务器正在运行在端口 <strong>5173</strong></p>
-            <p class="error-code">错误代码: ${errorCode}</p>
-            <p>您可以：</p>
-            <button onclick="window.location.href='http://localhost:5173'">重新连接</button>
-            <button onclick="window.location.reload()">刷新页面</button>
+            <h1>⚠️ Cannot connect to dev server</h1>
+            <p>Please ensure dev server is running on port <strong>5173</strong></p>
+            <p class="error-code">Error code: ${errorCode}</p>
+            <p>You can:</p>
+            <button onclick="window.location.href='http://localhost:5173'">Reconnect</button>
+            <button onclick="window.location.reload()">Refresh</button>
             
             <script>
-              // 每5秒自动重试一次
+              // Auto retry every 5 seconds
               setTimeout(() => {
                 window.location.href = 'http://localhost:5173';
               }, 5000);
@@ -259,44 +259,44 @@ async function createWindow() {
 
   // Show window when ready
   mainWindow.once('ready-to-show', () => {
-    console.log('窗口准备就绪');
+    console.log('Window ready');
     mainWindow.show();
     mainWindow.focus();
     
     // Open DevTools in development mode
     if (isDev) {
-      console.log('正在打开开发者工具...');
+      console.log('Opening developer tools...');
       mainWindow.webContents.openDevTools();
     }
   });
 
-  // 窗口事件监听
+  // Window event listeners
   mainWindow.on('show', () => {
-    console.log('窗口显示事件');
+    console.log('Window show event');
   });
 
   mainWindow.on('hide', () => {
-    console.log('窗口隐藏事件');
+    console.log('Window hide event');
   });
 
   mainWindow.on('focus', () => {
-    console.log('窗口获得焦点');
+    console.log('Window focus event');
   });
 
   // Handle window closed
   mainWindow.on('closed', () => {
-    console.log('窗口关闭事件');
+    console.log('Window close event');
     mainWindow = null;
   });
   
-  console.log('窗口创建完成');
+  console.log('Window created');
 }
 
 function startServer() {
-  // 在开发模式下不启动服务器，假设开发服务器已经运行
-  console.log('开发模式：假设开发服务器已经在运行');
-  console.log('前端服务器应该在: http://localhost:5173');
-  console.log('后端服务器应该在: http://localhost:3000');
+  // In development mode, don't start server, assume dev server is already running
+  console.log('Development mode: Assuming dev server is already running');
+  console.log('Frontend server should be at: http://localhost:5173');
+  console.log('Backend server should be at: http://localhost:3000');
 }
 
 function createMenu() {
@@ -365,21 +365,21 @@ function createMenu() {
 
 // Create window when app is ready
 app.whenReady().then(() => {
-  console.log('Electron 应用准备就绪');
-  console.log('平台:', process.platform);
-  console.log('Electron 版本:', process.versions.electron);
-  console.log('Node 版本:', process.versions.node);
+  console.log('Electron application ready');
+  console.log('Platform:', process.platform);
+  console.log('Electron version:', process.versions.electron);
+  console.log('Node version:', process.versions.node);
   
   startServer();
   
-  // 稍微延迟一下再创建窗口
+  // Wait a bit before creating window
   setTimeout(() => {
     createWindow();
     createMenu();
   }, 500);
 
   app.on('activate', () => {
-    console.log('应用激活事件');
+    console.log('Application activate event');
     // On macOS, re-create window when dock icon is clicked
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();

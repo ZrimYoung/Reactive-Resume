@@ -10,7 +10,7 @@ import {
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { ApiTags } from "@nestjs/swagger";
-import { Response } from "express";
+import type { Response } from "express";
 
 import { StorageService } from "./storage.service";
 
@@ -56,8 +56,9 @@ export class StorageController {
       res.setHeader("Content-Type", contentType);
       
       if (type === "resumes") {
-        // 对于PDF，设置为附件下载
-        res.setHeader("Content-Disposition", `attachment; filename="${filename}.pdf"`);
+        // 对于PDF，设置为附件下载，确保文件名正确
+        const downloadFilename = filename.endsWith('.pdf') ? filename : `${filename}.pdf`;
+        res.setHeader("Content-Disposition", `attachment; filename="${downloadFilename}"`);
       }
       
       res.send(buffer);

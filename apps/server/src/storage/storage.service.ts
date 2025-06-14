@@ -97,7 +97,14 @@ export class StorageService implements OnModuleInit {
   // 新增：获取文件内容
   async getObject(userId: string, type: UploadType, filename: string): Promise<Buffer> {
     const extension = type === "resumes" ? "pdf" : "jpg";
-    const filepath = path.join(this.storageRoot, userId, type, `${filename}.${extension}`);
+    
+    // 检查文件名是否已经包含扩展名
+    let finalFilename = filename;
+    if (!filename.endsWith(`.${extension}`)) {
+      finalFilename = `${filename}.${extension}`;
+    }
+    
+    const filepath = path.join(this.storageRoot, userId, type, finalFilename);
 
     try {
       return await fs.readFile(filepath);

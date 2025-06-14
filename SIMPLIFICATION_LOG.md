@@ -706,3 +706,74 @@ pnpm dev
 - PDF 导出功能应该正常工作
 - 点击"下载 PDF"按钮不再返回 404 错误
 - 用户可以成功导出和下载简历 PDF 文件 
+
+### 2025-06-15: Electron 应用测试和中文编码修复
+#### 测试目标
+用户希望测试当前项目构建的 Electron 应用的可用性。
+
+#### 发现的问题
+1. **服务器启动错误**：
+   - `apps/server/src/storage/storage.controller.ts` 中 `express` 模块导入错误
+   - 错误信息：`Module not found: Error: Can't resolve 'express'`
+
+2. **中文编码问题**：
+   - Windows PowerShell 中 Electron 应用的控制台输出显示为乱码
+   - 影响调试和用户体验
+
+#### 完成的修复 ✅
+1. **Express 导入修复** ✅
+   - 文件：`apps/server/src/storage/storage.controller.ts`
+   - 修改：`import { Response } from "express"` → `import type { Response } from "express"`
+   - 原因：在 NestJS 中应该使用类型导入而不是值导入
+
+2. **中文编码修复** ✅
+   - 文件：`electron.js`
+   - 将所有中文 `console.log` 输出改为英文
+   - 修复的输出包括：
+     - 应用启动信息
+     - 窗口创建过程
+     - 服务器连接状态
+     - 错误处理信息
+     - 事件监听器日志
+
+#### 测试结果 ✅
+1. **开发服务器状态**：
+   - 前端服务器：`http://localhost:5173` ✅ 运行中
+   - 后端服务器：`http://localhost:3000` ✅ 运行中  
+   - Artboard 服务器：`http://localhost:6173` ✅ 运行中
+
+2. **Electron 应用状态**：
+   - 应用成功启动 ✅
+   - 多个 electron.exe 进程正在运行 ✅
+   - 控制台输出清晰可读（英文）✅
+   - 应用窗口正常显示 ✅
+
+3. **功能验证**：
+   - 数据库连接正常（SQLite）✅
+   - Prisma 客户端生成成功 ✅
+   - 数据库迁移完成 ✅
+   - 应用界面加载正常 ✅
+
+#### 技术改进
+- **编码兼容性**：解决了 Windows PowerShell 中文显示问题
+- **模块导入规范**：使用正确的 TypeScript 类型导入语法
+- **调试体验**：控制台输出更加清晰易读
+- **跨平台兼容**：英文输出在所有操作系统上都能正确显示
+
+#### 使用方法
+```bash
+# 启动开发服务器（后台运行）
+pnpm dev
+
+# 启动 Electron 应用
+pnpm electron:simple
+
+# 或者一键启动（开发模式）
+pnpm electron:dev
+```
+
+#### 预期结果
+- Electron 应用完全可用 ✅
+- 控制台输出无乱码 ✅
+- 所有核心功能正常工作 ✅
+- 用户可以正常创建、编辑和导出简历 ✅ 

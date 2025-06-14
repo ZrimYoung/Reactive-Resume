@@ -107,7 +107,9 @@ const Summary = () => {
 type RatingProps = { level: number };
 
 const Rating = ({ level }: RatingProps) => {
-  const primaryColor = useArtboardStore((state) => state.resume.metadata.theme.primary);
+  const primaryColor = useArtboardStore(
+    (state) => state.resume.metadata.theme.primary || "#dc2626",
+  );
 
   return (
     <div className="relative">
@@ -582,7 +584,9 @@ const mapSectionToComponent = (section: SectionKey) => {
 export const Glalie = ({ columns, isFirstPage = false }: TemplateProps) => {
   const [main, sidebar] = columns;
 
-  const primaryColor = useArtboardStore((state) => state.resume.metadata.theme.primary);
+  const primaryColor = useArtboardStore(
+    (state) => state.resume.metadata.theme.primary || "#dc2626",
+  );
 
   return (
     <div className="grid min-h-[inherit] grid-cols-3">

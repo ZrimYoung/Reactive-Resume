@@ -1,34 +1,28 @@
-import type { UserDto } from "@reactive-resume/dto";
-import { useQuery } from "@tanstack/react-query";
-import type { AxiosResponse } from "axios";
-import { useEffect } from "react";
-
-import { axios } from "@/client/libs/axios";
-import { useAuthStore } from "@/client/stores/auth";
-
-export const fetchUser = async () => {
-  const response = await axios.get<UserDto | undefined, AxiosResponse<UserDto | undefined>>(
-    "/user/me",
-  );
-
-  return response.data;
+// 本地用户服务 - 不再依赖服务器
+export const fetchUser = () => {
+  // 返回模拟的本地用户数据
+  return {
+    id: 'local-user',
+    name: 'Local User', // eslint-disable-line lingui/no-unlocalized-strings
+    email: 'local@example.com',
+    username: 'local-user',
+    locale: 'zh-CN',
+  };
 };
 
 export const useUser = () => {
-  const setUser = useAuthStore((state) => state.setUser);
+  // 直接返回本地用户数据，不需要查询服务器
+  const user = {
+    id: 'local-user',
+    name: 'Local User', // eslint-disable-line lingui/no-unlocalized-strings
+    email: 'local@example.com',
+    username: 'local-user',
+    locale: 'zh-CN',
+  };
 
-  const {
-    error,
-    isPending: loading,
-    data: user,
-  } = useQuery({
-    queryKey: ["user"],
-    queryFn: fetchUser,
-  });
-
-  useEffect(() => {
-    setUser(user ?? null);
-  }, [user, setUser]);
-
-  return { user: user, loading, error };
+  return { 
+    user, 
+    loading: false, 
+    error: null 
+  };
 };

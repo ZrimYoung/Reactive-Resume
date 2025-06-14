@@ -446,7 +446,7 @@ const References = () => {
 };
 
 const Custom = ({ id }: { id: string }) => {
-  const section = useArtboardStore((state) => state.resume.sections.custom[id]);
+  const section = useArtboardStore((state) => state.resume.sections?.custom?.[id]);
 
   return (
     <Section<CustomSection>

@@ -39,7 +39,12 @@ export const TypographySection = () => {
   const [variants, setVariants] = useState<ComboboxOption[]>([]);
 
   const setValue = useResumeStore((state) => state.setValue);
-  const typography = useResumeStore((state) => state.resume.data.metadata.typography);
+  const typography = useResumeStore((state) => state.resume.data?.metadata?.typography || {
+    font: { family: "IBM Plex Serif", subset: "latin", variants: ["regular"], size: 14 },
+    lineHeight: 1.5,
+    hideIcons: false,
+    underlineLinks: true
+  });
 
   const loadFontSuggestions = useCallback(() => {
     for (const font of fontSuggestions) {

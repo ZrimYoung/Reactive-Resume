@@ -14,8 +14,8 @@ export const MM_TO_PX = 3.78;
 export const Page = ({ mode = "preview", pageNumber, children }: Props) => {
   const { isDarkMode } = useTheme();
 
-  const page = useArtboardStore((state) => state.resume.metadata.page);
-  const fontFamily = useArtboardStore((state) => state.resume.metadata.typography.font.family);
+  const page = useArtboardStore((state) => state.resume.metadata?.page || { format: "a4", margin: 18, options: { breakLine: true, pageNumbers: true } });
+  const fontFamily = useArtboardStore((state) => state.resume.metadata?.typography?.font?.family || "IBM Plex Serif");
 
   return (
     <div

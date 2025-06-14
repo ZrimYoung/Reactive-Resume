@@ -2,7 +2,7 @@ import { t } from "@lingui/macro";
 import { createId } from "@paralleldrive/cuid2";
 import type { ResumeDto } from "@reactive-resume/dto";
 import type { CustomSectionGroup, SectionKey } from "@reactive-resume/schema";
-import { defaultSection } from "@reactive-resume/schema";
+import { defaultResumeData, defaultSection } from "@reactive-resume/schema";
 import { removeItemInLayout } from "@reactive-resume/utils";
 import _set from "lodash.set";
 import type { TemporalState } from "zundo";
@@ -25,10 +25,23 @@ type ResumeStore = {
   removeSection: (sectionId: SectionKey) => void;
 };
 
+// Create a default resume object
+const defaultResume: ResumeDto = {
+  id: "temp",
+  title: "",
+  slug: "",
+  visibility: "private" as const,
+  userId: "local-user-id",
+  locked: false,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  data: defaultResumeData,
+};
+
 export const useResumeStore = create<ResumeStore>()(
   temporal(
     immer((set) => ({
-      resume: {} as ResumeDto,
+      resume: defaultResume,
       setValue: (path, value) => {
         set((state) => {
           if (path === "visibility") {
@@ -49,8 +62,9 @@ export const useResumeStore = create<ResumeStore>()(
         };
 
         set((state) => {
-          const lastPageIndex = state.resume.data.metadata.layout.length - 1;
-          state.resume.data.metadata.layout[lastPageIndex][0].push(`custom.${section.id}`);
+          const layout = state.resume.data.metadata.layout;
+          const lastPageIndex = layout.length - 1;
+          layout[lastPageIndex][0].push(`custom.${section.id}`);
           state.resume.data = _set(state.resume.data, `sections.custom.${section.id}`, section);
 
           void debouncedUpdateResume(JSON.parse(JSON.stringify(state.resume)));
@@ -61,9 +75,12 @@ export const useResumeStore = create<ResumeStore>()(
           const id = sectionId.split("custom.")[1];
 
           set((state) => {
-            removeItemInLayout(sectionId, state.resume.data.metadata.layout);
-            // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-            delete state.resume.data.sections.custom[id];
+            const layout = state.resume.data.metadata.layout;
+            removeItemInLayout(sectionId, layout);
+
+            // Remove the custom section using spread syntax instead of delete
+            const { [id]: removed, ...remainingCustomSections } = state.resume.data.sections.custom;
+            state.resume.data.sections.custom = remainingCustomSections;
 
             void debouncedUpdateResume(JSON.parse(JSON.stringify(state.resume)));
           });

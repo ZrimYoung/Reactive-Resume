@@ -8,6 +8,7 @@ import { PDFDocument } from "pdf-lib";
 import { Browser, launch } from "puppeteer";
 
 import { Config } from "../config/schema";
+import { FontService } from "../font/font.service";
 import { StorageService } from "../storage/storage.service";
 
 @Injectable()
@@ -20,38 +21,39 @@ export class PrinterService {
     private readonly configService: ConfigService<Config>,
     private readonly storageService: StorageService,
     private readonly httpService: HttpService,
+    private readonly fontService: FontService,
   ) {}
 
   private async getBrowser() {
     try {
       // 如果浏览器实例不存在或已断开连接，则创建新实例
       if (!this.browser?.connected) {
-        this.logger.log('启动本地 Puppeteer 浏览器实例...');
-        
+        this.logger.log("启动本地 Puppeteer 浏览器实例...");
+
         this.browser = await launch({
           headless: true,
           args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-accelerated-2d-canvas',
-            '--no-first-run',
-            '--no-zygote',
-            '--disable-gpu',
-            '--disable-background-timer-throttling',
-            '--disable-backgrounding-occluded-windows',
-            '--disable-renderer-backgrounding',
-            '--disable-features=TranslateUI',
-            '--disable-ipc-flooding-protection',
+            "--no-sandbox",
+            "--disable-setuid-sandbox",
+            "--disable-dev-shm-usage",
+            "--disable-accelerated-2d-canvas",
+            "--no-first-run",
+            "--no-zygote",
+            "--disable-gpu",
+            "--disable-background-timer-throttling",
+            "--disable-backgrounding-occluded-windows",
+            "--disable-renderer-backgrounding",
+            "--disable-features=TranslateUI",
+            "--disable-ipc-flooding-protection",
           ],
         });
-        
-        this.logger.log('Puppeteer 浏览器实例已启动');
+
+        this.logger.log("Puppeteer 浏览器实例已启动");
       }
-      
+
       return this.browser;
     } catch (error) {
-      this.logger.error('无法启动 Puppeteer 浏览器:', error);
+      this.logger.error("无法启动 Puppeteer 浏览器:", error);
       throw new InternalServerErrorException(
         ErrorMessage.InvalidBrowserConnection,
         (error as Error).message,
@@ -91,9 +93,7 @@ export class PrinterService {
       retries: 3,
       randomize: true,
       onRetry: (_, attempt) => {
-        this.logger.log(
-          `重试生成简历预览 #${resume.id}，第 ${attempt} 次尝试`,
-        );
+        this.logger.log(`重试生成简历预览 #${resume.id}，第 ${attempt} 次尝试`);
       },
     });
 
@@ -117,11 +117,37 @@ export class PrinterService {
       // Set the data of the resume to be printed in the browser's session storage
       const numberPages = resume.data.metadata?.layout?.length || 1;
 
+      // 确保在传递数据时正确处理CSS状态
+      const resumeDataForPrint = {
+        ...resume.data,
+        metadata: {
+          ...resume.data.metadata,
+          css: {
+            value: resume.data.metadata?.css?.value || "",
+            visible: resume.data.metadata?.css?.visible === true, // 明确转换为布尔值
+          },
+        },
+      };
+
+      this.logger.debug(`PDF生成 - CSS状态: ${resumeDataForPrint.metadata.css.visible}`);
+      this.logger.debug(`PDF生成 - CSS内容长度: ${resumeDataForPrint.metadata.css.value.length}`);
+      this.logger.debug(`PDF生成 - 简历ID: ${resume.id}`);
+
       await page.evaluateOnNewDocument((data) => {
         window.localStorage.setItem("resume", JSON.stringify(data));
-      }, resume.data);
+        console.log("PDF生成 - 注入的简历数据", JSON.stringify(data, null, 2));
+      }, resumeDataForPrint);
 
       await page.goto(`${url}/artboard/preview`, { waitUntil: "networkidle0" });
+
+      // 等待所有字体加载完成，包括自定义字体
+      await page.evaluate(async () => {
+        // 等待document.fonts.ready
+        await document.fonts.ready;
+
+        // 额外等待以确保自定义字体完全加载
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      });
 
       const pagesBuffer: Buffer[] = [];
 
@@ -138,17 +164,6 @@ export class PrinterService {
           document.body.innerHTML = clonedElement.outerHTML;
           return temporaryHtml_;
         }, pageElement);
-
-        // Apply custom CSS, if enabled
-        const css = resume.data.metadata?.css || { visible: false, value: "" };
-
-        if (css.visible) {
-          await page.evaluate((cssValue: string) => {
-            const styleTag = document.createElement("style");
-            styleTag.textContent = cssValue;
-            document.head.append(styleTag);
-          }, css.value);
-        }
 
         const uint8array = await page.pdf({ width, height, printBackground: true });
         const buffer = Buffer.from(uint8array);
@@ -190,7 +205,7 @@ export class PrinterService {
 
       return resumeUrl;
     } catch (error) {
-      this.logger.error('生成PDF时出错:', error);
+      this.logger.error("生成PDF时出错:", error);
 
       throw new InternalServerErrorException(
         ErrorMessage.ResumePrinterError,
@@ -236,8 +251,8 @@ export class PrinterService {
 
       return previewUrl;
     } catch (error) {
-      this.logger.error('生成预览时出错:', error);
-      
+      this.logger.error("生成预览时出错:", error);
+
       throw new InternalServerErrorException(
         ErrorMessage.ResumePrinterError,
         (error as Error).message,
@@ -249,7 +264,7 @@ export class PrinterService {
   async onModuleDestroy() {
     if (this.browser) {
       await this.browser.close();
-      this.logger.log('Puppeteer 浏览器实例已关闭');
+      this.logger.log("Puppeteer 浏览器实例已关闭");
     }
   }
 }

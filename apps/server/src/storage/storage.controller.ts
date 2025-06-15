@@ -1,3 +1,5 @@
+import path from "node:path";
+
 import {
   BadRequestException,
   Controller,
@@ -44,23 +46,49 @@ export class StorageController {
   @Get(":userId/:type/:filename")
   async downloadFile(
     @Param("userId") userId: string,
-    @Param("type") type: "pictures" | "previews" | "resumes",
+    @Param("type") type: "pictures" | "previews" | "resumes" | "fonts",
     @Param("filename") filename: string,
     @Res() res: Response,
   ) {
     try {
       const buffer = await this.storageService.getObject(userId, type, filename);
-      
-      // 设置适当的 Content-Type
-      const contentType = type === "resumes" ? "application/pdf" : "image/jpeg";
+
+      // --- 设置正确的 Content-Type ---
+      let contentType = "application/octet-stream";
+      switch (type) {
+        case "resumes": {
+          contentType = "application/pdf";
+          break;
+        }
+        case "pictures":
+        case "previews": {
+          contentType = "image/jpeg";
+          break;
+        }
+        case "fonts": {
+          const ext = path.extname(filename).toLowerCase();
+          const mimeMap: Record<string, string> = {
+            ".ttf": "font/ttf",
+            ".otf": "font/otf",
+            ".woff": "font/woff",
+            ".woff2": "font/woff2",
+          };
+          contentType = mimeMap[ext] || "font/ttf";
+          break;
+        }
+        default: {
+          break;
+        }
+      }
+
       res.setHeader("Content-Type", contentType);
-      
+
       if (type === "resumes") {
         // 对于PDF，设置为附件下载，确保文件名正确
-        const downloadFilename = filename.endsWith('.pdf') ? filename : `${filename}.pdf`;
+        const downloadFilename = filename.endsWith(".pdf") ? filename : `${filename}.pdf`;
         res.setHeader("Content-Disposition", `attachment; filename="${downloadFilename}"`);
       }
-      
+
       res.send(buffer);
     } catch {
       res.status(404).send("文件未找到");

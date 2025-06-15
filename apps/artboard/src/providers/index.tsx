@@ -85,6 +85,11 @@ export const Providers = () => {
       try {
         const parsedData = JSON.parse(resumeData);
         console.log("🔄 Artboard: 从 localStorage 加载数据", parsedData);
+        console.log("🔍 Artboard: CSS状态检查", {
+          hasCss: !!parsedData.metadata?.css,
+          cssVisible: parsedData.metadata?.css?.visible,
+          cssValue: (parsedData.metadata?.css?.value || "").slice(0, 100) + "...",
+        });
 
         // Deep merge with default data to ensure all required fields exist
         const mergedData = { ...defaultResumeData, ...parsedData };
@@ -95,6 +100,10 @@ export const Providers = () => {
             ...defaultResumeData.metadata,
             ...parsedData.metadata,
             layout: parsedData.metadata?.layout || defaultResumeData.metadata.layout,
+            css: {
+              value: parsedData.metadata?.css?.value || "",
+              visible: parsedData.metadata?.css?.visible === true,
+            },
           };
         }
 
@@ -107,6 +116,10 @@ export const Providers = () => {
         }
 
         console.log("✅ Artboard: localStorage 合并后的数据", mergedData);
+        console.log("🎨 Artboard: 最终CSS状态", {
+          visible: mergedData.metadata.css.visible,
+          valueLength: mergedData.metadata.css.value.length
+        });
         setResume(mergedData);
       } catch (error) {
         console.error("❌ Artboard: Failed to parse resume data from localStorage:", error);
@@ -116,7 +129,7 @@ export const Providers = () => {
       console.log("📝 Artboard: localStorage 中没有简历数据，使用默认数据");
       setResume(defaultResumeData);
     }
-  }, [window.localStorage.getItem("resume")]);
+  }, []);
 
   return (
     <ErrorBoundary>

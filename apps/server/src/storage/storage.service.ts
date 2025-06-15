@@ -14,7 +14,8 @@ import sharp from "sharp";
 
 type ImageUploadType = "pictures" | "previews";
 type DocumentUploadType = "resumes";
-export type UploadType = ImageUploadType | DocumentUploadType;
+type FontUploadType = "fonts";
+export type UploadType = ImageUploadType | DocumentUploadType | FontUploadType;
 
 @Injectable()
 export class StorageService implements OnModuleInit {
@@ -38,10 +39,24 @@ export class StorageService implements OnModuleInit {
     buffer: Buffer,
     filename: string = createId(),
   ): Promise<string> {
-    const extension = type === "resumes" ? "pdf" : "jpg";
-
-    let normalizedFilename = slugify(filename);
-    if (!normalizedFilename) normalizedFilename = createId();
+    let extension: string;
+    let normalizedFilename: string;
+    
+    if (type === "resumes") {
+      extension = "pdf";
+      normalizedFilename = slugify(filename);
+      if (!normalizedFilename) normalizedFilename = createId();
+    } else if (type === "fonts") {
+      // 对于字体文件，保留原始扩展名
+      const originalExt = path.extname(filename);
+      extension = originalExt.slice(1); // 移除点号
+      normalizedFilename = slugify(path.basename(filename, originalExt));
+      if (!normalizedFilename) normalizedFilename = createId();
+    } else {
+      extension = "jpg";
+      normalizedFilename = slugify(filename);
+      if (!normalizedFilename) normalizedFilename = createId();
+    }
 
     const userDir = path.join(this.storageRoot, userId, type);
     const filepath = path.join(userDir, `${normalizedFilename}.${extension}`);
@@ -51,7 +66,7 @@ export class StorageService implements OnModuleInit {
       // 确保用户目录存在
       await fs.mkdir(userDir, { recursive: true });
 
-      if (extension === "jpg") {
+      if (type === "pictures" || type === "previews") {
         // 如果是图片，使用 sharp 调整大小
         buffer = await sharp(buffer)
           .resize({ width: 600, height: 600, fit: sharp.fit.outside })
@@ -70,8 +85,19 @@ export class StorageService implements OnModuleInit {
   }
 
   async deleteObject(userId: string, type: UploadType, filename: string): Promise<void> {
-    const extension = type === "resumes" ? "pdf" : "jpg";
-    const filepath = path.join(this.storageRoot, userId, type, `${filename}.${extension}`);
+    let extension: string;
+    if (type === "resumes") {
+      extension = "pdf";
+    } else if (type === "fonts") {
+      // 对于字体文件，从文件名中提取扩展名
+      const ext = path.extname(filename);
+      extension = ext ? ext.slice(1) : "";
+    } else {
+      extension = "jpg";
+    }
+
+    const finalFilename = extension ? `${filename}.${extension}` : filename;
+    const filepath = path.join(this.storageRoot, userId, type, finalFilename);
 
     try {
       await fs.unlink(filepath);
@@ -96,11 +122,20 @@ export class StorageService implements OnModuleInit {
 
   // 新增：获取文件内容
   async getObject(userId: string, type: UploadType, filename: string): Promise<Buffer> {
-    const extension = type === "resumes" ? "pdf" : "jpg";
+    let extension: string;
+    if (type === "resumes") {
+      extension = "pdf";
+    } else if (type === "fonts") {
+      // 对于字体文件，从文件名中提取扩展名
+      const ext = path.extname(filename);
+      extension = ext ? ext.slice(1) : "";
+    } else {
+      extension = "jpg";
+    }
     
     // 检查文件名是否已经包含扩展名
     let finalFilename = filename;
-    if (!filename.endsWith(`.${extension}`)) {
+    if (extension && !filename.endsWith(`.${extension}`)) {
       finalFilename = `${filename}.${extension}`;
     }
     

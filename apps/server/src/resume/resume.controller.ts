@@ -81,6 +81,31 @@ export class ResumeController {
     return this.resumeService.update(LOCAL_USER_ID, id, updateResumeDto);
   }
 
+  @Post(":id/debug")
+  async debugUpdate(@Param("id") id: string, @Body() updateResumeDto: UpdateResumeDto) {
+    try {
+      console.log("DEBUG: 接收到的更新数据", JSON.stringify(updateResumeDto, null, 2));
+      
+      if (updateResumeDto.data) {
+        const parsedData = typeof updateResumeDto.data === "string" 
+          ? JSON.parse(updateResumeDto.data) 
+          : updateResumeDto.data;
+          
+        console.log("DEBUG: CSS状态", {
+          hasCss: !!parsedData.metadata?.css,
+          cssVisible: parsedData.metadata?.css?.visible,
+          cssValueLength: parsedData.metadata?.css?.value?.length || 0
+        });
+      }
+      
+      const result = await this.resumeService.update(LOCAL_USER_ID, id, updateResumeDto);
+      return { success: true, result };
+    } catch (error) {
+      console.log("DEBUG: 更新失败", error.message);
+      return { success: false, error: error.message };
+    }
+  }
+
   @Patch(":id/lock")
   lock(@Param("id") id: string, @Body("set") set = true) {
     return this.resumeService.lock(LOCAL_USER_ID, id, set);

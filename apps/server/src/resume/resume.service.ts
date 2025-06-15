@@ -5,7 +5,7 @@ import {
   Logger,
 } from "@nestjs/common";
 import { CreateResumeDto, ImportResumeDto, ResumeDto, UpdateResumeDto } from "@reactive-resume/dto";
-import { defaultResumeData, ResumeData } from "@reactive-resume/schema";
+import { defaultResumeData, ResumeData, resumeDataSchema, defaultMetadata } from "@reactive-resume/schema";
 import type { DeepPartial } from "@reactive-resume/utils";
 import { ErrorMessage, generateRandomName } from "@reactive-resume/utils";
 import slugify from "@sindresorhus/slugify";
@@ -18,6 +18,8 @@ import { StorageService } from "../storage/storage.service";
 
 @Injectable()
 export class ResumeService {
+  private readonly logger = new Logger(ResumeService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly printerService: PrinterService,
@@ -34,7 +36,7 @@ export class ResumeService {
       basics: { name, email, picture: { url: "" } },
     } satisfies DeepPartial<ResumeData>);
 
-    return this.prisma.resume.create({
+    const resume = await this.prisma.resume.create({
       data: {
         data: JSON.stringify(data),
         userId,
@@ -42,6 +44,14 @@ export class ResumeService {
         slug: createResumeDto.slug ?? slugify(createResumeDto.title),
       },
     });
+
+    return {
+      ...resume,
+      data:
+        typeof resume.data === "string"
+          ? (JSON.parse(resume.data) as ResumeData)
+          : resume.data,
+    };
   }
 
   import(userId: string, importResumeDto: ImportResumeDto) {
@@ -89,14 +99,76 @@ export class ResumeService {
 
       if (locked) throw new BadRequestException(ErrorMessage.ResumeLocked);
 
+      // 验证和标准化数据
+      let processedData: string | undefined;
+      if (updateResumeDto.data) {
+        try {
+          // 如果是字符串，先解析再重新序列化以验证格式
+          const parsedData =
+            typeof updateResumeDto.data === "string"
+              ? JSON.parse(updateResumeDto.data)
+              : updateResumeDto.data;
+
+          // 使用resumeDataSchema验证数据结构
+          try {
+            // 在验证之前，先确保数据结构完整
+            const safeData = {
+              ...parsedData,
+              basics: parsedData.basics || {},
+              sections: parsedData.sections || {},
+              metadata: {
+                ...defaultMetadata,
+                ...parsedData.metadata,
+                css: {
+                  ...defaultMetadata.css,
+                  ...(parsedData.metadata?.css ?? {}),
+                  visible: parsedData.metadata?.css?.visible ?? false,
+                },
+                typography: {
+                  ...defaultMetadata.typography,
+                  ...(parsedData.metadata?.typography ?? {}),
+                },
+              },
+            };
+
+            // 使用schema验证
+            const validatedData = resumeDataSchema.parse(safeData);
+            processedData = JSON.stringify(validatedData);
+
+            this.logger.debug(
+              `简历更新 - 数据验证成功: ${JSON.stringify({
+                hasMetadata: !!validatedData.metadata,
+                hasCss: !!validatedData.metadata.css,
+                cssVisible: validatedData.metadata.css.visible,
+                cssValueLength: validatedData.metadata.css.value.length || 0,
+              })}`,
+            );
+          } catch (validationError) {
+            this.logger.error(`简历数据验证失败: ${validationError.message}`, validationError);
+
+            // 如果验证失败，尝试使用原始数据但修复已知问题
+            if (parsedData.metadata?.css) {
+              const css = parsedData.metadata.css;
+              parsedData.metadata.css = {
+                value: typeof css.value === "string" ? css.value : "",
+                visible: typeof css.visible === "boolean" ? css.visible : false,
+              };
+            }
+
+            processedData = JSON.stringify(parsedData);
+            this.logger.warn("使用修复后的数据而非验证通过的数据");
+          }
+        } catch (parseError) {
+          this.logger.error(`简历数据解析失败: ${parseError.message}`, parseError.stack);
+          throw new BadRequestException(`无效的简历数据格式: ${parseError.message}`);
+        }
+      }
+
       const updatedResume = await this.prisma.resume.update({
         data: {
           title: updateResumeDto.title,
           slug: updateResumeDto.slug,
-          data:
-            typeof updateResumeDto.data === "string"
-              ? updateResumeDto.data
-              : JSON.stringify(updateResumeDto.data),
+          ...(processedData && { data: processedData }),
         },
         where: { userId_id: { userId, id } },
       });
@@ -109,11 +181,17 @@ export class ResumeService {
             : updatedResume.data,
       };
     } catch (error) {
+      this.logger.error(`简历更新失败: ${error.message}`, error.stack);
+
       if (error.code === "P2025") {
-        Logger.error(error);
-        throw new InternalServerErrorException(error);
+        throw new InternalServerErrorException("简历不存在或无权限访问");
       }
-      throw error;
+
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException(`简历更新失败: ${error.message}`);
     }
   }
 

@@ -44,7 +44,8 @@ export const useResumeStore = create<ResumeStore>()(
       setValue: (path, value) => {
         set((state) => {
           state.resume.data = _set(state.resume.data, path, value);
-          void debouncedUpdateResume(JSON.parse(JSON.stringify(state.resume)));
+          const { id, data } = state.resume;
+          debouncedUpdateResume({ id, data: JSON.parse(JSON.stringify(data)) });
         });
       },
       addSection: () => {
@@ -61,7 +62,8 @@ export const useResumeStore = create<ResumeStore>()(
           layout[lastPageIndex][0].push(`custom.${section.id}`);
           state.resume.data = _set(state.resume.data, `sections.custom.${section.id}`, section);
 
-          void debouncedUpdateResume(JSON.parse(JSON.stringify(state.resume)));
+          const { id, data } = state.resume;
+          debouncedUpdateResume({ id, data: JSON.parse(JSON.stringify(data)) });
         });
       },
       removeSection: (sectionId: SectionKey) => {
@@ -76,7 +78,8 @@ export const useResumeStore = create<ResumeStore>()(
             const { [id]: removed, ...remainingCustomSections } = state.resume.data.sections.custom;
             state.resume.data.sections.custom = remainingCustomSections;
 
-            void debouncedUpdateResume(JSON.parse(JSON.stringify(state.resume)));
+            const { id: resumeId, data } = state.resume;
+            debouncedUpdateResume({ id: resumeId, data: JSON.parse(JSON.stringify(data)) });
           });
         }
       },

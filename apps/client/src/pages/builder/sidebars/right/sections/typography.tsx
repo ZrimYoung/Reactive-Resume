@@ -1,20 +1,23 @@
 /* eslint-disable lingui/no-unlocalized-strings */
 
 import { t } from "@lingui/macro";
+import { Plus } from "@phosphor-icons/react";
 import type { ComboboxOption } from "@reactive-resume/ui";
 import { Button, Combobox, Label, Slider, Switch } from "@reactive-resume/ui";
 import { cn, fonts } from "@reactive-resume/utils";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import webfontloader from "webfontloader";
 
+import { FontUploadDialog } from "@/client/components/font-upload-dialog";
 import { useResumeStore } from "@/client/stores/resume";
 
 import { SectionIcon } from "../shared/section-icon";
 
 const localFonts = ["Arial", "Cambria", "Garamond", "Times New Roman"];
 
-const fontSuggestions = [
+const getfontSuggestions = (customFonts: string[]) => [
   ...localFonts,
+  ...customFonts,
   "IBM Plex Sans",
   "IBM Plex Serif",
   "Lato",
@@ -27,28 +30,108 @@ const fontSuggestions = [
   "Roboto Condensed",
 ];
 
-const families = fonts.map((font) => ({
-  value: font.family,
-  label: font.family,
-})) satisfies ComboboxOption[];
-
-families.push(...localFonts.map((font) => ({ value: font, label: font })));
-
 export const TypographySection = () => {
   const [subsets, setSubsets] = useState<ComboboxOption[]>([]);
   const [variants, setVariants] = useState<ComboboxOption[]>([]);
+  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
+  const [customFonts, setCustomFonts] = useState<string[]>([]);
+  const [isLoadingFonts, setIsLoadingFonts] = useState(false);
+
+  // 使用 ref 来避免重复加载
+  const hasLoadedCustomFonts = useRef(false);
 
   const setValue = useResumeStore((state) => state.setValue);
-  const typography = useResumeStore((state) => state.resume.data?.metadata?.typography || {
-    font: { family: "IBM Plex Serif", subset: "latin", variants: ["regular"], size: 14 },
-    lineHeight: 1.5,
-    hideIcons: false,
-    underlineLinks: true
-  });
+  const typography = useResumeStore(
+    (state) =>
+      state.resume.data.metadata.typography || {
+        font: { family: "IBM Plex Serif", subset: "latin", variants: ["regular"], size: 14 },
+        lineHeight: 1.5,
+        hideIcons: false,
+        underlineLinks: true,
+      },
+  );
+
+  const handleFamilyChange = useCallback(
+    (family: string | null) => {
+      if (!family) return;
+
+      const isGoogleFont = fonts.some((font) => font.family === family);
+      const currentFont = typography.font;
+
+      if (isGoogleFont) {
+        const fontInfo = fonts.find((f) => f.family === family);
+        const defaultVariant = fontInfo?.variants.includes("regular")
+          ? "regular"
+          : (fontInfo?.variants[0] ?? "");
+        const defaultSubset = fontInfo?.subsets.includes("latin")
+          ? "latin"
+          : (fontInfo?.subsets[0] ?? "");
+        setValue("metadata.typography.font", {
+          ...currentFont,
+          family,
+          subset: defaultSubset,
+          variants: defaultVariant ? [defaultVariant] : [],
+        });
+      } else {
+        // For custom or local fonts, reset subset and variants
+        setValue("metadata.typography.font", {
+          ...currentFont,
+          family,
+          subset: "",
+          variants: [],
+        });
+      }
+    },
+    [setValue, typography.font],
+  );
+
+  const families: ComboboxOption[] = useMemo(() => {
+    const googleFonts = fonts.map((font) => ({
+      label: font.family,
+      value: font.family,
+    }));
+
+    const customFontOptions = customFonts.map((font) => ({
+      label: font,
+      value: font,
+    }));
+
+    // 合并并去重，如果名称冲突，优先使用自定义字体
+    const combined = [...customFontOptions, ...googleFonts];
+    const uniqueFamilies = [...new Map(combined.map((item) => [item.value, item])).values()];
+
+    return uniqueFamilies;
+  }, [customFonts]);
+
+  // 加载用户自定义字体（只加载一次）
+  const loadCustomFonts = useCallback(async () => {
+    if (hasLoadedCustomFonts.current || isLoadingFonts) {
+      return;
+    }
+
+    setIsLoadingFonts(true);
+    hasLoadedCustomFonts.current = true;
+
+    try {
+      const response = await fetch("/api/fonts/user/local-user-id");
+      if (response.ok) {
+        const fonts = await response.json();
+        const fontFamilies = fonts.map((font: any) => font.fontFamily || font.family);
+        setCustomFonts(fontFamilies);
+      }
+    } catch (error) {
+      console.warn("加载自定义字体失败:", error);
+    } finally {
+      setIsLoadingFonts(false);
+    }
+  }, [isLoadingFonts]);
+
+  // 稳定的字体建议列表
+  const fontSuggestions = getfontSuggestions(customFonts);
 
   const loadFontSuggestions = useCallback(() => {
     for (const font of fontSuggestions) {
-      if (localFonts.includes(font)) continue;
+      if (localFonts.includes(font) || customFonts.includes(font)) continue;
 
       webfontloader.load({
         events: false,
@@ -58,21 +141,54 @@ export const TypographySection = () => {
     }
   }, [fontSuggestions]);
 
+  const handleUploadSuccess = useCallback(
+    (fontFamily: string) => {
+      // 直接更新本地状态，避免重新请求API
+      setCustomFonts((prev) => {
+        if (!prev.includes(fontFamily)) {
+          return [...prev, fontFamily];
+        }
+        return prev;
+      });
+
+      handleFamilyChange(fontFamily);
+    },
+    [handleFamilyChange],
+  );
+
+  // 只在组件首次加载时执行
+  useEffect(() => {
+    loadCustomFonts();
+  }, [loadCustomFonts]);
+
+  // 字体建议更新时加载字体
   useEffect(() => {
     loadFontSuggestions();
-  }, []);
+  }, [loadFontSuggestions]);
 
   useEffect(() => {
-    const subsets = fonts.find((font) => font.family === typography.font.family)?.subsets ?? [];
+    const family = typography.font.family;
+    const fontInfo = fonts.find((font) => font.family === family);
+
+    const subsets = fontInfo?.subsets ?? [];
     if (subsets.length > 0) {
       setSubsets(subsets.map((subset) => ({ value: subset, label: subset })));
+    } else {
+      setSubsets([]);
     }
 
-    const variants = fonts.find((font) => font.family === typography.font.family)?.variants ?? [];
+    const variants = fontInfo?.variants ?? [];
     if (variants.length > 0) {
       setVariants(variants.map((variant) => ({ value: variant, label: variant })));
+    } else {
+      setVariants([]);
     }
   }, [typography.font.family]);
+
+  const isGoogleFont = useMemo(
+    () => fonts.some((font) => font.family === typography.font.family),
+    [typography.font.family],
+  );
 
   return (
     <section id="typography" className="grid gap-y-8">
@@ -84,10 +200,35 @@ export const TypographySection = () => {
       </header>
 
       <main className="grid gap-y-6">
+        <div className="space-y-1.5">
+          <Label>{t`Font Family`}</Label>
+          <Combobox
+            options={families.sort((a, b) => {
+              const labelA = a.label?.toString() ?? "";
+              const labelB = b.label?.toString() ?? "";
+              return labelA.localeCompare(labelB);
+            })}
+            value={typography.font.family}
+            onValueChange={handleFamilyChange}
+          />
+        </div>
+
         <div className="grid grid-cols-2 gap-4">
+          {/* 添加上传字体按钮 */}
+          <Button
+            variant="outline"
+            className="flex h-12 items-center justify-center gap-2 border-dashed border-primary/40 text-primary hover:bg-primary/10"
+            onClick={() => {
+              setIsUploadDialogOpen(true);
+            }}
+          >
+            <Plus className="size-4" />
+            {t`上传字体`}
+          </Button>
+
           {fontSuggestions
-            .sort((a, b) => a.localeCompare(b))
-            .map((font) => (
+            .sort((a: string, b: string) => a.localeCompare(b))
+            .map((font: string) => (
               <Button
                 key={font}
                 variant="outline"
@@ -98,9 +239,7 @@ export const TypographySection = () => {
                   typography.font.family === font && "ring-1",
                 )}
                 onClick={() => {
-                  setValue("metadata.typography.font.family", font);
-                  setValue("metadata.typography.font.subset", "latin");
-                  setValue("metadata.typography.font.variants", ["regular"]);
+                  handleFamilyChange(font);
                 }}
               >
                 {font}
@@ -108,46 +247,31 @@ export const TypographySection = () => {
             ))}
         </div>
 
-        <div className="space-y-1.5">
-          <Label>{t`Font Family`}</Label>
-          <Combobox
-            options={families.sort((a, b) => a.label.localeCompare(b.label))}
-            value={typography.font.family}
-            searchPlaceholder={t`Search for a font family`}
-            onValueChange={(value) => {
-              setValue("metadata.typography.font.family", value);
-              setValue("metadata.typography.font.subset", "latin");
-              setValue("metadata.typography.font.variants", ["regular"]);
-            }}
-          />
-        </div>
+        {isGoogleFont && (
+          <div className="grid grid-cols-2 gap-x-4">
+            <div className="space-y-1.5">
+              <Label>{t`Font Subset`}</Label>
+              <Combobox
+                options={subsets}
+                value={typography.font.subset}
+                onValueChange={(value) => {
+                  setValue("metadata.typography.font.subset", value);
+                }}
+              />
+            </div>
 
-        <div className="grid grid-cols-2 gap-x-4">
-          <div className="space-y-1.5">
-            <Label>{t`Font Subset`}</Label>
-            <Combobox
-              options={subsets}
-              value={typography.font.subset}
-              searchPlaceholder={t`Search for a font subset`}
-              onValueChange={(value) => {
-                setValue("metadata.typography.font.subset", value);
-              }}
-            />
+            <div className="space-y-1.5">
+              <Label>{t`Font Variants`}</Label>
+              <Combobox
+                options={variants}
+                value={typography.font.variants[0]}
+                onValueChange={(value) => {
+                  setValue("metadata.typography.font.variants", [value]);
+                }}
+              />
+            </div>
           </div>
-
-          <div className="space-y-1.5">
-            <Label>{t`Font Variants`}</Label>
-            <Combobox
-              multiple
-              options={variants}
-              value={typography.font.variants}
-              searchPlaceholder={t`Search for a font variant`}
-              onValueChange={(value) => {
-                setValue("metadata.typography.font.variants", value);
-              }}
-            />
-          </div>
-        </div>
+        )}
 
         <div className="space-y-1.5">
           <Label>{t`Font Size`}</Label>
@@ -157,12 +281,11 @@ export const TypographySection = () => {
               max={18}
               step={0.05}
               value={[typography.font.size]}
-              onValueChange={(value) => {
-                setValue("metadata.typography.font.size", value[0]);
+              onValueChange={([value]) => {
+                setValue("metadata.typography.font.size", value);
               }}
             />
-
-            <span className="text-base font-bold">{typography.font.size}</span>
+            <span className="text-sm font-medium leading-none">{typography.font.size}</span>
           </div>
         </div>
 
@@ -170,45 +293,52 @@ export const TypographySection = () => {
           <Label>{t`Line Height`}</Label>
           <div className="flex items-center gap-x-4 py-1">
             <Slider
-              min={0}
-              max={3}
+              min={1}
+              max={2}
               step={0.05}
               value={[typography.lineHeight]}
-              onValueChange={(value) => {
-                setValue("metadata.typography.lineHeight", value[0]);
+              onValueChange={([value]) => {
+                setValue("metadata.typography.lineHeight", value);
               }}
             />
-
-            <span className="text-base font-bold">{typography.lineHeight}</span>
+            <span className="text-sm font-medium leading-none">{typography.lineHeight}</span>
           </div>
         </div>
 
-        <div className="space-y-1.5">
-          <Label>{t`Options`}</Label>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="hide-icons" className="cursor-pointer">
+            {t`Hide Icons`}
+          </Label>
+          <Switch
+            id="hide-icons"
+            checked={typography.hideIcons}
+            onCheckedChange={(checked) => {
+              setValue("metadata.typography.hideIcons", checked);
+            }}
+          />
+        </div>
 
-          <div className="flex items-center gap-x-4 py-1">
-            <Switch
-              id="metadata.typography.hideIcons"
-              checked={typography.hideIcons}
-              onCheckedChange={(checked) => {
-                setValue("metadata.typography.hideIcons", checked);
-              }}
-            />
-            <Label htmlFor="metadata.typography.hideIcons">{t`Hide Icons`}</Label>
-          </div>
-
-          <div className="flex items-center gap-x-4 py-1">
-            <Switch
-              id="metadata.typography.underlineLinks"
-              checked={typography.underlineLinks}
-              onCheckedChange={(checked) => {
-                setValue("metadata.typography.underlineLinks", checked);
-              }}
-            />
-            <Label htmlFor="metadata.typography.underlineLinks">{t`Underline Links`}</Label>
-          </div>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="underline-links" className="cursor-pointer">
+            {t`Underline Links`}
+          </Label>
+          <Switch
+            id="underline-links"
+            checked={typography.underlineLinks}
+            onCheckedChange={(checked) => {
+              setValue("metadata.typography.underlineLinks", checked);
+            }}
+          />
         </div>
       </main>
+
+      <FontUploadDialog
+        isOpen={isUploadDialogOpen}
+        onClose={() => {
+          setIsUploadDialogOpen(false);
+        }}
+        onSuccess={handleUploadSuccess}
+      />
     </section>
   );
 };

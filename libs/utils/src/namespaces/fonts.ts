@@ -4,7 +4,85 @@ export type Font = {
   subsets: string[];
   variants: string[];
   files: Record<string, string>;
+  // 新增：字体来源标识
+  source?: "google" | "custom" | "system";
+  // 新增：自定义字体的元数据
+  metadata?: {
+    uploadedAt?: string;
+    originalName?: string;
+    fileSize?: number;
+    format?: string;
+    userId?: string;
+  };
 };
+
+// 新增：自定义字体类型
+// 字体轴参数类型定义
+export type FontAxis = {
+  tag: string; // 轴标签，如 'wght', 'wdth', 'slnt', 'opsz'
+  name: string; // 轴名称，如 'Weight', 'Width', 'Slant', 'Optical Size'
+  min: number; // 最小值
+  max: number; // 最大值
+  default: number; // 默认值
+  step?: number; // 步长
+};
+
+// 可变字体信息
+export type VariableFontInfo = {
+  isVariable: boolean;
+  axes: FontAxis[];
+  namedInstances?: {
+    name: string;
+    coordinates: Record<string, number>;
+  }[];
+};
+
+export type CustomFont = {
+  id: string;
+  family: string;
+  category: string;
+  originalName: string;
+  fileSize: number;
+  format: string;
+  url: string;
+  uploadedAt: string;
+  userId: string;
+
+  // 可变字体支持
+  variableFont?: VariableFontInfo;
+};
+
+// 新增：字体上传配置
+export const FONT_UPLOAD_CONFIG = {
+  maxFileSize: 50 * 1024 * 1024, // 50MB，支持中文字体
+  allowedFormats: ["ttf", "otf", "woff", "woff2"],
+  allowedMimeTypes: [
+    "font/ttf",
+    "font/otf",
+    "font/woff",
+    "font/woff2",
+    "application/font-woff",
+    "application/font-woff2",
+    "application/x-font-ttf",
+    "application/x-font-opentype",
+  ],
+} as const;
+
+// 常见字体轴标签的映射
+export const FONT_AXIS_REGISTRY = {
+  wght: { name: "Weight", min: 100, max: 900, default: 400, step: 1 },
+  wdth: { name: "Width", min: 50, max: 200, default: 100, step: 1 },
+  slnt: { name: "Slant", min: -15, max: 0, default: 0, step: 0.1 },
+  opsz: { name: "Optical Size", min: 6, max: 72, default: 14, step: 0.1 },
+  ital: { name: "Italic", min: 0, max: 1, default: 0, step: 1 },
+  GRAD: { name: "Grade", min: -200, max: 150, default: 0, step: 1 },
+  YOPQ: { name: "Thin Stroke", min: 25, max: 135, default: 79, step: 1 },
+  YTAS: { name: "Ascender Height", min: 649, max: 854, default: 750, step: 1 },
+  YTDE: { name: "Descender Depth", min: -305, max: -98, default: -203, step: 1 },
+  YTFI: { name: "Figure Height", min: 560, max: 788, default: 738, step: 1 },
+  YTLC: { name: "Lowercase Height", min: 416, max: 570, default: 514, step: 1 },
+  YTUC: { name: "Uppercase Height", min: 528, max: 760, default: 712, step: 1 },
+} as const;
 
 export const fonts: Font[] = [
   {
@@ -10357,4 +10435,138 @@ export const getFontUrls = (family: string, variants: string[]): string[] => {
   return Object.entries(font.files)
     .filter(([variant]) => variants.includes(variant))
     .map(([, url]) => url);
+};
+
+// 定义文件类型接口，兼容浏览器File和服务端UploadedFile
+type FileInput =
+  | File
+  | {
+      originalname?: string;
+      name?: string;
+      size: number;
+      type?: string;
+      mimetype?: string;
+    };
+
+// 新增：自定义字体管理工具函数
+export const customFontUtils = {
+  // 验证字体文件
+  validateFontFile: (file: FileInput): { valid: boolean; error?: string } => {
+    // 检查文件大小
+    if (file.size > FONT_UPLOAD_CONFIG.maxFileSize) {
+      return {
+        valid: false,
+        error: `文件大小不能超过 ${Math.round(FONT_UPLOAD_CONFIG.maxFileSize / 1024 / 1024)}MB`,
+      };
+    }
+
+    // 获取文件名（兼容浏览器File和服务端UploadedFile）
+    let fileName = "";
+
+    // 优先尝试浏览器File对象的name属性
+    if ("name" in file && file.name) {
+      fileName = file.name;
+    }
+    // 然后尝试服务端UploadedFile的originalname属性
+    else if ("originalname" in file && file.originalname) {
+      fileName = file.originalname;
+    }
+
+    // 如果没有文件名，直接返回错误
+    if (!fileName) {
+      return {
+        valid: false,
+        error: "无法获取文件名",
+      };
+    }
+
+    // 检查文件格式
+    const fileExtension = fileName.split(".").pop()?.toLowerCase();
+    if (
+      !fileExtension ||
+      !(FONT_UPLOAD_CONFIG.allowedFormats as readonly string[]).includes(fileExtension)
+    ) {
+      return {
+        valid: false,
+        error: `不支持的文件格式。支持的格式：${FONT_UPLOAD_CONFIG.allowedFormats.join(", ")}`,
+      };
+    }
+
+    // 检查MIME类型（兼容浏览器File和服务端UploadedFile）
+    const mimeType = ("type" in file && file.type) ?? ("mimetype" in file && file.mimetype) ?? "";
+
+    if (
+      mimeType &&
+      !(FONT_UPLOAD_CONFIG.allowedMimeTypes as readonly string[]).includes(mimeType)
+    ) {
+      return {
+        valid: false,
+        error: "不支持的文件类型",
+      };
+    }
+
+    return { valid: true };
+  },
+
+  // 从文件名提取字体家族名
+  extractFontFamily: (fileName: string): string => {
+    // 移除文件扩展名
+    const nameWithoutExt = fileName.replace(/\.(ttf|otf|woff|woff2)$/i, "");
+
+    // 处理常见的字体命名模式
+    return nameWithoutExt
+      .replace(/[_-]/g, " ") // 替换连字符和下划线为空格
+      .replace(/\b(regular|normal|medium|bold|light|thin|black|extra|ultra)\b/gi, "") // 移除字重描述
+      .replace(/\b(italic|oblique)\b/gi, "") // 移除斜体描述
+      .replace(/\s+/g, " ") // 合并多个空格
+      .trim();
+  },
+
+  // 检测字体变体
+  detectFontVariant: (fileName: string): string => {
+    const name = fileName.toLowerCase();
+
+    if (name.includes("thin")) return "100";
+    if (name.includes("light")) return "300";
+    if (name.includes("medium")) return "500";
+    if (name.includes("semibold") || name.includes("semi-bold")) return "600";
+    if (name.includes("bold") && !name.includes("extra") && !name.includes("ultra")) return "700";
+    if (name.includes("extrabold") || name.includes("extra-bold") || name.includes("ultra"))
+      return "800";
+    if (name.includes("black") || name.includes("heavy")) return "900";
+    if (name.includes("italic") || name.includes("oblique")) return "italic";
+
+    return "regular";
+  },
+
+  // 生成字体CSS
+  generateFontFaceCSS: (customFont: CustomFont): string => {
+    return `
+@font-face {
+  font-family: '${customFont.family}';
+  src: url('${customFont.url}') format('${customFont.format}');
+  font-display: swap;
+}`;
+  },
+
+  // 创建Font对象
+  createFontFromCustom: (customFont: CustomFont): Font => {
+    return {
+      family: customFont.family,
+      category: "custom",
+      subsets: ["latin"], // 默认支持latin
+      variants: ["regular"], // 默认regular变体
+      files: {
+        regular: customFont.url,
+      },
+      source: "custom",
+      metadata: {
+        uploadedAt: customFont.uploadedAt,
+        originalName: customFont.originalName,
+        fileSize: customFont.fileSize,
+        format: customFont.format,
+        userId: customFont.userId,
+      },
+    };
+  },
 };

@@ -20,7 +20,7 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService<Config>);
 
-  const accessTokenSecret = configService.getOrThrow("ACCESS_TOKEN_SECRET");
+  const sessionSecret = configService.getOrThrow("SESSION_SECRET");
   const publicUrl = configService.getOrThrow("PUBLIC_URL");
   const isHTTPS = publicUrl.startsWith("https://") ?? false;
 
@@ -32,7 +32,7 @@ async function bootstrap() {
     session({
       resave: false,
       saveUninitialized: false,
-      secret: accessTokenSecret,
+      secret: sessionSecret,
       cookie: { httpOnly: true, secure: isHTTPS },
     }),
   );
@@ -57,7 +57,6 @@ async function bootstrap() {
     .setDescription(
       "Reactive Resume is a free and open source resume builder that's built to make the mundane tasks of creating, updating and sharing your resume as easy as 1, 2, 3.",
     )
-    .addCookieAuth("Authentication", { type: "http", in: "cookie", scheme: "Bearer" })
     .setVersion("4.0.0")
     .build();
   const document = SwaggerModule.createDocument(app, config);

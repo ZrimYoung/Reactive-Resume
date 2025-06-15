@@ -16,7 +16,7 @@ export class ResumeGuard implements CanActivate {
     try {
       const resume = await this.resumeService.findOne(
         request.params.id,
-        user ? user.id : undefined,
+        user && typeof user === 'object' ? user.id : undefined,
       );
 
       // First check if the resume is public, if yes, attach the resume to the request payload.
@@ -27,7 +27,7 @@ export class ResumeGuard implements CanActivate {
       // If the resume is private and the user is authenticated and is the owner of the resume, attach the resume to the request payload.
       // Else, if either the user is not authenticated or is not the owner of the resume, throw a 404 error.
       if (resume.visibility === "private") {
-        if (user && user.id === resume.userId) {
+        if (user && typeof user === 'object' && user.id === resume.userId) {
           request.payload = { resume };
         } else {
           throw new NotFoundException(ErrorMessage.ResumeNotFound);

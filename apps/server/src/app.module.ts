@@ -9,7 +9,6 @@ import { ZodValidationPipe } from "nestjs-zod";
 import { ConfigModule } from "./config/config.module";
 import { ContributorsModule } from "./contributors/contributors.module";
 import { DatabaseModule } from "./database/database.module";
-import { FeatureModule } from "./feature/feature.module";
 import { HealthModule } from "./health/health.module";
 import { PrinterModule } from "./printer/printer.module";
 import { ResumeModule } from "./resume/resume.module";
@@ -49,7 +48,6 @@ const staticFileModules =
     ResumeModule,
     StorageModule,
     PrinterModule,
-    FeatureModule,
     TranslationModule,
     ContributorsModule,
 

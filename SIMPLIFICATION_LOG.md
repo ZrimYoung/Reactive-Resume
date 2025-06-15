@@ -776,4 +776,66 @@ pnpm electron:dev
 - Electron 应用完全可用 ✅
 - 控制台输出无乱码 ✅
 - 所有核心功能正常工作 ✅
-- 用户可以正常创建、编辑和导出简历 ✅ 
+- 用户可以正常创建、编辑和导出简历 ✅
+
+### 2025-06-15: 项目冗余清理 - 第一阶段
+#### 清理目标
+清理项目中的冗余文件和代码，减少项目体积和复杂度。
+
+#### 完成的清理工作 ✅
+
+##### 1. Docker 相关清理 ✅
+- **删除文件**：
+  - `Dockerfile` (48行) - Docker构建文件
+  - `compose.yml` 和 `compose.dev.yml` - Docker Compose配置
+  - `tools/compose/` 整个目录 (6个配置文件，约25KB)
+    - `traefik.yml`, `traefik-secure.yml`, `simple.yml`
+    - `swarm.yml`, `nginx-proxy-manager.yml`, `development.yml`
+
+##### 2. CI/CD 和 GitHub 工作流清理 ✅
+- **删除目录**：
+  - `.github/workflows/` - 所有GitHub Actions工作流
+    - `publish-docker-image.yml` (5.0KB)
+    - `sync-crowdin-translations.yml` (1.1KB) 
+    - `lint-test-build.yml` (950字节)
+  - `.github/ISSUE_TEMPLATE/` - GitHub问题模板
+  - `.github/FUNDING.yml` - GitHub赞助配置
+- **结果**：完全删除 `.github` 目录
+
+##### 3. 认证系统清理 ✅
+- **删除DTO模块**：
+  - `libs/dto/src/auth/` 整个目录 (10个文件)
+    - 双因素认证、登录注册、密码重置等
+  - `libs/dto/src/secrets/` 整个目录 (2个文件)
+    - 用户密钥和令牌管理
+  - `libs/dto/src/feature/` 整个目录 (功能开关)
+
+- **删除服务器模块**：
+  - `apps/server/src/feature/` 整个目录 (3个文件)
+    - 功能开关服务（注册禁用、邮箱认证等）
+
+- **更新配置**：
+  - 更新 `libs/dto/src/index.ts` - 移除已删除模块的导出
+  - 更新 `apps/server/src/app.module.ts` - 移除FeatureModule引用
+
+##### 4. 保留的简化认证代码 ✅
+- `apps/client/src/stores/auth.ts` - 已简化为本地用户模式
+- `apps/client/src/providers/auth-refresh.tsx` - 已简化为兼容性包装器
+
+#### 清理效果
+- **删除文件数量**: 约30-40个文件
+- **减少代码量**: 约40-50KB
+- **删除目录**: 7个主要目录
+- **简化模块**: 移除3个主要功能模块
+
+#### 技术改进
+- **项目体积减少**: 显著减少不必要的文件和依赖
+- **代码复杂度降低**: 移除多用户认证、Docker部署等复杂功能
+- **维护成本降低**: 减少需要维护的代码和配置文件
+- **专注本地应用**: 项目更专注于本地单用户使用场景
+
+#### 下一步计划
+- 国际化清理（保留中英文）
+- 外部服务集成清理
+- 解析器模块清理
+- 开发工具配置优化 

@@ -1,7 +1,9 @@
 import { t } from "@lingui/macro";
-import { Upload, X } from "@phosphor-icons/react";
+import { Info, Upload, X } from "@phosphor-icons/react";
 import {
   Alert,
+  AlertDescription,
+  AlertTitle,
   Button,
   Dialog,
   DialogContent,
@@ -183,6 +185,14 @@ export const FontUploadDialog = ({ isOpen, onClose, onSuccess }: FontUploadDialo
         </DialogHeader>
 
         <div className="space-y-6">
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertTitle>{t`提示`}</AlertTitle>
+            <AlertDescription>
+              {t`当前系统对可变字体（Variable Fonts）支持最佳。为确保所有字重和样式能正常工作，建议优先上传VF字体。`}
+            </AlertDescription>
+          </Alert>
+
           {/* 文件上传区域 */}
           <div className="space-y-4">
             <Label>{t`选择字体文件`}</Label>

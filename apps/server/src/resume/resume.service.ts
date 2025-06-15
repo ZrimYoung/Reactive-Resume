@@ -5,7 +5,12 @@ import {
   Logger,
 } from "@nestjs/common";
 import { CreateResumeDto, ImportResumeDto, ResumeDto, UpdateResumeDto } from "@reactive-resume/dto";
-import { defaultResumeData, ResumeData, resumeDataSchema, defaultMetadata } from "@reactive-resume/schema";
+import {
+  defaultMetadata,
+  defaultResumeData,
+  ResumeData,
+  resumeDataSchema,
+} from "@reactive-resume/schema";
 import type { DeepPartial } from "@reactive-resume/utils";
 import { ErrorMessage, generateRandomName } from "@reactive-resume/utils";
 import slugify from "@sindresorhus/slugify";
@@ -47,24 +52,62 @@ export class ResumeService {
 
     return {
       ...resume,
-      data:
-        typeof resume.data === "string"
-          ? (JSON.parse(resume.data) as ResumeData)
-          : resume.data,
+      data: typeof resume.data === "string" ? (JSON.parse(resume.data) as ResumeData) : resume.data,
     };
   }
 
-  import(userId: string, importResumeDto: ImportResumeDto) {
+  async import(userId: string, importResumeDto: ImportResumeDto) {
     const randomTitle = generateRandomName();
 
-    return this.prisma.resume.create({
-      data: {
-        userId,
-        data: JSON.stringify(importResumeDto.data),
-        title: importResumeDto.title ?? randomTitle,
-        slug: importResumeDto.slug ?? slugify(randomTitle),
-      },
-    });
+    try {
+      // 验证和标准化导入的数据
+      const parsedData = importResumeDto.data;
+
+      // 确保数据结构完整，合并默认值
+      const safeData = {
+        ...parsedData,
+        basics: parsedData.basics || {},
+        sections: parsedData.sections || {},
+        metadata: {
+          ...defaultMetadata,
+          ...parsedData.metadata,
+          css: {
+            ...defaultMetadata.css,
+            ...parsedData.metadata.css,
+            visible: parsedData.metadata.css.visible ?? false,
+          },
+          typography: {
+            ...defaultMetadata.typography,
+            ...parsedData.metadata.typography,
+          },
+        },
+      };
+
+      // 使用schema验证
+      const validatedData = resumeDataSchema.parse(safeData);
+      const processedData = JSON.stringify(validatedData);
+
+      this.logger.debug(
+        `简历导入 - 数据验证成功: ${JSON.stringify({
+          hasMetadata: !!validatedData.metadata,
+          hasCss: !!validatedData.metadata.css,
+          cssVisible: validatedData.metadata.css.visible,
+          title: importResumeDto.title ?? randomTitle,
+        })}`,
+      );
+
+      return this.prisma.resume.create({
+        data: {
+          userId,
+          data: processedData,
+          title: importResumeDto.title ?? randomTitle,
+          slug: importResumeDto.slug ?? slugify(randomTitle),
+        },
+      });
+    } catch (error) {
+      this.logger.error(`简历导入失败: ${error.message}`, error.stack);
+      throw new BadRequestException(`简历导入失败: ${error.message}`);
+    }
   }
 
   async findAll(userId: string) {
@@ -121,12 +164,12 @@ export class ResumeService {
                 ...parsedData.metadata,
                 css: {
                   ...defaultMetadata.css,
-                  ...(parsedData.metadata?.css ?? {}),
+                  ...parsedData.metadata?.css,
                   visible: parsedData.metadata?.css?.visible ?? false,
                 },
                 typography: {
                   ...defaultMetadata.typography,
-                  ...(parsedData.metadata?.typography ?? {}),
+                  ...parsedData.metadata?.typography,
                 },
               },
             };

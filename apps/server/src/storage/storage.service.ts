@@ -2,6 +2,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 
 import { Injectable, InternalServerErrorException, Logger, OnModuleInit } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { createId } from "@paralleldrive/cuid2";
 import slugify from "@sindresorhus/slugify";
 import sharp from "sharp";
@@ -21,6 +22,8 @@ export type UploadType = ImageUploadType | DocumentUploadType | FontUploadType;
 export class StorageService implements OnModuleInit {
   private readonly logger = new Logger(StorageService.name);
   private readonly storageRoot = "./storage";
+
+  constructor(private readonly configService: ConfigService) {}
 
   async onModuleInit() {
     try {
@@ -54,13 +57,16 @@ export class StorageService implements OnModuleInit {
       if (!normalizedFilename) normalizedFilename = createId();
     } else {
       extension = "jpg";
-      normalizedFilename = slugify(filename);
+      normalizedFilename = slugify(path.basename(filename, path.extname(filename)));
       if (!normalizedFilename) normalizedFilename = createId();
     }
 
     const userDir = path.join(this.storageRoot, userId, type);
     const filepath = path.join(userDir, `${normalizedFilename}.${extension}`);
-    const url = `/api/storage/${userId}/${type}/${normalizedFilename}.${extension}`;
+    
+    // 构建完整的URL
+    const storageUrl = this.configService.get<string>("STORAGE_URL") ?? "http://localhost:3000";
+    const url = `${storageUrl}/api/storage/${userId}/${type}/${normalizedFilename}.${extension}`;
 
     try {
       // 确保用户目录存在

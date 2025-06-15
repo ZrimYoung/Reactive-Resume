@@ -12,19 +12,13 @@ import {
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { ApiTags } from "@nestjs/swagger";
+import type { Express } from "express";
 import type { Response } from "express";
 
 import { StorageService } from "./storage.service";
 
 // 本地用户 ID 常量
 const LOCAL_USER_ID = "local-user-id";
-
-// 文件类型
-type UploadedFileType = {
-  buffer: Buffer;
-  filename: string;
-  mimetype: string;
-};
 
 @ApiTags("Storage")
 @Controller("storage")
@@ -33,14 +27,14 @@ export class StorageController {
 
   @Put("image")
   @UseInterceptors(FileInterceptor("file"))
-  async uploadFile(@UploadedFile("file") file: UploadedFileType) {
+  async uploadFile(@UploadedFile("file") file: Express.Multer.File) {
     if (!file.mimetype.startsWith("image")) {
       throw new BadRequestException(
         "The file you uploaded doesn't seem to be an image, please upload a file that ends in .jp(e)g or .png.",
       );
     }
 
-    return this.storageService.uploadObject(LOCAL_USER_ID, "pictures", file.buffer, file.filename);
+    return this.storageService.uploadObject(LOCAL_USER_ID, "pictures", file.buffer, file.originalname);
   }
 
   @Get(":userId/:type/:filename")

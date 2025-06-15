@@ -11,7 +11,7 @@ import {
   Post,
 } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
-import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
+import { Prisma } from "@prisma/client";
 import {
   CreateResumeDto,
   importResumeSchema,
@@ -42,7 +42,7 @@ export class ResumeController {
     try {
       return await this.resumeService.create(LOCAL_USER_ID, createResumeDto);
     } catch (error) {
-      if (error instanceof PrismaClientKnownRequestError && error.code === "P2002") {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
         throw new BadRequestException(ErrorMessage.ResumeSlugAlreadyExists);
       }
 
@@ -57,7 +57,7 @@ export class ResumeController {
       const result = importResumeSchema.parse(importResumeDto);
       return await this.resumeService.import(LOCAL_USER_ID, result);
     } catch (error) {
-      if (error instanceof PrismaClientKnownRequestError && error.code === "P2002") {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
         throw new BadRequestException(ErrorMessage.ResumeSlugAlreadyExists);
       }
 

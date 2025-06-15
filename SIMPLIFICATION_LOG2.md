@@ -103,6 +103,76 @@ const isActive = location.pathname.startsWith(path);
 
 **当前状态：** 已修复，构建成功 ✅
 
+### 6. Prisma Client 生成问题修复 ✅
+**问题描述：**
+用户运行 `pnpm dev` 时出现大量 TypeScript 错误，主要涉及 PrismaService 缺少属性和方法：
+- `Property '$queryRaw' does not exist on type 'PrismaService'`
+- `Property 'user' does not exist on type 'PrismaService'`
+- `Property 'resume' does not exist on type 'PrismaService'`
+- `Module '"@prisma/client"' has no exported member 'Prisma'`
+- `Module '"@prisma/client"' has no exported member 'User'`
+
+**根本原因：**
+Prisma Client 没有正确生成。虽然 schema 文件存在于 `tools/prisma/schema.prisma`，但 `@prisma/client` 模块缺少必要的类型和方法。
+
+**解决方案：**
+执行 `pnpm prisma generate` 命令重新生成 Prisma Client：
+```bash
+pnpm prisma generate
+```
+
+**验证结果：**
+- Prisma Client 成功生成到 `node_modules/.pnpm/@prisma+client@5.22.0_prisma@5.22.0/node_modules/@prisma/client`
+- 修复了所有 TypeScript 编译错误
+- 开发服务器可以正常启动
+
+**当前状态：** 已修复，开发环境正常运行 ✅
+
+### 7. Prisma 版本不匹配和查询引擎错误修复 ✅
+**问题描述：**
+用户在运行 `pnpm electron` 时遇到新的错误：
+- `Module not found: Error: Can't resolve '@prisma/client/runtime/library'`
+- `thread '<unnamed>' panicked: missing field 'enableTracing'`
+- 服务器进程异常退出，代码 3221226505
+
+**根本原因：**
+1. **Prisma Client 版本不匹配**: 使用了不同版本的 Prisma CLI 生成 Client，导致版本冲突
+2. **导入路径问题**: `PrismaClientKnownRequestError` 导入路径在不同版本中发生变化
+3. **查询引擎配置错误**: 生成的 Client 与运行时引擎版本不匹配
+
+**解决方案：**
+1. **清理并重新安装 Prisma**:
+   ```bash
+   Remove-Item -Path "node_modules/@prisma" -Recurse -Force
+   pnpm install
+   pnpm prisma generate
+   ```
+
+2. **修复导入路径**:
+   ```typescript
+   // 修改前
+   import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
+   
+   // 修改后
+   import { Prisma } from "@prisma/client";
+   
+   // 使用时
+   error instanceof Prisma.PrismaClientKnownRequestError
+   ```
+
+3. **修改的文件**:
+   - `apps/server/src/resume/resume.controller.ts`
+   - `apps/server/src/user/user.controller.ts`
+
+**验证结果：**
+- ✅ 后端 API 服务器正常运行 (端口 3000)
+- ✅ 客户端应用正常运行 (端口 5173) 
+- ✅ Artboard 应用正常运行 (端口 6173)
+- ✅ 健康检查端点正常响应
+- ✅ 所有 TypeScript 编译错误已修复
+
+**当前状态：** 已修复，开发环境完全正常运行 ✅
+
 ## 下一步工作建议
 
 ### 高优先级

@@ -9,7 +9,7 @@ import {
   Res,
 } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
-import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
+import { Prisma } from "@prisma/client";
 import { UpdateUserDto } from "@reactive-resume/dto";
 import { ErrorMessage } from "@reactive-resume/utils";
 import type { Response } from "express";
@@ -50,7 +50,7 @@ export class UserController {
       const user = await this.userService.updateByEmail("local@example.com", updateUserDto);
       return user;
     } catch (error) {
-      if (error instanceof PrismaClientKnownRequestError && error.code === "P2002") {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
         // 使用通用错误替代已删除的UserAlreadyExists
         throw new BadRequestException(ErrorMessage.SomethingWentWrong);
       }

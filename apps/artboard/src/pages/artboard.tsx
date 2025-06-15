@@ -12,21 +12,34 @@ export const ArtboardPage = () => {
   const metadata = useArtboardStore((state) => state.resume.metadata);
   const [customFonts, setCustomFonts] = useState<CustomFont[]>([]);
 
+  const fetchCustomFonts = async () => {
+    try {
+      const response = await fetch("/api/fonts/user/local-user-id");
+      if (response.ok) {
+        const fonts = (await response.json()) as CustomFont[];
+        setCustomFonts(fonts);
+      }
+    } catch {
+      // Artboard: Error fetching custom fonts
+    }
+  };
+
   useEffect(() => {
-    const fetchCustomFonts = async (userId: string) => {
-      try {
-        const response = await fetch(`/api/fonts/user/${userId}`);
-        if (response.ok) {
-          const fonts = (await response.json()) as CustomFont[];
-          setCustomFonts(fonts);
-        }
-      } catch {
-        // Artboard: Error fetching custom fonts
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data.type === "REFETCH_FONTS") {
+        void fetchCustomFonts();
       }
     };
 
-    void fetchCustomFonts("local-user-id");
-  }, [metadata.typography.font.family]);
+    window.addEventListener("message", handleMessage);
+
+    // Initial fetch
+    void fetchCustomFonts();
+
+    return () => {
+      window.removeEventListener("message", handleMessage);
+    };
+  }, []);
 
   useEffect(() => {
     const family = metadata.typography.font.family;
@@ -61,7 +74,6 @@ export const ArtboardPage = () => {
       .filter(Boolean)
       .join("\n");
 
-    console.log("Artboard: 生成的自定义字体CSS", fontCSS);
     return fontCSS;
   }, [customFonts]);
 

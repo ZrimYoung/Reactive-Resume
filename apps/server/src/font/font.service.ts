@@ -41,9 +41,10 @@ export class FontService {
       throw new BadRequestException(validation.error);
     }
 
-    // 生成唯一文件名
+    // 将字体名称安全地编码到文件名中
+    const safeFontFamily = dto.fontFamily.replace(/[^\dA-Za-z-]/g, "_");
     const fileExtension = path.extname(file.originalname).toLowerCase();
-    const fileName = `${randomUUID()}${fileExtension}`;
+    const fileName = `${safeFontFamily}_${randomUUID()}${fileExtension}`;
 
     // 确定字体格式
     const format = this.getFormatFromExtension(fileExtension);
@@ -98,7 +99,7 @@ export class FontService {
   }
 
   async getUserFonts(userId: string): Promise<FontResponseDto[]> {
-    let fonts = this.userFonts.get(userId) ?? [];
+    const fonts = this.userFonts.get(userId) ?? [];
 
     // 如果缓存为空，则尝试从 storage 文件夹扫描已上传字体，构建字体列表
     if (fonts.length === 0) {
@@ -121,47 +122,51 @@ export class FontService {
           this.configService.get<string>("PUBLIC_URL")?.replace("5173", "3000") ??
           "http://localhost:3000";
 
-        // 过滤出字体文件
-        const fontFiles = files.filter((file) => {
-          const ext = path.extname(file).toLowerCase();
-          return [".ttf", ".otf", ".woff", ".woff2"].includes(ext);
-        });
+        const fonts = await Promise.all(
+          files
+            .filter((file) => {
+              const ext = path.extname(file).toLowerCase();
+              return [".ttf", ".otf", ".woff", ".woff2"].includes(ext);
+            })
+            .map(async (file): Promise<FontResponseDto | null> => {
+              const ext = path.extname(file);
+              const format = this.getFormatFromExtension(ext);
+              const filePath = path.join(userFontDir, file);
+              const relativeUrl = `/api/storage/${userId}/fonts/${file}`;
 
-        fonts = await Promise.all(
-          fontFiles.map(async (file) => {
-            const ext = path.extname(file);
-            const format = this.getFormatFromExtension(ext);
-            const filePath = path.join(userFontDir, file);
+              // 获取文件信息
+              let fileSize = 0;
+              try {
+                const stats = await fs.stat(filePath);
+                fileSize = stats.size;
+              } catch {
+                // 忽略文件状态读取错误
+              }
 
-            // 获取文件信息
-            let fileSize = 0;
-            try {
-              const stats = await fs.stat(filePath);
-              fileSize = stats.size;
-            } catch {
-              // 忽略文件状态读取错误
-            }
+              // 尝试从文件名解析字体名称
+              const [fontFamily, _uuid] = file.split("_");
+              if (!fontFamily) return null; // 跳过不符合命名规则的文件
 
-            // 尝试从文件名解析字体名称
-            const fontFamily = path.basename(file, ext).replace(/[_-]/g, " ");
-
-            return {
-              id: randomUUID(),
-              fontFamily,
-              category: "custom",
-              originalName: file,
-              fileSize,
-              format,
-              url: `/api/storage/${userId}/fonts/${file}`,
-              uploadedAt: new Date().toISOString(),
-              userId,
-            } as FontResponseDto;
-          }),
+              return {
+                id: randomUUID(),
+                fontFamily: fontFamily.replace(/_/g, " "), // 将下划线替换回空格
+                category: "custom",
+                originalName: file,
+                fileSize,
+                format,
+                url: `${publicUrl}${relativeUrl}`,
+                uploadedAt: new Date().toISOString(),
+                userId,
+              };
+            }),
         );
 
+        // 过滤掉解析失败的条目
+        const validFonts = fonts.filter((font): font is FontResponseDto => font !== null);
+
         // 缓存结果
-        this.userFonts.set(userId, fonts);
-        this.logger.log(`从磁盘扫描恢复 ${fonts.length} 个字体文件`);
+        this.userFonts.set(userId, validFonts);
+        this.logger.log(`从磁盘扫描恢复 ${validFonts.length} 个字体文件`);
       } catch (error) {
         this.logger.error(`扫描字体目录失败: ${error.message}`);
         return [];

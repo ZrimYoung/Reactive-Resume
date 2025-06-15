@@ -13,6 +13,8 @@ import {
 import { customFontUtils } from "@reactive-resume/utils";
 import { useCallback, useRef, useState } from "react";
 
+import { useBuilderStore } from "@/client/stores/builder";
+
 type FontUploadDialogProps = {
   isOpen: boolean;
   onClose: () => void;
@@ -36,6 +38,7 @@ export const FontUploadDialog = ({ isOpen, onClose, onSuccess }: FontUploadDialo
     success: false,
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const frameRef = useBuilderStore((state) => state.frame.ref);
 
   // 重置状态
   const resetState = useCallback(() => {
@@ -131,7 +134,10 @@ export const FontUploadDialog = ({ isOpen, onClose, onSuccess }: FontUploadDialo
       const result = await response.json();
 
       if (result.success) {
-        setUploadState((prev) => ({ ...prev, progress: 100, success: true }));
+        setUploadState((prev) => ({ ...prev, progress: 100, success: true, uploading: false }));
+
+        // 通知 artboard 刷新字体
+        frameRef?.contentWindow?.postMessage({ type: "REFETCH_FONTS" }, "*");
 
         // 等待一下让用户看到成功状态
         setTimeout(() => {
@@ -149,7 +155,7 @@ export const FontUploadDialog = ({ isOpen, onClose, onSuccess }: FontUploadDialo
         error: error instanceof Error ? error.message : "上传失败",
       }));
     }
-  }, [selectedFile, fontFamily, onSuccess, onClose, resetState]);
+  }, [selectedFile, fontFamily, onSuccess, onClose, resetState, frameRef]);
 
   // 关闭对话框
   const handleClose = useCallback(() => {

@@ -8,10 +8,8 @@ import {
   Note,
   Palette,
   ReadCvLogo,
-  ShareFat,
   TextT,
   Translate,
-  TrendUp,
 } from "@phosphor-icons/react";
 import type { ButtonProps } from "@reactive-resume/ui";
 import { Button, Tooltip } from "@reactive-resume/ui";
@@ -24,8 +22,6 @@ type MetadataKey =
   | "css"
   | "page"
   | "locale"
-  | "sharing"
-  | "statistics"
   | "export"
   | "notes"
   | "information";
@@ -56,12 +52,6 @@ const getSectionIcon = (id: MetadataKey, props: IconProps = {}) => {
     }
     case "locale": {
       return <Translate size={18} {...props} />;
-    }
-    case "sharing": {
-      return <ShareFat size={18} {...props} />;
-    }
-    case "statistics": {
-      return <TrendUp size={18} {...props} />;
     }
     case "export": {
       return <DownloadSimple size={18} {...props} />;

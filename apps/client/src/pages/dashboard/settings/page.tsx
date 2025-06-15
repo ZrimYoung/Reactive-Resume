@@ -5,7 +5,6 @@ import { Helmet } from "react-helmet-async";
 
 import { AccountSettings } from "./_sections/account";
 import { DangerZoneSettings } from "./_sections/danger";
-import { OpenAISettings } from "./_sections/openai";
 import { ProfileSettings } from "./_sections/profile";
 import { SecuritySettings } from "./_sections/security";
 
@@ -26,7 +25,7 @@ export const SettingsPage = () => (
         {t`Settings`}
       </motion.h1>
 
-      <ScrollArea hideScrollbar className="h-[calc(100vh-140px)] lg:h-[calc(100vh-88px)]">
+      <div className="h-[calc(100vh-140px)] overflow-y-auto lg:h-[calc(100vh-88px)]">
         <div className="space-y-6">
           <AccountSettings />
           <Separator />
@@ -34,11 +33,9 @@ export const SettingsPage = () => (
           <Separator />
           <ProfileSettings />
           <Separator />
-          <OpenAISettings />
-          <Separator />
           <DangerZoneSettings />
         </div>
-      </ScrollArea>
+      </div>
     </div>
   </>
 );

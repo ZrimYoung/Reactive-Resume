@@ -19,30 +19,16 @@ model User {
 }
 
 model Resume {
-  id         String      @id @default(cuid())
-  title      String
-  slug       String
-  data       String      @default("{}")
-  visibility String      @default("private")
-  locked     Boolean     @default(false)
-  statistics Statistics?
-  userId     String
-  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
-
-  @@unique([userId, id])
-  @@unique([userId, slug])
-}
-
-model Statistics {
   id        String   @id @default(cuid())
-  views     Int      @default(0)
-  downloads Int      @default(0)
-  resumeId  String   @unique
-  resume    Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  title     String
+  slug      String
+  data      String   @default("{}")
+  locked    Boolean  @default(false)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([resumeId, id])
+  @@unique([userId, id])
+  @@unique([userId, slug])
 }

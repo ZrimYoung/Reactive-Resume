@@ -12,7 +12,7 @@ import {
   FormMessage,
   Input,
 } from "@reactive-resume/ui";
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { useForm } from "react-hook-form";
 
 import { UserAvatar } from "@/client/components/user-avatar";
@@ -34,18 +34,20 @@ export const AccountSettings = () => {
   });
 
   useEffect(() => {
-    user && onReset();
-  }, [user]);
+    const onReset = () => {
+      if (!user) return;
 
-  const onReset = () => {
-    if (!user) return;
+      form.reset({
+        name: user.name,
+        username: user.username,
+        email: user.email,
+      });
+    };
 
-    form.reset({
-      name: user.name,
-      username: user.username,
-      email: user.email,
-    });
-  };
+    if (user) {
+      onReset();
+    }
+  }, [user, form.reset]);
 
   const onSubmit = async (data: UpdateUserDto) => {
     if (!user) return;
@@ -79,7 +81,7 @@ export const AccountSettings = () => {
         <form className="grid gap-6 sm:grid-cols-2" onSubmit={form.handleSubmit(onSubmit)}>
           <div className="flex items-center gap-x-4 sm:col-span-2">
             <UserAvatar />
-            <div className="text-sm text-muted-foreground">
+            <div className="text-muted-foreground text-sm">
               {t`Profile picture is not available in local mode.`}
             </div>
           </div>
@@ -129,7 +131,19 @@ export const AccountSettings = () => {
             <Button type="submit" disabled={loading}>
               {t`Save Changes`}
             </Button>
-            <Button type="reset" variant="ghost" onClick={onReset}>
+            <Button
+              type="reset"
+              variant="ghost"
+              onClick={() => {
+                if (!user) return;
+
+                form.reset({
+                  name: user.name,
+                  username: user.username,
+                  email: user.email,
+                });
+              }}
+            >
               {t`Reset`}
             </Button>
           </div>

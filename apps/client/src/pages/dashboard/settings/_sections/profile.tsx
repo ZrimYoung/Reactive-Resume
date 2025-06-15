@@ -36,14 +36,10 @@ export const ProfileSettings = () => {
   });
 
   useEffect(() => {
-    user && onReset();
-  }, [user]);
-
-  const onReset = () => {
     if (!user) return;
 
     form.reset({ theme, locale: user.locale });
-  };
+  }, [user, theme, form.reset]);
 
   const onSubmit = async (data: FormValues) => {
     if (!user) return;
@@ -130,7 +126,15 @@ export const ProfileSettings = () => {
             <Button type="submit" disabled={loading}>
               {t`Save Changes`}
             </Button>
-            <Button type="reset" variant="ghost" onClick={onReset}>
+            <Button
+              type="reset"
+              variant="ghost"
+              onClick={() => {
+                if (!user) return;
+
+                form.reset({ theme, locale: user.locale });
+              }}
+            >
               {t`Discard`}
             </Button>
           </div>

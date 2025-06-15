@@ -14,26 +14,13 @@ export class ResumeGuard implements CanActivate {
     const user = request.user as UserWithSecrets | false;
 
     try {
-      const resume = await this.resumeService.findOne(
-        request.params.id,
-        user && typeof user === 'object' ? user.id : undefined,
-      );
+      // In local mode, we use a fixed local user ID
+      const LOCAL_USER_ID = "local-user-id";
 
-      // First check if the resume is public, if yes, attach the resume to the request payload.
-      if (resume.visibility === "public") {
-        request.payload = { resume };
-      }
+      const resume = await this.resumeService.findOne(request.params.id, LOCAL_USER_ID);
 
-      // If the resume is private and the user is authenticated and is the owner of the resume, attach the resume to the request payload.
-      // Else, if either the user is not authenticated or is not the owner of the resume, throw a 404 error.
-      if (resume.visibility === "private") {
-        if (user && typeof user === 'object' && user.id === resume.userId) {
-          request.payload = { resume };
-        } else {
-          throw new NotFoundException(ErrorMessage.ResumeNotFound);
-        }
-      }
-
+      // Attach the resume to the request payload
+      request.payload = { resume };
       return true;
     } catch {
       throw new NotFoundException(ErrorMessage.ResumeNotFound);

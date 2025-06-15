@@ -76,16 +76,6 @@ export class ResumeController {
     return this.resumeService.findOne(id, LOCAL_USER_ID);
   }
 
-  @Get(":id/statistics")
-  findOneStatistics(@Param("id") id: string) {
-    return this.resumeService.findOneStatistics(id);
-  }
-
-  @Get("/public/:username/:slug")
-  findOneByUsernameSlug(@Param("username") username: string, @Param("slug") slug: string) {
-    return this.resumeService.findOneByUsernameSlug(username, slug, LOCAL_USER_ID);
-  }
-
   @Patch(":id")
   update(@Param("id") id: string, @Body() updateResumeDto: UpdateResumeDto) {
     return this.resumeService.update(LOCAL_USER_ID, id, updateResumeDto);

@@ -9,7 +9,6 @@ import {
   FilePdf,
   Hash,
   LineSegment,
-  LinkSimple,
   MagnifyingGlass,
   MagnifyingGlassMinus,
   MagnifyingGlassPlus,
@@ -18,7 +17,6 @@ import { Button, Separator, Toggle, Tooltip } from "@reactive-resume/ui";
 import { motion } from "framer-motion";
 import { useState } from "react";
 
-import { useToast } from "@/client/hooks/use-toast";
 import { usePrintResume } from "@/client/services/resume";
 import { useBuilderStore } from "@/client/stores/builder";
 import { useResumeStore, useTemporalResumeStore } from "@/client/stores/resume";
@@ -29,8 +27,6 @@ const openInNewTab = (url: string) => {
 };
 
 export const BuilderToolbar = () => {
-  const { toast } = useToast();
-
   const [panMode, setPanMode] = useState<boolean>(true);
 
   const setValue = useResumeStore((state) => state.setValue);
@@ -39,7 +35,6 @@ export const BuilderToolbar = () => {
   const frameRef = useBuilderStore((state) => state.frame.ref);
 
   const id = useResumeStore((state) => state.resume.id);
-  const isPublic = useResumeStore((state) => state.resume.visibility === "public");
   const pageOptions = useResumeStore((state) => state.resume.data?.metadata?.page?.options || { breakLine: true, pageNumbers: true });
 
   const { printResume, loading } = usePrintResume();
@@ -48,17 +43,6 @@ export const BuilderToolbar = () => {
     const { url } = await printResume({ id });
 
     openInNewTab(url);
-  };
-
-  const onCopy = async () => {
-    const { url } = await printResume({ id });
-    await navigator.clipboard.writeText(url);
-
-    toast({
-      variant: "success",
-      title: t`A link has been copied to your clipboard.`,
-      description: t`Anyone with this link can view and download the resume. Share it on your profile or with recruiters.`,
-    });
   };
 
   const onZoomIn = () => frameRef?.contentWindow?.postMessage({ type: "ZOOM_IN" }, "*");
@@ -160,18 +144,6 @@ export const BuilderToolbar = () => {
         </Tooltip>
 
         <Separator orientation="vertical" className="h-9" />
-
-        <Tooltip content={t`Copy Link to Resume`}>
-          <Button
-            size="icon"
-            variant="ghost"
-            className="rounded-none"
-            disabled={!isPublic}
-            onClick={onCopy}
-          >
-            <LinkSimple />
-          </Button>
-        </Tooltip>
 
         <Tooltip content={t`Download PDF`}>
           <Button

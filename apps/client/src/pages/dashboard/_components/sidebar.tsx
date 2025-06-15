@@ -39,26 +39,23 @@ type SidebarItemProps = SidebarItem & {
 };
 
 const SidebarItem = ({ path, name, shortcut, icon, onClick }: SidebarItemProps) => {
-  const isActive = useLocation().pathname === path;
+  const location = useLocation();
+  const isActive = location.pathname.startsWith(path);
 
   return (
-    <Button
-      asChild
-      size="lg"
-      variant="ghost"
+    <Link
+      to={path}
       className={cn(
-        "h-auto justify-start px-4 py-3",
-        isActive && "pointer-events-none bg-secondary/50 text-secondary-foreground",
+        "flex h-auto items-center justify-start rounded-md px-4 py-3 text-sm font-medium transition-colors hover:bg-secondary/50 cursor-pointer no-underline",
+        isActive && "bg-secondary/50 text-secondary-foreground",
       )}
-      onClick={onClick}
+      onClick={() => onClick?.()}
     >
-      <Link to={path}>
-        <div className="mr-3">{icon}</div>
-        <span>{name}</span>
-        {!isActive && <KeyboardShortcut className="ml-auto">{shortcut}</KeyboardShortcut>}
-        {isActive && <ActiveIndicator className="ml-auto" />}
-      </Link>
-    </Button>
+      <div className="mr-3">{icon}</div>
+      <span>{name}</span>
+      {!isActive && <KeyboardShortcut className="ml-auto">{shortcut}</KeyboardShortcut>}
+      {isActive && <ActiveIndicator className="ml-auto" />}
+    </Link>
   );
 };
 
@@ -120,7 +117,7 @@ export const Sidebar = ({ setOpen }: SidebarProps) => {
       <UserOptions>
         <Button size="lg" variant="ghost" className="w-full justify-start px-3">
           <UserAvatar size={24} className="mr-3" />
-          <span>{user?.name}</span>
+          <span>{user.name}</span>
         </Button>
       </UserOptions>
 

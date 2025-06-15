@@ -13,8 +13,6 @@ import {
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
 
-import { AiActions } from "@/client/components/ai-actions";
-
 import { SectionDialog } from "../sections/shared/section-dialog";
 import { URLInput } from "../sections/shared/url-input";
 
@@ -111,15 +109,6 @@ export const VolunteerDialog = () => {
                 <RichInput
                   {...field}
                   content={field.value}
-                  footer={(editor) => (
-                    <AiActions
-                      value={editor.getText()}
-                      onChange={(value) => {
-                        editor.commands.setContent(value, true);
-                        field.onChange(value);
-                      }}
-                    />
-                  )}
                   onChange={(value) => {
                     field.onChange(value);
                   }}

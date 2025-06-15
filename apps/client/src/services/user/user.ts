@@ -1,28 +1,24 @@
 // 本地用户服务 - 不再依赖服务器
+
+// 将用户对象定义为常量，确保其在多次调用之间保持稳定
+const localUser = {
+  id: "local-user",
+  name: "Local User", // eslint-disable-line lingui/no-unlocalized-strings
+  email: "local@example.com",
+  username: "local-user",
+  locale: "zh-CN",
+};
+
 export const fetchUser = () => {
-  // 返回模拟的本地用户数据
-  return {
-    id: 'local-user',
-    name: 'Local User', // eslint-disable-line lingui/no-unlocalized-strings
-    email: 'local@example.com',
-    username: 'local-user',
-    locale: 'zh-CN',
-  };
+  // 返回稳定的本地用户数据
+  return localUser;
 };
 
 export const useUser = () => {
-  // 直接返回本地用户数据，不需要查询服务器
-  const user = {
-    id: 'local-user',
-    name: 'Local User', // eslint-disable-line lingui/no-unlocalized-strings
-    email: 'local@example.com',
-    username: 'local-user',
-    locale: 'zh-CN',
-  };
-
-  return { 
-    user, 
-    loading: false, 
-    error: null 
+  // 直接返回稳定的本地用户数据，不需要查询服务器
+  return {
+    user: localUser,
+    loading: false,
+    error: null,
   };
 };

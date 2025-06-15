@@ -18,9 +18,10 @@ export const useFeatureFlags = () => {
     queryKey: ["feature_flags"],
     queryFn: () => fetchFeatureFlags(),
     refetchOnMount: "always",
+    // 本地模式下不需要认证相关的功能标志
     initialData: {
-      isSignupsDisabled: false,
-      isEmailAuthDisabled: false,
+      // isSignupsDisabled: false,
+      // isEmailAuthDisabled: false,
     },
   });
 

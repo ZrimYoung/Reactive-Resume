@@ -39,7 +39,6 @@ export class ResumeService {
         data: JSON.stringify(data),
         userId,
         title: createResumeDto.title,
-        visibility: createResumeDto.visibility,
         slug: createResumeDto.slug ?? slugify(createResumeDto.title),
       },
     });
@@ -51,7 +50,6 @@ export class ResumeService {
     return this.prisma.resume.create({
       data: {
         userId,
-        visibility: "private",
         data: JSON.stringify(importResumeDto.data),
         title: importResumeDto.title ?? randomTitle,
         slug: importResumeDto.slug ?? slugify(randomTitle),
@@ -72,9 +70,7 @@ export class ResumeService {
   }
 
   async findOne(id: string, userId?: string) {
-    let resume;
-
-    resume = await (userId
+    const resume = await (userId
       ? this.prisma.resume.findUniqueOrThrow({ where: { userId_id: { userId, id } } })
       : this.prisma.resume.findUniqueOrThrow({ where: { id } }));
 
@@ -82,35 +78,6 @@ export class ResumeService {
       ...resume,
       data: typeof resume.data === "string" ? JSON.parse(resume.data) : resume.data,
     };
-  }
-
-  async findOneStatistics(id: string) {
-    const result = await this.prisma.statistics.findFirst({
-      select: { views: true, downloads: true },
-      where: { resumeId: id },
-    });
-
-    return {
-      views: result?.views ?? 0,
-      downloads: result?.downloads ?? 0,
-    };
-  }
-
-  async findOneByUsernameSlug(username: string, slug: string, userId?: string) {
-    const resume = await this.prisma.resume.findFirstOrThrow({
-      where: { user: { username }, slug, visibility: "public" },
-    });
-
-    // Update statistics: increment the number of views by 1
-    if (!userId) {
-      await this.prisma.statistics.upsert({
-        where: { resumeId: resume.id },
-        create: { views: 1, downloads: 0, resumeId: resume.id },
-        update: { views: { increment: 1 } },
-      });
-    }
-
-    return resume;
   }
 
   async update(userId: string, id: string, updateResumeDto: UpdateResumeDto) {
@@ -126,7 +93,6 @@ export class ResumeService {
         data: {
           title: updateResumeDto.title,
           slug: updateResumeDto.slug,
-          visibility: updateResumeDto.visibility,
           data:
             typeof updateResumeDto.data === "string"
               ? updateResumeDto.data
@@ -170,16 +136,6 @@ export class ResumeService {
 
   async printResume(resume: ResumeDto, userId?: string) {
     const url = await this.printerService.printResume(resume);
-
-    // Update statistics: increment the number of downloads by 1
-    if (!userId) {
-      await this.prisma.statistics.upsert({
-        where: { resumeId: resume.id },
-        create: { views: 0, downloads: 1, resumeId: resume.id },
-        update: { downloads: { increment: 1 } },
-      });
-    }
-
     return url;
   }
 

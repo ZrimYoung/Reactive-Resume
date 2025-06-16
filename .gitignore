@@ -3,6 +3,8 @@ dist
 tmp
 /out-tsc
 storage
+dist-*
+
 # Project Dependencies
 node_modules
 
@@ -22,7 +24,7 @@ node_modules
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
-
+.cursor/
 
 
 # Miscellaneous

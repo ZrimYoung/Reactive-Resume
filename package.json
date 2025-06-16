@@ -29,11 +29,9 @@
     "prisma:migrate": "pnpm exec prisma migrate deploy",
     "prisma:migrate:dev": "pnpm exec prisma migrate dev",
     "messages:extract": "pnpm exec lingui extract --clean --overwrite",
-    "electron": "concurrently \"pnpm dev\" \"wait-on http://localhost:5173 http://localhost:3000 && .\\node_modules\\.bin\\electron.CMD electron.js\"",
-    "electron:dev": "concurrently \"pnpm dev\" \"wait-on http://localhost:5173 http://localhost:3000 && cross-env NODE_ENV=development .\\node_modules\\.bin\\electron.CMD electron.js\"",
-    "electron:simple": ".\\node_modules\\.bin\\electron.CMD electron.js",
-    "electron:build": "pnpm build && electron-builder",
-    "electron:dist": "pnpm build && electron-builder --publish=never",
+    "electron:dev": "concurrently \"pnpm dev\" \"wait-on http://localhost:5173 http://localhost:3000 && cross-env NODE_ENV=development electron electron.js\"",
+    "electron:simple": "electron electron.js",
+    "electron:build": "node electron-build.js",
     "postinstall": "electron-builder install-app-deps"
   },
   "devDependencies": {
@@ -97,7 +95,6 @@
     "cross-env": "^7.0.3",
     "electron": "^36.4.0",
     "electron-builder": "^26.0.12",
-    "electron-is-dev": "^3.0.1",
     "eslint": "^8.57.1",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-import": "^2.31.0",
@@ -127,7 +124,8 @@
     "vite": "^5.4.14",
     "vite-plugin-dts": "^4.5.0",
     "vitest": "^2.1.9",
-    "wait-on": "^8.0.3"
+    "wait-on": "^8.0.3",
+    "webpack-node-externals": "^3.0.0"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -175,6 +173,7 @@
     "@radix-ui/react-toggle-group": "^1.1.1",
     "@radix-ui/react-tooltip": "^1.1.7",
     "@radix-ui/react-visually-hidden": "^1.1.1",
+    "@sentry/node": "^9.29.0",
     "@sindresorhus/slugify": "^2.2.1",
     "@swc/helpers": "^0.5.15",
     "@tanstack/react-query": "^5.66.0",
@@ -195,6 +194,7 @@
     "cookie-parser": "^1.4.7",
     "dayjs": "^1.11.13",
     "deepmerge": "^4.3.1",
+    "electron-is-dev": "^3.0.1",
     "express-session": "^1.18.1",
     "file-saver": "^2.0.5",
     "framer-motion": "^11.18.2",
@@ -251,25 +251,40 @@
     "schema": "tools/prisma/schema.prisma",
     "seed": "node tools/prisma/seed.js"
   },
-  "main": "dist/electron/main.js",
+  "main": "electron.js",
   "homepage": "./",
   "build": {
     "appId": "com.reactiveresume.app",
     "productName": "Reactive Resume",
     "copyright": "Copyright © 2025 Reactive Resume",
     "directories": {
-      "output": "dist-electron"
+      "output": "dist-electron-20250616-212451"
     },
     "files": [
-      "dist/electron/**/*",
+      "electron.js",
+      "server-start.js",
       "dist/apps/**/*",
       "node_modules/**/*",
       "!node_modules/.cache/**/*",
       "!node_modules/@nx/**/*",
       "!node_modules/@types/**/*",
       "!node_modules/typescript/**/*",
+      "!node_modules/@swc/**/*",
+      "!node_modules/eslint/**/*",
+      "!node_modules/prettier/**/*",
+      "!node_modules/jest/**/*",
+      "!node_modules/@testing-library/**/*",
+      "!node_modules/@vitejs/**/*",
+      "!node_modules/vite/**/*",
       "!**/*.map",
+      "!**/*.d.ts",
       "package.json"
+    ],
+    "asarUnpack": [
+      "server-start.js",
+      "dist/apps/server/**/*",
+      "node_modules/**/*",
+      "node_modules/.prisma/**/*"
     ],
     "extraResources": [
       {

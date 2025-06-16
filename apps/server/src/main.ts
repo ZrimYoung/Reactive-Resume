@@ -64,10 +64,11 @@ async function bootstrap() {
 
   // Port
   const port = configService.get<number>("PORT") ?? 3000;
+  const host = process.env.NODE_ENV === "production" ? "0.0.0.0" : "localhost";
 
-  await app.listen(port);
+  await app.listen(port, host);
 
-  Logger.log(`🚀 Server is up and running on port ${port}`, "Bootstrap");
+  Logger.log(`🚀 Server is up and running on ${host}:${port}`, "Bootstrap");
 }
 
 // eslint-disable-next-line unicorn/prefer-top-level-await

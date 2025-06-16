@@ -25,13 +25,13 @@ const staticFileModules =
         ServeStaticModule.forRoot({
           serveRoot: "/artboard",
           // eslint-disable-next-line unicorn/prefer-module
-          rootPath: path.join(__dirname, "..", "artboard"),
+          rootPath: path.join(__dirname, "..", "..", "apps", "artboard"),
         }),
         // Static Assets for Client
         ServeStaticModule.forRoot({
           renderPath: "/*",
           // eslint-disable-next-line unicorn/prefer-module
-          rootPath: path.join(__dirname, "..", "client"),
+          rootPath: path.join(__dirname, "..", "..", "apps", "client"),
         }),
       ]
     : [];

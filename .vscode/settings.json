@@ -7,5 +7,13 @@
     ["cn\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"]
   ],
   "python.pythonPath": "C:\\Users\\Zrim\\anaconda3\\envs\\resume\\python.exe",
-  "nxConsole.generateAiAgentRules": true
+  "nxConsole.generateAiAgentRules": true,
+  "files.watcherExclude": {
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/node_modules/*/**": true,
+    "**/dist/**": true,
+    "**/dist-electron/**": true,
+    "**/.nx/cache/**": true
+  },
 }

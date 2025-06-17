@@ -1,5 +1,4 @@
 import { Logger, Module } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
 import {
   loggingMiddleware,
   PrismaModule,
@@ -7,18 +6,18 @@ import {
   providePrismaClientExceptionFilter,
 } from "nestjs-prisma";
 
-import { Config } from "@/server/config/schema";
-
 @Module({
   imports: [
     PrismaModule.forRootAsync({
       isGlobal: true,
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService<Config>) => ({
-        prismaOptions: { datasourceUrl: configService.get("DATABASE_URL") },
+      useFactory: () => ({
+        prismaOptions: { 
+          // 使用本地 SQLite 数据库，不再依赖环境变量
+          datasourceUrl: "file:./local-resume.db" 
+        },
         middlewares: [
           loggingMiddleware({
-            logLevel: "debug", // only in development
+            logLevel: "debug",
             logger: new Logger(PrismaService.name),
             logMessage: (query) =>
               `[Query] ${query.model}.${query.action} - ${query.executionTime}ms`,

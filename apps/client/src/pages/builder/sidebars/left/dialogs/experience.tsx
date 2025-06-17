@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { t } from "@lingui/macro";
-import { defaultExperience, experienceSchema } from "@reactive-resume/schema";
+import { experienceSchema, defaultExperience } from "@reactive-resume/schema";
 import {
   FormControl,
   FormField,
@@ -12,8 +12,6 @@ import {
 } from "@reactive-resume/ui";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
-
-import { AiActions } from "@/client/components/ai-actions";
 
 import { SectionDialog } from "../sections/shared/section-dialog";
 import { URLInput } from "../sections/shared/url-input";
@@ -116,15 +114,6 @@ export const ExperienceDialog = () => {
                 <RichInput
                   {...field}
                   content={field.value}
-                  footer={(editor) => (
-                    <AiActions
-                      value={editor.getText()}
-                      onChange={(value) => {
-                        editor.commands.setContent(value, true);
-                        field.onChange(value);
-                      }}
-                    />
-                  )}
                   onChange={(value) => {
                     field.onChange(value);
                   }}

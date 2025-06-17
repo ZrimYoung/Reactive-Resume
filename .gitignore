@@ -1,8 +1,9 @@
 # Compiled Output
 dist
+dist*
 tmp
 /out-tsc
-
+storage
 # Project Dependencies
 node_modules
 
@@ -22,6 +23,8 @@ node_modules
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+
+
 
 # Miscellaneous
 /.sass-cache
@@ -50,3 +53,6 @@ stats.html
 # Lingui Compiled Messages
 apps/client/src/locales/_build/
 apps/client/src/locales/*/messages.*js
+
+.cursor\rules\nx-rules.mdc
+.github\instructions\nx.instructions.md

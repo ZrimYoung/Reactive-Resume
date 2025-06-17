@@ -5,5 +5,7 @@
   "tailwindCSS.experimental.classRegex": [
     ["cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"],
     ["cn\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"]
-  ]
+  ],
+  "python.pythonPath": "C:\\Users\\Zrim\\anaconda3\\envs\\resume\\python.exe",
+  "nxConsole.generateAiAgentRules": true
 }

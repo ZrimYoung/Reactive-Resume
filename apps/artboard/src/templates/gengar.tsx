@@ -81,7 +81,9 @@ const Header = () => {
 
 const Summary = () => {
   const section = useArtboardStore((state) => state.resume.sections.summary);
-  const primaryColor = useArtboardStore((state) => state.resume.metadata.theme.primary);
+  const primaryColor = useArtboardStore(
+    (state) => state.resume.metadata.theme.primary || "#dc2626",
+  );
 
   if (!section.visible || isEmptyString(section.content)) return null;
 
@@ -489,7 +491,7 @@ const References = () => {
 };
 
 const Custom = ({ id }: { id: string }) => {
-  const section = useArtboardStore((state) => state.resume.sections.custom[id]);
+  const section = useArtboardStore((state) => state.resume.sections?.custom?.[id]);
 
   return (
     <Section<CustomSection>
@@ -569,7 +571,9 @@ const mapSectionToComponent = (section: SectionKey) => {
 export const Gengar = ({ columns, isFirstPage = false }: TemplateProps) => {
   const [main, sidebar] = columns;
 
-  const primaryColor = useArtboardStore((state) => state.resume.metadata.theme.primary);
+  const primaryColor = useArtboardStore(
+    (state) => state.resume.metadata.theme.primary || "#dc2626",
+  );
 
   return (
     <div className="grid min-h-[inherit] grid-cols-3">

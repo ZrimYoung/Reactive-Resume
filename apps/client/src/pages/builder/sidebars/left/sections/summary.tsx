@@ -2,7 +2,6 @@ import { defaultSections } from "@reactive-resume/schema";
 import { RichInput } from "@reactive-resume/ui";
 import { cn } from "@reactive-resume/utils";
 
-import { AiActions } from "@/client/components/ai-actions";
 import { useResumeStore } from "@/client/stores/resume";
 
 import { SectionIcon } from "./shared/section-icon";
@@ -31,15 +30,6 @@ export const SummarySection = () => {
       <main className={cn(!section.visible && "opacity-50")}>
         <RichInput
           content={section.content}
-          footer={(editor) => (
-            <AiActions
-              value={editor.getText()}
-              onChange={(value) => {
-                editor.commands.setContent(value, true);
-                setValue("sections.summary.content", value);
-              }}
-            />
-          )}
           onChange={(value) => {
             setValue("sections.summary.content", value);
           }}

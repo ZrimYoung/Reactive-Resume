@@ -11,8 +11,6 @@ import { InformationSection } from "./sections/information";
 import { LayoutSection } from "./sections/layout";
 import { NotesSection } from "./sections/notes";
 import { PageSection } from "./sections/page";
-import { SharingSection } from "./sections/sharing";
-import { StatisticsSection } from "./sections/statistics";
 import { TemplateSection } from "./sections/template";
 import { ThemeSection } from "./sections/theme";
 import { TypographySection } from "./sections/typography";
@@ -41,10 +39,6 @@ export const RightSidebar = () => {
           <CssSection />
           <Separator />
           <PageSection />
-          <Separator />
-          <SharingSection />
-          <Separator />
-          <StatisticsSection />
           <Separator />
           <ExportSection />
           <Separator />
@@ -100,20 +94,6 @@ export const RightSidebar = () => {
             name={t`Page`}
             onClick={() => {
               scrollIntoView("#page");
-            }}
-          />
-          <SectionIcon
-            id="sharing"
-            name={t`Sharing`}
-            onClick={() => {
-              scrollIntoView("#sharing");
-            }}
-          />
-          <SectionIcon
-            id="statistics"
-            name={t`Statistics`}
-            onClick={() => {
-              scrollIntoView("#statistics");
             }}
           />
           <SectionIcon

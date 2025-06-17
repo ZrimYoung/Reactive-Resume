@@ -33,7 +33,7 @@ export const LeftSidebar = () => {
   const containterRef = useRef<HTMLDivElement | null>(null);
 
   const addSection = useResumeStore((state) => state.addSection);
-  const customSections = useResumeStore((state) => state.resume.data.sections.custom);
+  const customSections = useResumeStore((state) => state.resume.data.sections?.custom || {});
 
   const scrollIntoView = (selector: string) => {
     const section = containterRef.current?.querySelector(selector);

@@ -9,7 +9,6 @@ import {
   FilePdf,
   Hash,
   LineSegment,
-  LinkSimple,
   MagnifyingGlass,
   MagnifyingGlassMinus,
   MagnifyingGlassPlus,
@@ -17,9 +16,9 @@ import {
 import { Button, Separator, Toggle, Tooltip } from "@reactive-resume/ui";
 import { motion } from "framer-motion";
 import { useState } from "react";
+import { toast } from "sonner";
 
-import { useToast } from "@/client/hooks/use-toast";
-import { usePrintResume } from "@/client/services/resume";
+import { printResume, updateResume } from "@/client/services/resume";
 import { useBuilderStore } from "@/client/stores/builder";
 import { useResumeStore, useTemporalResumeStore } from "@/client/stores/resume";
 
@@ -29,8 +28,6 @@ const openInNewTab = (url: string) => {
 };
 
 export const BuilderToolbar = () => {
-  const { toast } = useToast();
-
   const [panMode, setPanMode] = useState<boolean>(true);
 
   const setValue = useResumeStore((state) => state.setValue);
@@ -38,27 +35,26 @@ export const BuilderToolbar = () => {
   const redo = useTemporalResumeStore((state) => state.redo);
   const frameRef = useBuilderStore((state) => state.frame.ref);
 
-  const id = useResumeStore((state) => state.resume.id);
-  const isPublic = useResumeStore((state) => state.resume.visibility === "public");
-  const pageOptions = useResumeStore((state) => state.resume.data.metadata.page.options);
+  const resume = useResumeStore((state) => state.resume);
+  const pageOptions = useResumeStore((state) => state.resume.data?.metadata?.page?.options);
 
-  const { printResume, loading } = usePrintResume();
+  const [isPrinting, setPrinting] = useState(false);
 
   const onPrint = async () => {
-    const { url } = await printResume({ id });
+    try {
+      setPrinting(true);
 
-    openInNewTab(url);
-  };
+      const { id, data } = resume;
+      await updateResume({ id, data });
 
-  const onCopy = async () => {
-    const { url } = await printResume({ id });
-    await navigator.clipboard.writeText(url);
+      const { url } = await printResume({ id });
 
-    toast({
-      variant: "success",
-      title: t`A link has been copied to your clipboard.`,
-      description: t`Anyone with this link can view and download the resume. Share it on your profile or with recruiters.`,
-    });
+      openInNewTab(url);
+    } catch (error) {
+      toast.error(t`An error occurred while printing. Please try again.`);
+    } finally {
+      setPrinting(false);
+    }
   };
 
   const onZoomIn = () => frameRef?.contentWindow?.postMessage({ type: "ZOOM_IN" }, "*");
@@ -161,27 +157,15 @@ export const BuilderToolbar = () => {
 
         <Separator orientation="vertical" className="h-9" />
 
-        <Tooltip content={t`Copy Link to Resume`}>
-          <Button
-            size="icon"
-            variant="ghost"
-            className="rounded-none"
-            disabled={!isPublic}
-            onClick={onCopy}
-          >
-            <LinkSimple />
-          </Button>
-        </Tooltip>
-
         <Tooltip content={t`Download PDF`}>
           <Button
             size="icon"
             variant="ghost"
-            disabled={loading}
+            disabled={isPrinting}
             className="rounded-none"
             onClick={onPrint}
           >
-            {loading ? <CircleNotch className="animate-spin" /> : <FilePdf />}
+            {isPrinting ? <CircleNotch className="animate-spin" /> : <FilePdf />}
           </Button>
         </Tooltip>
       </div>

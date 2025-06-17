@@ -494,7 +494,7 @@ const References = () => {
 };
 
 const Custom = ({ id }: { id: string }) => {
-  const section = useArtboardStore((state) => state.resume.sections.custom[id]);
+  const section = useArtboardStore((state) => state.resume.sections?.custom?.[id]);
 
   return (
     <Section<CustomSection>
@@ -570,7 +570,7 @@ const mapSectionToComponent = (section: SectionKey) => {
 };
 
 export const Nosepass = ({ columns, isFirstPage = false }: TemplateProps) => {
-  const name = useArtboardStore((state) => state.resume.basics.name);
+  const name = useArtboardStore((state) => state.resume.basics?.name || "");
 
   const [main, sidebar] = columns;
 

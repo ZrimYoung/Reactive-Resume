@@ -1,34 +1,29 @@
-import type { UserDto } from "@reactive-resume/dto";
-import { useQuery } from "@tanstack/react-query";
-import type { AxiosResponse } from "axios";
-import { useEffect } from "react";
+// 本地用户服务 - 不再依赖服务器
+import { detect, fromStorage } from "@lingui/detect-locale";
 
-import { axios } from "@/client/libs/axios";
-import { useAuthStore } from "@/client/stores/auth";
+import { defaultLocale } from "@/client/libs/lingui";
 
-export const fetchUser = async () => {
-  const response = await axios.get<UserDto | undefined, AxiosResponse<UserDto | undefined>>(
-    "/user/me",
-  );
+const detectedLocale = detect(fromStorage("locale"), defaultLocale) ?? defaultLocale;
 
-  return response.data;
+// 将用户对象定义为常量，确保其在多次调用之间保持稳定
+const localUser = {
+  id: "local-user",
+  name: "Local User", // eslint-disable-line lingui/no-unlocalized-strings
+  email: "local@example.com",
+  username: "local-user",
+  locale: detectedLocale,
+};
+
+export const fetchUser = () => {
+  // 返回稳定的本地用户数据
+  return localUser;
 };
 
 export const useUser = () => {
-  const setUser = useAuthStore((state) => state.setUser);
-
-  const {
-    error,
-    isPending: loading,
-    data: user,
-  } = useQuery({
-    queryKey: ["user"],
-    queryFn: fetchUser,
-  });
-
-  useEffect(() => {
-    setUser(user ?? null);
-  }, [user, setUser]);
-
-  return { user: user, loading, error };
+  // 直接返回稳定的本地用户数据，不需要查询服务器
+  return {
+    user: localUser,
+    loading: false,
+    error: null,
+  };
 };

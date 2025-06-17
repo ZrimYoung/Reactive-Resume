@@ -14,7 +14,6 @@ export const createResumeSchema = z.object({
       return slug;
     })
     .optional(),
-  visibility: z.enum(["public", "private"]).default("private"),
 });
 
 export class CreateResumeDto extends createZodDto(createResumeSchema) {}

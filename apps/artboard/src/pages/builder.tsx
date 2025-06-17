@@ -15,11 +15,11 @@ export const BuilderLayout = () => {
 
   const transformRef = useRef<ReactZoomPanPinchRef>(null);
 
-  const layout = useArtboardStore((state) => state.resume.metadata.layout);
-  const format = useArtboardStore((state) => state.resume.metadata.page.format);
-  const template = useArtboardStore((state) => state.resume.metadata.template as Template);
+  const layout = useArtboardStore((state) => state.resume.metadata?.layout || [[[], []]]);
+  const format = useArtboardStore((state) => state.resume.metadata?.page?.format || "a4");
+  const template = useArtboardStore((state) => state.resume.metadata?.template || "rhyhorn");
 
-  const Template = useMemo(() => getTemplate(template), [template]);
+  const Template = useMemo(() => getTemplate(template as Template), [template]);
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {

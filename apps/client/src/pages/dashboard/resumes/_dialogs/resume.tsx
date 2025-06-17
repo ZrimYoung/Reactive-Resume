@@ -79,7 +79,7 @@ export const ResumeDialog = () => {
 
   const onSubmit = async (values: FormValues) => {
     if (isCreate) {
-      await createResume({ slug: values.slug, title: values.title, visibility: "private" });
+      await createResume({ slug: values.slug, title: values.title });
     }
 
     if (isUpdate) {

@@ -11,7 +11,9 @@ import { URLInput } from "./shared/url-input";
 
 export const BasicsSection = () => {
   const setValue = useResumeStore((state) => state.setValue);
-  const basics = useResumeStore((state) => state.resume.data.basics);
+  const basics = useResumeStore((state) => state.resume?.data?.basics);
+
+  if (!basics) return null;
 
   return (
     <section id="basics" className="grid gap-y-6">

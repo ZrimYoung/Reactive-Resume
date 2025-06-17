@@ -25,6 +25,18 @@ export class StorageService implements OnModuleInit {
 
   constructor(private readonly configService: ConfigService) {}
 
+  private getSafePath(...segments: string[]): string {
+    const storageRootAbs = path.resolve(this.storageRoot);
+    const intendedPath = path.resolve(storageRootAbs, ...segments);
+
+    if (!intendedPath.startsWith(storageRootAbs)) {
+      this.logger.warn(`Path traversal attempt detected: ${segments.join("/")}`);
+      throw new InternalServerErrorException("Invalid path");
+    }
+
+    return intendedPath;
+  }
+
   async onModuleInit() {
     try {
       // 确保存储目录存在
@@ -61,8 +73,8 @@ export class StorageService implements OnModuleInit {
       if (!normalizedFilename) normalizedFilename = createId();
     }
 
-    const userDir = path.join(this.storageRoot, userId, type);
-    const filepath = path.join(userDir, `${normalizedFilename}.${extension}`);
+    const filepath = this.getSafePath(userId, type, `${normalizedFilename}.${extension}`);
+    const userDir = path.dirname(filepath);
     
     // 构建完整的URL
     const storageUrl = this.configService.get<string>("STORAGE_URL") ?? "http://localhost:3000";
@@ -103,7 +115,7 @@ export class StorageService implements OnModuleInit {
     }
 
     const finalFilename = extension ? `${filename}.${extension}` : filename;
-    const filepath = path.join(this.storageRoot, userId, type, finalFilename);
+    const filepath = this.getSafePath(userId, type, finalFilename);
 
     try {
       await fs.unlink(filepath);
@@ -115,7 +127,7 @@ export class StorageService implements OnModuleInit {
   }
 
   async deleteFolder(prefix: string): Promise<void> {
-    const folderPath = path.join(this.storageRoot, prefix);
+    const folderPath = this.getSafePath(prefix);
 
     try {
       await fs.rm(folderPath, { recursive: true, force: true });
@@ -145,7 +157,7 @@ export class StorageService implements OnModuleInit {
       finalFilename = `${filename}.${extension}`;
     }
     
-    const filepath = path.join(this.storageRoot, userId, type, finalFilename);
+    const filepath = this.getSafePath(userId, type, finalFilename);
 
     try {
       return await fs.readFile(filepath);

@@ -104,7 +104,14 @@ export class FontService {
     // 如果缓存为空，则尝试从 storage 文件夹扫描已上传字体，构建字体列表
     if (fonts.length === 0) {
       try {
-        const userFontDir = path.join("./storage", userId, "fonts");
+        const storageRoot = path.resolve("./storage");
+        const userFontDir = path.resolve(storageRoot, userId, "fonts");
+
+        // 安全检查：确保路径在预期的 storage 目录内
+        if (!userFontDir.startsWith(storageRoot)) {
+          this.logger.warn(`检测到潜在的路径遍历攻击: ${userId}`);
+          return [];
+        }
 
         // 检查目录是否存在
         try {

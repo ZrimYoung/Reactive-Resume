@@ -1,5 +1,6 @@
 # Compiled Output
 dist
+dist*
 tmp
 /out-tsc
 storage

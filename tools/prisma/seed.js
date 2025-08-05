@@ -46,7 +46,6 @@ async function main() {
         },
         sections: {}
       }),
-      visibility: 'private',
       userId: user.id,
     },
   });
@@ -61,4 +60,4 @@ main()
   })
   .finally(async () => {
     await prisma.$disconnect();
-  }); 
+  });

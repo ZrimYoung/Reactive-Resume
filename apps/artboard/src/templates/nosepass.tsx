@@ -15,11 +15,11 @@ import type {
   URL,
 } from "@reactive-resume/schema";
 import { Education, Experience, Volunteer } from "@reactive-resume/schema";
+import { BrandIcon } from "@reactive-resume/ui";
 import { cn, isEmptyString, isUrl, sanitize } from "@reactive-resume/utils";
 import get from "lodash.get";
 import { Fragment } from "react";
 
-import { BrandIcon } from "../components/brand-icon";
 import { Picture } from "../components/picture";
 import { useArtboardStore } from "../store/artboard";
 import type { TemplateProps } from "../types/template";
@@ -494,7 +494,7 @@ const References = () => {
 };
 
 const Custom = ({ id }: { id: string }) => {
-  const section = useArtboardStore((state) => state.resume.sections?.custom?.[id]);
+  const section = useArtboardStore((state) => state.resume.sections.custom[id]);
 
   return (
     <Section<CustomSection>
@@ -570,7 +570,7 @@ const mapSectionToComponent = (section: SectionKey) => {
 };
 
 export const Nosepass = ({ columns, isFirstPage = false }: TemplateProps) => {
-  const name = useArtboardStore((state) => state.resume.basics?.name || "");
+  const name = useArtboardStore((state) => state.resume.basics.name || "");
 
   const [main, sidebar] = columns;
 

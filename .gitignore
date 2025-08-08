@@ -62,3 +62,4 @@ tools/prisma/local-resume.db-journal
 .specstory/
 
 tools/prisma/migrations/
+test/

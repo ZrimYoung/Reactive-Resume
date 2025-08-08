@@ -11,7 +11,6 @@ import {
   UseInterceptors,
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
-import { ApiTags } from "@nestjs/swagger";
 import type { Express } from "express";
 import type { Response } from "express";
 
@@ -20,7 +19,6 @@ import { StorageService } from "./storage.service";
 // 本地用户 ID 常量
 const LOCAL_USER_ID = "local-user-id";
 
-@ApiTags("Storage")
 @Controller("storage")
 export class StorageController {
   constructor(private readonly storageService: StorageService) {}

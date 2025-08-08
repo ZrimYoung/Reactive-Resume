@@ -2,16 +2,12 @@ import { Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { NestFactory } from "@nestjs/core";
 import type { NestExpressApplication } from "@nestjs/platform-express";
-import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import cookieParser from "cookie-parser";
 import session from "express-session";
 import helmet from "helmet";
-import { patchNestJsSwagger } from "nestjs-zod";
 
 import { AppModule } from "./app.module";
 import type { Config } from "./config/schema";
-
-patchNestJsSwagger();
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -22,7 +18,7 @@ async function bootstrap() {
 
   const sessionSecret = configService.getOrThrow("SESSION_SECRET");
   const publicUrl = configService.getOrThrow("PUBLIC_URL");
-  const isHTTPS = publicUrl.startsWith("https://") ?? false;
+  const isHTTPS = publicUrl.startsWith("https://");
 
   // Cookie Parser
   app.use(cookieParser());
@@ -38,7 +34,20 @@ async function bootstrap() {
   );
 
   // CORS
-  app.enableCors({ credentials: true, origin: isHTTPS });
+  // 开发环境：基于 PUBLIC_URL 动态允许来源，并兼容常用本地端口
+  const publicOrigin = (() => {
+    try {
+      return new URL(publicUrl).origin;
+    } catch {
+      return;
+    }
+  })();
+
+  const allowedOrigins = isHTTPS
+    ? [/^https:\/\/.+$/]
+    : [publicOrigin, "http://localhost:5173", "http://localhost:3000"].filter(Boolean);
+
+  app.enableCors({ credentials: true, origin: allowedOrigins as (string | RegExp)[] });
 
   // Helmet - enabled only in production
   if (isHTTPS) app.use(helmet({ contentSecurityPolicy: false }));
@@ -49,18 +58,6 @@ async function bootstrap() {
 
   // Enable Shutdown Hooks
   app.enableShutdownHooks();
-
-  // Swagger (OpenAPI Docs)
-  // This can be accessed by visiting {SERVER_URL}/api/docs
-  const config = new DocumentBuilder()
-    .setTitle("Reactive Resume")
-    .setDescription(
-      "Reactive Resume is a free and open source resume builder that's built to make the mundane tasks of creating, updating and sharing your resume as easy as 1, 2, 3.",
-    )
-    .setVersion("4.0.0")
-    .build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup("docs", app, document);
 
   // Port
   const port = configService.get<number>("PORT") ?? 3000;

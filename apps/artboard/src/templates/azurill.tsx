@@ -15,11 +15,11 @@ import type {
   URL,
 } from "@reactive-resume/schema";
 import { Education, Experience, Volunteer } from "@reactive-resume/schema";
+import { BrandIcon } from "@reactive-resume/ui";
 import { cn, isEmptyString, isUrl, linearTransform, sanitize } from "@reactive-resume/utils";
 import get from "lodash.get";
 import React, { Fragment } from "react";
 
-import { BrandIcon } from "../components/brand-icon";
 import { Picture } from "../components/picture";
 import { useArtboardStore } from "../store/artboard";
 import type { TemplateProps } from "../types/template";

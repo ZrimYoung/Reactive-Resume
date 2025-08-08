@@ -5,13 +5,50 @@ console.log('Current file path:', __filename);
 const { app, BrowserWindow, Menu, screen } = require('electron');
 const { spawn } = require('child_process');
 const path = require('path');
-const isDev = require('electron-is-dev');
+// Avoid bundling dev-only deps; rely on Electron API
+const isProd = app.isPackaged;
+const isDev = !isProd;
 
 console.log('isDev:', isDev);
 console.log('Platform:', process.platform);
 
 let mainWindow;
 let serverProcess;
+
+function checkServerConnection(host = 'localhost', port = 5173) {
+  return new Promise((resolve) => {
+    const http = require('http');
+    const req = http.request(
+      { hostname: host, port, path: '/', method: 'GET', timeout: 2000 },
+      () => resolve(true),
+    );
+    req.on('error', () => resolve(false));
+    req.on('timeout', () => {
+      req.destroy();
+      resolve(false);
+    });
+    req.end();
+  });
+}
+
+function startEmbeddedServer() {
+  if (!isProd) return;
+  try {
+    process.env.NODE_ENV = 'production';
+    process.env.PORT = process.env.PORT || '3000';
+    process.env.PUBLIC_URL = process.env.PUBLIC_URL || 'http://localhost:3000';
+    process.env.SESSION_SECRET = process.env.SESSION_SECRET || 'reactive-resume-offline-secret';
+    const baseDir = app.isPackaged
+      ? path.join(process.resourcesPath, 'app.asar.unpacked')
+      : __dirname;
+    const serverEntry = path.join(baseDir, 'dist', 'apps', 'server', 'main.js');
+    console.log('Starting embedded server from:', serverEntry);
+    // Requiring the compiled server bundle bootstraps NestJS
+    require(serverEntry);
+  } catch (error) {
+    console.error('Failed to start embedded server:', error);
+  }
+}
 
 function checkServerConnection() {
   return new Promise((resolve) => {
@@ -76,17 +113,18 @@ async function createWindow() {
 
   console.log('Window object created');
 
-  const startUrl = 'http://localhost:5173';
+  const devUrl = 'http://localhost:5173';
+  const prodUrl = process.env.PUBLIC_URL || 'http://localhost:3000';
   
   // Check server connection
-  console.log('Checking dev server connection...');
-  const isServerRunning = await checkServerConnection();
-  
-  if (isServerRunning) {
-    console.log('Dev server connected, loading app directly');
-    mainWindow.loadURL(startUrl);
-  } else {
-    console.log('Dev server not responding, showing waiting page');
+  if (isDev) {
+    console.log('Checking dev server connection...');
+    const isServerRunning = await checkServerConnection('localhost', 5173);
+    if (isServerRunning) {
+      console.log('Dev server connected, loading app directly');
+      mainWindow.loadURL(devUrl);
+    } else {
+      console.log('Dev server not responding, showing waiting page');
     
     // Show waiting page with correct encoding
     const waitingPage = `
@@ -179,6 +217,29 @@ async function createWindow() {
     `;
     
     mainWindow.loadURL('data:text/html;charset=UTF-8,' + encodeURIComponent(waitingPage));
+    }
+  } else {
+    // Production: wait for embedded server and then load the app
+    // Pass resources path to backend so it can resolve unpacked static assets
+    process.env.ELECTRON_RESOURCES_PATH = process.resourcesPath;
+    startEmbeddedServer();
+    let attempts = 0;
+    const maxAttempts = 60;
+    const http = require('http');
+    const tryLoad = () => {
+      attempts++;
+      const req = http.request({ hostname: 'localhost', port: 3000, path: '/', method: 'GET', timeout: 1000 }, () => {
+        console.log('Embedded server is ready, loading app');
+        mainWindow.loadURL(prodUrl);
+      });
+      req.on('error', () => {
+        if (attempts < maxAttempts) setTimeout(tryLoad, 1000);
+        else mainWindow.loadURL('data:text/html;charset=UTF-8,' + encodeURIComponent('<h2>Failed to start embedded server on port 3000</h2>'));
+      });
+      req.on('timeout', () => { req.destroy(); if (attempts < maxAttempts) setTimeout(tryLoad, 1000); });
+      req.end();
+    };
+    tryLoad();
   }
 
   // Page load complete event

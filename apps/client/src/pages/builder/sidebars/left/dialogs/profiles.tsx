@@ -11,10 +11,9 @@ import {
   FormMessage,
   Input,
 } from "@reactive-resume/ui";
+import { BrandIcon } from "@reactive-resume/ui";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
-
-import { BrandIcon } from "@/client/components/brand-icon";
 
 import { SectionDialog } from "../sections/shared/section-dialog";
 import { URLInput } from "../sections/shared/url-input";
@@ -84,7 +83,7 @@ export const ProfilesDialog = () => {
               <FormControl>
                 <div className="flex items-center gap-x-2">
                   <Avatar className="size-8 bg-white p-1.5">
-                    <BrandIcon slug={field.value} />
+                    <BrandIcon slug={field.value} size="size-5" debounce={600} />
                   </Avatar>
                   <Input {...field} placeholder="github" onChange={field.onChange} />
                 </div>

@@ -10,7 +10,6 @@ import {
   Patch,
   Post,
 } from "@nestjs/common";
-import { ApiTags } from "@nestjs/swagger";
 import { Prisma } from "@prisma/client";
 import {
   CreateResumeDto,
@@ -27,7 +26,6 @@ import { ResumeService } from "./resume.service";
 // 本地用户ID常量
 const LOCAL_USER_ID = "local-user-id";
 
-@ApiTags("Resume")
 @Controller("resume")
 export class ResumeController {
   constructor(private readonly resumeService: ResumeService) {}

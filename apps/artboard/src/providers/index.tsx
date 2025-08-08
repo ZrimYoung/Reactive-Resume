@@ -41,6 +41,10 @@ export const Providers = () => {
               ...defaultResumeData.metadata.theme,
               ...event.data.payload.metadata.theme,
             },
+            css: {
+              value: event.data.payload.metadata?.css?.value || "",
+              visible: event.data.payload.metadata?.css?.visible === true,
+            },
             typography: {
               ...defaultResumeData.metadata.typography,
               ...event.data.payload.metadata.typography,
@@ -100,11 +104,27 @@ export const Providers = () => {
             ...defaultResumeData.metadata,
             ...parsedData.metadata,
             layout: parsedData.metadata?.layout || defaultResumeData.metadata.layout,
+            page: {
+              ...defaultResumeData.metadata.page,
+              ...parsedData.metadata.page,
+            },
+            theme: {
+              ...defaultResumeData.metadata.theme,
+              ...parsedData.metadata.theme,
+            },
             css: {
               value: parsedData.metadata?.css?.value || "",
               visible: parsedData.metadata?.css?.visible === true,
             },
-          };
+            typography: {
+              ...defaultResumeData.metadata.typography,
+              ...parsedData.metadata?.typography,
+              font: {
+                ...defaultResumeData.metadata.typography.font,
+                ...parsedData.metadata?.typography?.font,
+              },
+            },
+          } as typeof defaultResumeData.metadata;
         }
 
         // Ensure basics exists

@@ -26,7 +26,7 @@ import {
 import get from "lodash.get";
 import { Fragment } from "react";
 
-import { BrandIcon } from "../components/brand-icon";
+import { BrandIcon } from "@reactive-resume/ui";
 import { Picture } from "../components/picture";
 import { useArtboardStore } from "../store/artboard";
 import type { TemplateProps } from "../types/template";

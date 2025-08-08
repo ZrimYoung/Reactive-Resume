@@ -30,7 +30,7 @@ export const BuilderLayout = () => {
       if (event.data.type === "CENTER_VIEW") transformRef.current?.centerView();
       if (event.data.type === "RESET_VIEW") {
         transformRef.current?.resetTransform(0);
-        setTimeout(() => transformRef.current?.centerView(0.8, 0), 10);
+        setTimeout(() => transformRef.current?.centerView(1.0, 0), 10);
       }
       if (event.data.type === "TOGGLE_PAN_MODE") {
         setWheelPanning(event.data.panMode);
@@ -50,7 +50,7 @@ export const BuilderLayout = () => {
       centerOnInit
       maxScale={2}
       minScale={0.4}
-      initialScale={0.8}
+      initialScale={1.0}
       limitToBounds={false}
       wheel={{ wheelDisabled: wheelPanning }}
       panning={{ wheelPanning: wheelPanning }}

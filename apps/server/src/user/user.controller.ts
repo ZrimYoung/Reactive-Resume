@@ -8,7 +8,6 @@ import {
   Patch,
   Res,
 } from "@nestjs/common";
-import { ApiTags } from "@nestjs/swagger";
 import { Prisma } from "@prisma/client";
 import { UpdateUserDto } from "@reactive-resume/dto";
 import { ErrorMessage } from "@reactive-resume/utils";
@@ -19,7 +18,6 @@ import { UserService } from "./user.service";
 // 本地用户ID常量
 const LOCAL_USER_ID = "local-user-id";
 
-@ApiTags("User")
 @Controller("user")
 export class UserController {
   constructor(private readonly userService: UserService) {}

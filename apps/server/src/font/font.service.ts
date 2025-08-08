@@ -113,13 +113,12 @@ export class FontService {
           return [];
         }
 
-        // 检查目录是否存在
+        // 检查目录是否存在，如果不存在则创建
         try {
           await fs.access(userFontDir);
         } catch {
-          // 目录不存在，返回空数组
-          this.logger.debug(`字体目录不存在: ${userFontDir}`);
-          return [];
+          this.logger.debug(`字体目录不存在，正在创建: ${userFontDir}`);
+          await fs.mkdir(userFontDir, { recursive: true });
         }
 
         const files = await fs.readdir(userFontDir);

@@ -46,7 +46,7 @@ const DonateCard = () => (
 const IssuesCard = () => (
   <Card className="space-y-4">
     <CardContent className="space-y-2">
-      <CardTitle>{t`Found a bug, or have an idea for a new feature?`}</CardTitle>
+      <CardTitle>{t`Found a bug, or have a new feature idea?`}</CardTitle>
       <CardDescription className="space-y-2">
         <Trans>
           <p>I'm sure the app is not perfect, but I'd like for it to be.</p>
@@ -58,20 +58,24 @@ const IssuesCard = () => (
         </Trans>
       </CardDescription>
     </CardContent>
-    <CardFooter className="space-x-4">
+    <CardFooter className="flex-row-reverse gap-x-2">
       <a
         href="https://github.com/AmruthPillai/Reactive-Resume/issues/new/choose"
-        className={cn(buttonVariants({ size: "sm" }))}
+        className={cn(buttonVariants({ size: "sm", variant: "outline" }))}
         rel="noopener noreferrer nofollow"
         target="_blank"
       >
         <GithubLogo size={14} weight="bold" className="mr-2" />
-        <span className="line-clamp-1">{t`Raise an issue`}</span>
+        <span>{t`Raise an issue`}</span>
       </a>
-
-      <a className={cn(buttonVariants({ size: "sm" }))} href="mailto:hello@amruthpillai.com">
+      <a
+        href="mailto:hello@amruthpillai.com?subject=Reactive Resume Feedback"
+        className={cn(buttonVariants({ size: "sm", variant: "outline" }))}
+        rel="noopener noreferrer nofollow"
+        target="_blank"
+      >
         <EnvelopeSimpleOpen size={14} weight="bold" className="mr-2" />
-        <span className="line-clamp-1">{t`Send me a message`}</span>
+        <span>{t`Email me`}</span>
       </a>
     </CardFooter>
   </Card>
@@ -80,49 +84,34 @@ const IssuesCard = () => (
 const DocumentationCard = () => (
   <Card className="space-y-4">
     <CardContent className="space-y-2">
-      <CardTitle>{t`Don't know where to begin? Hit the docs!`}</CardTitle>
+      <CardTitle>{t`Don't know where to start? Click on the docs!`}</CardTitle>
       <CardDescription className="space-y-2">
         <Trans>
           <p>
-            The community has spent a lot of time writing the documentation for Reactive Resume, and
-            I'm sure it will help you get started with the app.
+            The community has spent a lot of time writing the documentation for Reactive Resume,
+            which I'm sure would help you get on board with the application.
           </p>
           <p>
-            There are also a lot of examples to help you get started, and features that you might
-            not know about which could help you build your perfect resume.
+            There are a lot of examples to get you started, and a lot of features that you might not
+            know about that would help you build the perfect resume.
           </p>
         </Trans>
       </CardDescription>
     </CardContent>
-    <CardFooter className="space-x-4">
+    <CardFooter>
       <a
-        className={cn(buttonVariants({ size: "sm" }))}
         href="https://docs.rxresu.me/"
-        target="_blank"
+        className={cn(buttonVariants({ size: "sm" }))}
         rel="noopener noreferrer nofollow"
+        target="_blank"
       >
         <Book size={14} weight="bold" className="mr-2" />
-        <span className="line-clamp-1">{t`Documentation`}</span>
+        <span>{t`Documentation`}</span>
       </a>
     </CardFooter>
   </Card>
 );
 
 export const InformationSection = () => {
-  return (
-    <section id="information" className="grid gap-y-6">
-      <header className="flex items-center justify-between">
-        <div className="flex items-center gap-x-4">
-          <SectionIcon id="information" size={18} name={t`Information`} />
-          <h2 className="line-clamp-1 text-2xl font-bold lg:text-3xl">{t`Information`}</h2>
-        </div>
-      </header>
-
-      <main className="grid gap-y-4">
-        <DonateCard />
-        <DocumentationCard />
-        <IssuesCard />
-      </main>
-    </section>
-  );
+  return null;
 };

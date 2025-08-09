@@ -53,19 +53,13 @@ export class FontService {
     const variableFontInfo = this.variableFontParser.parseFont(file.buffer, file.originalname);
 
     try {
-      // 上传文件到存储服务
-      const relativeUrl = await this.storageService.uploadObject(
+      // 上传文件到存储服务（已返回绝对 URL，基于 STORAGE_URL 构造）
+      const fileUrl = await this.storageService.uploadObject(
         userId,
         "fonts",
         file.buffer,
         fileName,
       );
-
-      // 生成完整的URL（用于PDF生成等场景）
-      const publicUrl =
-        this.configService.get<string>("PUBLIC_URL")?.replace("5173", "3000") ??
-        "http://localhost:3000";
-      const fullUrl = `${publicUrl}${relativeUrl}`;
 
       // 构造响应
       const fontResponse: FontResponseDto = {
@@ -75,7 +69,7 @@ export class FontService {
         originalName: file.originalname,
         fileSize: file.size,
         format,
-        url: fullUrl, // 使用完整URL
+        url: fileUrl, // 使用存储服务返回的绝对 URL
         uploadedAt: new Date().toISOString(),
         userId,
         variableFont: variableFontInfo,
@@ -90,10 +84,11 @@ export class FontService {
         userFontList.push(fontResponse);
       }
 
-      this.logger.log(`字体上传成功: ${fontResponse.fontFamily}, URL: ${fullUrl}`);
+      this.logger.log(`字体上传成功: ${fontResponse.fontFamily}, URL: ${fileUrl}`);
       return fontResponse;
     } catch (error) {
-      this.logger.error(`字体上传失败: ${error.message}`, error.stack);
+      const err = error as Error;
+      this.logger.error(`字体上传失败: ${err.message}`, (err as unknown as { stack?: string })?.stack);
       throw new BadRequestException("字体文件上传失败");
     }
   }
@@ -124,10 +119,6 @@ export class FontService {
         const files = await fs.readdir(userFontDir);
         this.logger.debug(`在 ${userFontDir} 中找到 ${files.length} 个文件`);
 
-        const publicUrl =
-          this.configService.get<string>("PUBLIC_URL")?.replace("5173", "3000") ??
-          "http://localhost:3000";
-
         const fonts = await Promise.all(
           files
             .filter((file) => {
@@ -138,7 +129,9 @@ export class FontService {
               const ext = path.extname(file);
               const format = this.getFormatFromExtension(ext);
               const filePath = path.join(userFontDir, file);
-              const relativeUrl = `/api/storage/${userId}/fonts/${file}`;
+              const storageBaseUrl =
+                this.configService.get<string>("STORAGE_URL") ?? "http://localhost:3000";
+              const absoluteUrl = `${storageBaseUrl}/api/storage/${userId}/fonts/${file}`;
 
               // 获取文件信息
               let fileSize = 0;
@@ -160,7 +153,7 @@ export class FontService {
                 originalName: file,
                 fileSize,
                 format,
-                url: `${publicUrl}${relativeUrl}`,
+                url: absoluteUrl,
                 uploadedAt: new Date().toISOString(),
                 userId,
               };
@@ -174,23 +167,19 @@ export class FontService {
         this.userFonts.set(userId, validFonts);
         this.logger.log(`从磁盘扫描恢复 ${validFonts.length} 个字体文件`);
       } catch (error) {
-        this.logger.error(`扫描字体目录失败: ${error.message}`);
+        const err = error as Error;
+        this.logger.error(`扫描字体目录失败: ${err.message}`);
         return [];
       }
     }
 
     this.logger.debug(`为用户 ${userId} 返回 ${fonts.length} 个字体`);
 
-    const publicUrl =
-      this.configService.get<string>("PUBLIC_URL")?.replace("5173", "3000") ??
-      "http://localhost:3000";
+    // 兜底处理：如果缓存中存在历史相对 URL，这里用 STORAGE_URL 兜底补齐
+    const storageBaseUrl = this.configService.get<string>("STORAGE_URL") ?? "http://localhost:3000";
 
-    // 确保URL格式正确
     return fonts.map((font) => {
-      let finalUrl = font.url;
-      if (!font.url.startsWith("http")) {
-        finalUrl = `${publicUrl}${font.url}`;
-      }
+      const finalizedUrl = font.url.startsWith("http") ? font.url : `${storageBaseUrl}${font.url}`;
 
       return {
         id: font.id,
@@ -199,11 +188,11 @@ export class FontService {
         originalName: font.originalName,
         fileSize: font.fileSize,
         format: font.format,
-        url: finalUrl,
+        url: finalizedUrl,
         uploadedAt: font.uploadedAt,
         userId: font.userId,
         variableFont: font.variableFont,
-      };
+      } as FontResponseDto;
     });
   }
 
@@ -216,7 +205,8 @@ export class FontService {
       this.logger.log(`字体删除成功: ${fontId}`);
       await Promise.resolve();
     } catch (error) {
-      this.logger.error(`删除字体失败: ${error.message}`);
+      const err = error as Error;
+      this.logger.error(`删除字体失败: ${err.message}`);
       throw new BadRequestException("删除字体失败");
     }
   }

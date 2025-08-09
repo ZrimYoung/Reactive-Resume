@@ -6,7 +6,6 @@ import { DashboardLayout } from "../pages/dashboard/layout";
 import { ResumesPage } from "../pages/dashboard/resumes/page";
 import { SettingsPage } from "../pages/dashboard/settings/page";
 import { ErrorPage } from "../pages/public/error";
-import { publicLoader, PublicResumePage } from "../pages/public/page";
 import { Providers } from "../providers";
 
 export const routes = createRoutesFromElements(
@@ -32,10 +31,7 @@ export const routes = createRoutesFromElements(
         </Route>
       </Route>
 
-      {/* Public Routes */}
-      <Route path=":username">
-        <Route path=":slug" loader={publicLoader} element={<PublicResumePage />} />
-      </Route>
+      {/* 已移除公开简历路由（本地部署不支持公开分享） */}
     </Route>
   </Route>,
 );

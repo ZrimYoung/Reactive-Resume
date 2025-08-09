@@ -99,8 +99,9 @@ export class ResumeController {
       const result = await this.resumeService.update(LOCAL_USER_ID, id, updateResumeDto);
       return { success: true, result };
     } catch (error) {
-      console.log("DEBUG: 更新失败", error.message);
-      return { success: false, error: error.message };
+      const message = error instanceof Error ? error.message : String(error);
+      console.log("DEBUG: 更新失败", message);
+      return { success: false, error: message };
     }
   }
 

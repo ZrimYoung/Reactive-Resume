@@ -105,8 +105,12 @@ export class ResumeService {
         },
       });
     } catch (error) {
-      this.logger.error(`简历导入失败: ${error.message}`, error.stack);
-      throw new BadRequestException(`简历导入失败: ${error.message}`);
+      const err = error as Error;
+      this.logger.error(
+        `简历导入失败: ${err.message}`,
+        (err as unknown as { stack?: string }).stack,
+      );
+      throw new BadRequestException(`简历导入失败: ${err.message}`);
     }
   }
 
@@ -187,7 +191,8 @@ export class ResumeService {
               })}`,
             );
           } catch (validationError) {
-            this.logger.error(`简历数据验证失败: ${validationError.message}`, validationError);
+            const e = validationError as Error;
+            this.logger.error(`简历数据验证失败: ${e.message}`, e);
 
             // 如果验证失败，尝试使用原始数据但修复已知问题
             if (parsedData.metadata?.css) {
@@ -202,8 +207,12 @@ export class ResumeService {
             this.logger.warn("使用修复后的数据而非验证通过的数据");
           }
         } catch (parseError) {
-          this.logger.error(`简历数据解析失败: ${parseError.message}`, parseError.stack);
-          throw new BadRequestException(`无效的简历数据格式: ${parseError.message}`);
+          const e = parseError as Error;
+          this.logger.error(
+            `简历数据解析失败: ${e.message}`,
+            (e as unknown as { stack?: string }).stack,
+          );
+          throw new BadRequestException(`无效的简历数据格式: ${e.message}`);
         }
       }
 
@@ -224,17 +233,21 @@ export class ResumeService {
             : updatedResume.data,
       };
     } catch (error) {
-      this.logger.error(`简历更新失败: ${error.message}`, error.stack);
+      const err = error as Error & { code?: string };
+      this.logger.error(
+        `简历更新失败: ${err.message}`,
+        (err as unknown as { stack?: string }).stack,
+      );
 
-      if (error.code === "P2025") {
+      if (err.code === "P2025") {
         throw new InternalServerErrorException("简历不存在或无权限访问");
       }
 
-      if (error instanceof BadRequestException) {
-        throw error;
+      if (err instanceof BadRequestException) {
+        throw err;
       }
 
-      throw new InternalServerErrorException(`简历更新失败: ${error.message}`);
+      throw new InternalServerErrorException(`简历更新失败: ${err.message}`);
     }
   }
 

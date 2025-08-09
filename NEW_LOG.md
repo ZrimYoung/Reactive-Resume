@@ -1,3 +1,43 @@
+# 项目分析日志（简要）
+
+- 日期：2025-08-09
+
+## 已完成
+- 梳理 Nx 工作区结构（apps: `client`、`artboard`、`server`；libs: `dto`、`schema`、`utils`、`ui`、`hooks`、`parser`）。
+- 阅读关键配置与入口：`nx.json`、`package.json`、`pnpm-workspace.yaml`、`tsconfig.base.json`、各 `project.json`、`apps/server/src/main.ts`、`apps/server/src/app.module.ts`、`apps/client/src/router/index.tsx`、`apps/client/src/libs/axios.ts`、`tools/prisma/schema.prisma` 等。
+- 端到端数据流与业务模块：简历 CRUD 与打印（`ResumeController/Service`、`PrinterService`）、本地文件存储（`StorageService/Controller`）、字体上传与扫描（`FontService/Controller`）、语言列表（`TranslationService/Controller`）、用户信息（`UserController/Service`）。
+- 前端路由与数据访问：客户端仪表盘/编辑器/公开页路由，React Query + Axios（`/api` 前缀，Vite 代理 `/artboard` 到 6173）。
+- 打印与预览流程：Puppeteer 启动 → 注入 `localStorage.resume` → 加载 `/artboard/preview` → 逐页输出 PDF/截图 → 通过 `StorageService` 生成 URL。
+
+## 变更（移除公开分享）
+- 删除前端公开简历能力（本地部署不支持公开分享）：
+  - 路由：移除 `:username/:slug` 路由以及 `PublicResumePage`、`publicLoader` 引用（`apps/client/src/router/index.tsx`）。
+  - 服务：移除 `findResumeByUsernameSlug`（`apps/client/src/services/resume/resume.ts`）。
+  - 页面：删除 `apps/client/src/pages/public/page.tsx`。
+  - 保留 `apps/client/src/pages/public/error.tsx` 仅作为全局错误页使用。
+
+## 关键发现
+- 公开简历接口：前端存在 `/resume/public/:username/:slug` 的调用，服务端暂未实现对应控制器，属潜在功能缺口。
+- 用户标识：服务端固定使用 `local-user-id`，客户端本地用户常量为 `local-user`；功能可用，但存在标识不一致的隐患。
+- Prisma 种子：`package.json` 指向 `tools/prisma/seed.js`，仓库为 `seed.ts`，如需脚本方式种子，建议使用 `ts-node` 执行 TS 版本或补充 JS 文件。
+- 字体 URL：`FontService` 通过替换端口构造完整 URL（5173→3000），在部分部署形态下可能不稳健，建议统一由 `STORAGE_URL`/反向代理提供稳定前缀。
+- 安全边界：本地模式无鉴权；`StorageService` 做了路径安全检查与类型限制，但公开下载接口应关注访问控制（当前为本地桌面/离线模式问题不大）。
+
+## 下一步建议
+- 补全公开简历 API 或在前端按本地模式显式禁用该路径，避免 404。
+- 统一客户端/服务端用户标识（或在客户端读取服务端 `/user/me`）。
+- 调整 Prisma 种子脚本指向或提供 `tools/prisma/seed.js`；若使用 TS，建议命令：`pnpm ts-node tools/prisma/seed.ts`。
+- 校验 `PUBLIC_URL` 与开发代理是否一致，保证打印服务访问 `/artboard/preview` 正常（需同时起 `client` 与 `artboard`）。
+- 如需增强持久化与多用户，扩展用户认证与存储权限校验；字体删除与持久化也可进一步完善。
+
+## 本次调整
+- 统一字体资源 URL 构造：改为使用 `STORAGE_URL` 作为稳定前缀，不再通过 `PUBLIC_URL` 端口替换（5173→3000）。
+  - 位置：`apps/server/src/font/font.service.ts`
+  - 影响：
+    - 上传后返回的 `FontResponseDto.url` 现在直接为绝对 URL（来源于 `StorageService.uploadObject`，已基于 `STORAGE_URL` 构造）。
+    - 扫描磁盘恢复字体列表时，也用 `STORAGE_URL` 拼接 `/api/storage/...`，确保不同部署形态下一致。
+    - 对历史相对 URL 做兜底补齐，兼容旧缓存。
+
 # 项目分析要点（Reactive-Resume / Nx 19 + pnpm）
 
 ## 已完成的工作
@@ -69,6 +109,21 @@
 - 服务端 CORS：根据 `PUBLIC_URL` 动态允许来源，并在开发环境默认放行 `http://localhost:5173` 与 `http://localhost:3000`
 - 新增 `.env.example`：补充本地开发变量示例
 - （已删除）CI 工作流：`.github/workflows/lint-test-build.yml`；同步清理 `nx.json` 对 `sharedGlobals` 的引用与依赖
+
+### 2025-08-08 打印导出缺失内容问题修复
+- 症状：`/artboard/preview` 预览正常，但导出 PDF（使用 Puppeteer）时页面底部/部分区块消失（示例：`test/reactive_resume-cme335lt200019nyw3uvgteil.json`）。
+- 根因：`apps/server/src/printer/printer.service.ts` 在 `page.pdf` 传入 `width/height` 为数字，Puppeteer 期望带单位的字符串，导致回退到默认纸张尺寸而发生裁剪；并且在把单页克隆到 `body` 后未再次精确测量高度。
+- 处理：
+  - 替换为 `"${width}px"/"${height}px"`，并启用 `preferCSSPageSize: true`、`margin: 0`。
+  - 克隆单页后使用 `getBoundingClientRect + scrollHeight` 重新测量尺寸。
+  - 注入仅打印兜底样式，强制 `[data-page]` 及子元素 `overflow: visible`，降低网格/负外边距导致的裁剪风险。
+  - 文件：`apps/server/src/printer/printer.service.ts`。
+  - Lint 已通过。
+
+### 2025-08-08 矢量 PDF 保持（禁用截图方案）
+- 说明：用户要求严格保持矢量 PDF，不可用截图。
+- 改动：恢复 Puppeteer 原生 `page.pdf` 流程（矢量），尺寸仍使用像素字符串与零边距；合并多页时继续用 `pdf-lib` 复制页面以保持矢量属性。
+- 额外：高度测量使用 `element/document.*scroll*` 的最大值，避免“在校经历”等被裁剪。
 
 日期: 2025-08-08
 

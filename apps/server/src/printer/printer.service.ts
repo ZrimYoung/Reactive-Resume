@@ -2,6 +2,7 @@ import { HttpService } from "@nestjs/axios";
 import { Injectable, InternalServerErrorException, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { ResumeDto } from "@reactive-resume/dto";
+import { defaultResumeData, type ResumeData } from "@reactive-resume/schema";
 import { ErrorMessage } from "@reactive-resume/utils";
 import retry from "async-retry";
 import { PDFDocument } from "pdf-lib";
@@ -117,17 +118,54 @@ export class PrinterService {
       // Set the data of the resume to be printed in the browser's session storage
       const numberPages = resume.data.metadata?.layout?.length || 1;
 
-      // 确保在传递数据时正确处理CSS状态
-      const resumeDataForPrint = {
-        ...resume.data,
-        metadata: {
-          ...resume.data.metadata,
-          css: {
-            value: resume.data.metadata?.css?.value || "",
-            visible: resume.data.metadata?.css?.visible === true, // 明确转换为布尔值
+      // 1) 显式对象合并：与 Artboard Providers 一致（数组覆盖不拼接）
+      const input = resume.data as ResumeData;
+      const resumeDataForPrint: ResumeData = {
+        basics: {
+          ...defaultResumeData.basics,
+          ...input.basics,
+          picture: {
+            ...defaultResumeData.basics.picture,
+            ...input.basics.picture,
           },
         },
-      };
+        sections: {
+          ...defaultResumeData.sections,
+          ...input.sections,
+        },
+        metadata: {
+          ...defaultResumeData.metadata,
+          ...input.metadata,
+          layout:
+            input.metadata.layout.length > 0
+              ? input.metadata.layout
+              : defaultResumeData.metadata.layout,
+          page: {
+            ...defaultResumeData.metadata.page,
+            ...input.metadata.page,
+            options: {
+              ...defaultResumeData.metadata.page.options,
+              ...input.metadata.page.options,
+            },
+          },
+          theme: {
+            ...defaultResumeData.metadata.theme,
+            ...input.metadata.theme,
+          },
+          css: {
+            value: input.metadata.css.value || "",
+            visible: input.metadata.css.visible,
+          },
+          typography: {
+            ...defaultResumeData.metadata.typography,
+            ...input.metadata.typography,
+            font: {
+              ...defaultResumeData.metadata.typography.font,
+              ...input.metadata.typography.font,
+            },
+          },
+        },
+      } as ResumeData;
 
       this.logger.debug(`PDF生成 - CSS状态: ${resumeDataForPrint.metadata.css.visible}`);
       this.logger.debug(`PDF生成 - CSS内容长度: ${resumeDataForPrint.metadata.css.value.length}`);
@@ -135,43 +173,113 @@ export class PrinterService {
 
       await page.evaluateOnNewDocument((data) => {
         window.localStorage.setItem("resume", JSON.stringify(data));
-        console.log("PDF生成 - 注入的简历数据", JSON.stringify(data, null, 2));
       }, resumeDataForPrint);
 
       await page.goto(`${url}/artboard/preview`, { waitUntil: "networkidle0" });
+      await page.emulateMediaType("screen");
 
-      // 等待所有字体加载完成，包括自定义字体
+      // 等待所有字体与图片资源加载完成，确保与 Artboard 视觉一致
       await page.evaluate(async () => {
-        // 等待document.fonts.ready
-        await document.fonts.ready;
+        // 1) 等待字体就绪
+        await (document as Document & { fonts: { ready: Promise<void> } }).fonts.ready;
 
-        // 额外等待以确保自定义字体完全加载
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+        // 2) 等待所有图片（包括头像、自定义图像）加载完成
+        // eslint-disable-next-line unicorn/prefer-spread
+        const images: HTMLImageElement[] = Array.from(document.images);
+        await Promise.all(
+          images.map((img) =>
+            img.complete
+              ? Promise.resolve()
+              : new Promise<void>((resolve) => {
+                  const done = () => {
+                    resolve();
+                  };
+                  img.addEventListener("load", done, { once: true });
+                  img.addEventListener("error", done, { once: true });
+                }),
+          ),
+        );
+
+        // 3) 移除预览样式里的 body 溢出裁剪，避免 PDF 高度被剪切
+        document.documentElement.style.overflow = "visible";
+        document.body.style.overflow = "visible";
+        document.documentElement.style.height = "auto";
+        document.body.style.height = "auto";
+
+        // 4) 给予少量缓冲，保证脚本驱动的图标/样式完成绘制
+        await new Promise((resolve) => setTimeout(resolve, 300));
+      });
+
+      // 追加仅用于打印的兜底样式，尽量避免内容被裁剪
+      await page.addStyleTag({
+        content: `
+          html, body { overflow: visible !important; height: auto !important; }
+          [data-page] { height: auto !important; min-height: auto !important; overflow: visible !important; }
+          [data-page] * { overflow: visible !important; }
+        `,
       });
 
       const pagesBuffer: Buffer[] = [];
 
       const processPage = async (index: number) => {
         const pageElement = await page.$(`[data-page="${index}"]`);
-        // eslint-disable-next-line unicorn/no-await-expression-member
-        const width = (await (await pageElement?.getProperty("scrollWidth"))?.jsonValue()) ?? 0;
-        // eslint-disable-next-line unicorn/no-await-expression-member
-        const height = (await (await pageElement?.getProperty("scrollHeight"))?.jsonValue()) ?? 0;
+        if (!pageElement) throw new Error(`[data-page="${index}"] not found`);
 
-        const temporaryHtml = await page.evaluate((element: HTMLDivElement) => {
-          const clonedElement = element.cloneNode(true) as HTMLDivElement;
-          const temporaryHtml_ = document.body.innerHTML;
-          document.body.innerHTML = clonedElement.outerHTML;
-          return temporaryHtml_;
-        }, pageElement);
+        // 隔离当前页：仅显示目标页，隐藏其它页，避免资源与布局丢失
+        await page.addStyleTag({
+          content: `
+            [data-page] { display: none !important; }
+            [data-page="${index}"] { display: block !important; }
+          `,
+        });
 
-        const uint8array = await page.pdf({ width, height, printBackground: true });
+        // 稍作等待，确保样式生效与布局稳定
+        await page.evaluate(() => new Promise((r) => setTimeout(r, 50)));
+
+        // 精确测量尺寸（包含文档层面的溢出高度，避免底部被裁剪）
+        const { width, height } = await page.evaluate(
+          (element: HTMLDivElement) => {
+            const rect = element.getBoundingClientRect();
+            const w = Math.ceil(
+              Math.max(
+                rect.width,
+                element.scrollWidth,
+                document.documentElement.scrollWidth,
+                document.body.scrollWidth,
+              ),
+            );
+            const h = Math.ceil(
+              Math.max(
+                rect.height,
+                element.scrollHeight,
+                document.documentElement.scrollHeight,
+                document.body.scrollHeight,
+              ) + 2,
+            );
+            return { width: w, height: h };
+          },
+          pageElement as unknown as HTMLDivElement,
+        );
+
+        // 使用 Puppeteer 原生 PDF（矢量），以像素单位设定页面尺寸
+        const uint8array = await page.pdf({
+          width: `${width}px`,
+          height: `${height}px`,
+          printBackground: true,
+          preferCSSPageSize: true,
+          margin: { top: "0px", right: "0px", bottom: "0px", left: "0px" },
+        });
         const buffer = Buffer.from(uint8array);
         pagesBuffer.push(buffer);
 
-        await page.evaluate((temporaryHtml_: string) => {
-          document.body.innerHTML = temporaryHtml_;
-        }, temporaryHtml);
+        // 还原：移除隔离样式（移除最后一个 addStyleTag 注入的 <style>）
+        await page.evaluate(() => {
+          const styles = Array.prototype.slice.call(
+            document.querySelectorAll("style"),
+          ) as HTMLStyleElement[];
+          const last = styles.at(-1);
+          if (last) last.remove();
+        });
       };
 
       // Loop through all the pages and print them, by first displaying them, printing the PDF and then hiding them back
@@ -179,9 +287,8 @@ export class PrinterService {
         await processPage(index);
       }
 
-      // Using 'pdf-lib', merge all the pages from their buffers into a single PDF
+      // 合并各页 PDF（保持矢量）
       const pdf = await PDFDocument.create();
-
       for (const element of pagesBuffer) {
         const page = await PDFDocument.load(element);
         const [copiedPage] = await pdf.copyPages(page, [0]);
@@ -224,14 +331,88 @@ export class PrinterService {
       // 本地模式下不需要 host.docker.internal 转换
       const url = publicUrl;
 
+      // 对齐前端数据合并，规范化 CSS 字段（数组覆盖）
+      const input = resume.data as ResumeData;
+      const resumeDataForPrint: ResumeData = {
+        basics: {
+          ...defaultResumeData.basics,
+          ...input.basics,
+          picture: {
+            ...defaultResumeData.basics.picture,
+            ...input.basics.picture,
+          },
+        },
+        sections: {
+          ...defaultResumeData.sections,
+          ...input.sections,
+        },
+        metadata: {
+          ...defaultResumeData.metadata,
+          ...input.metadata,
+          layout:
+            input.metadata.layout.length > 0
+              ? input.metadata.layout
+              : defaultResumeData.metadata.layout,
+          page: {
+            ...defaultResumeData.metadata.page,
+            ...input.metadata.page,
+            options: {
+              ...defaultResumeData.metadata.page.options,
+              ...input.metadata.page.options,
+            },
+          },
+          theme: {
+            ...defaultResumeData.metadata.theme,
+            ...input.metadata.theme,
+          },
+          css: {
+            value: input.metadata.css.value || "",
+            visible: input.metadata.css.visible,
+          },
+          typography: {
+            ...defaultResumeData.metadata.typography,
+            ...input.metadata.typography,
+            font: {
+              ...defaultResumeData.metadata.typography.font,
+              ...input.metadata.typography.font,
+            },
+          },
+        },
+      } as ResumeData;
+
       // Set the data of the resume to be printed in the browser's session storage
       await page.evaluateOnNewDocument((data) => {
         window.localStorage.setItem("resume", JSON.stringify(data));
-      }, resume.data);
+      }, resumeDataForPrint);
 
       await page.setViewport({ width: 794, height: 1123 });
 
       await page.goto(`${url}/artboard/preview`, { waitUntil: "networkidle0" });
+
+      // 等待字体与图片资源，并移除 body 溢出裁剪
+      await page.evaluate(async () => {
+        await (document as Document & { fonts: { ready: Promise<void> } }).fonts.ready;
+        // eslint-disable-next-line unicorn/prefer-spread
+        const images: HTMLImageElement[] = Array.from(document.images);
+        await Promise.all(
+          images.map((img) =>
+            img.complete
+              ? Promise.resolve()
+              : new Promise<void>((resolve) => {
+                  const done = () => {
+                    resolve();
+                  };
+                  img.addEventListener("load", done, { once: true });
+                  img.addEventListener("error", done, { once: true });
+                }),
+          ),
+        );
+        document.documentElement.style.overflow = "visible";
+        document.body.style.overflow = "visible";
+        document.documentElement.style.height = "auto";
+        document.body.style.height = "auto";
+        await new Promise((resolve) => setTimeout(resolve, 300));
+      });
 
       // Save the JPEG to storage and return the URL
       // Store the URL in cache for future requests, under the previously generated hash digest

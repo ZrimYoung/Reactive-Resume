@@ -117,7 +117,7 @@ export const Sidebar = ({ setOpen }: SidebarProps) => {
       <UserOptions>
         <Button size="lg" variant="ghost" className="w-full justify-start px-3">
           <UserAvatar size={24} className="mr-3" />
-          <span>{user.name}</span>
+          <span>{user?.name ?? ""}</span>
         </Button>
       </UserOptions>
 

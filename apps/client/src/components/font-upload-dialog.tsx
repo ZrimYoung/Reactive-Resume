@@ -76,7 +76,7 @@ export const FontUploadDialog = ({ isOpen, onClose, onSuccess }: FontUploadDialo
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
-      const files = Array.from(e.dataTransfer.files);
+      const files = [...e.dataTransfer.files];
       if (files.length > 0) {
         handleFileSelect(files[0]);
       }
@@ -186,7 +186,7 @@ export const FontUploadDialog = ({ isOpen, onClose, onSuccess }: FontUploadDialo
 
         <div className="space-y-6">
           <Alert>
-            <Info className="h-4 w-4" />
+            <Info className="size-4" />
             <AlertTitle>{t`提示`}</AlertTitle>
             <AlertDescription>
               {t`当前系统对可变字体（Variable Fonts）支持最佳。为确保所有字重和样式能正常工作，建议优先上传VF字体。`}
@@ -284,12 +284,12 @@ export const FontUploadDialog = ({ isOpen, onClose, onSuccess }: FontUploadDialo
 
           {/* 操作按钮 */}
           <div className="flex justify-end space-x-3">
-            <Button variant="outline" onClick={handleClose} disabled={uploadState.uploading}>
+            <Button variant="outline" disabled={uploadState.uploading} onClick={handleClose}>
               {t`取消`}
             </Button>
             <Button
-              onClick={handleUpload}
               disabled={!selectedFile || !fontFamily.trim() || uploadState.uploading}
+              onClick={handleUpload}
             >
               {uploadState.uploading ? t`上传中...` : t`上传字体`}
             </Button>

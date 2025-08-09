@@ -14,7 +14,8 @@ export class DatabaseHealthIndicator extends HealthIndicator {
 
       return this.getStatus("database", true);
     } catch (error) {
-      return this.getStatus("database", false, { message: error.message });
+      const message = error instanceof Error ? error.message : String(error);
+      return this.getStatus("database", false, { message });
     }
   }
 }

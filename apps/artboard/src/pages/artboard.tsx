@@ -1,5 +1,5 @@
 import type { CustomFont } from "@reactive-resume/utils";
-import { fonts as googleFonts } from "@reactive-resume/utils";
+import { fonts as googleFonts, pageSizeMap } from "@reactive-resume/utils";
 import { useEffect, useMemo, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { Outlet } from "react-router";
@@ -92,6 +92,20 @@ export const ArtboardPage = () => {
     `;
   }, [metadata.typography.font.size]);
 
+  // 为打印注入 @page 规则，允许浏览器自动分页并使用与设置一致的纸张尺寸
+  const printPageSizeCSS = useMemo(() => {
+    const page = metadata.page;
+    const baseWidthMm = page.custom.enabled ? page.custom.width : pageSizeMap[page.format].width;
+    const baseHeightMm = page.custom.enabled ? page.custom.height : pageSizeMap[page.format].height;
+    const widthMm = page.orientation === "landscape" ? baseHeightMm : baseWidthMm;
+    const heightMm = page.orientation === "landscape" ? baseWidthMm : baseHeightMm;
+
+    return `
+@page { size: ${widthMm}mm ${heightMm}mm; margin: 0; }
+@media print { html, body { margin: 0; } }
+`;
+  }, [metadata.page]);
+
   useEffect(() => {
     const fontSize = metadata.typography.font.size;
     const lineHeight = metadata.typography.lineHeight;
@@ -140,6 +154,8 @@ export const ArtboardPage = () => {
         <title>{name} | Reactive Resume</title>
         {/* 先注入动态字体映射，再注入自定义 CSS（自定义 CSS 仍可用 !important 覆盖） */}
         <style id="dynamic-font-scale">{dynamicFontScale}</style>
+        {/* 打印页面尺寸定义，供 Puppeteer 使用 preferCSSPageSize 自动分页 */}
+        <style id="print-page-size">{printPageSizeCSS}</style>
         {customFontCSS && <style id="custom-font-css">{customFontCSS}</style>}
         <style id="main-font-family">
           {`:root { --font-family: "${metadata.typography.font.family}"; }`}

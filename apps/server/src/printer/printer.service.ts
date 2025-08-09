@@ -3,8 +3,7 @@ import { Injectable, InternalServerErrorException, Logger } from "@nestjs/common
 import { ConfigService } from "@nestjs/config";
 import { ResumeDto } from "@reactive-resume/dto";
 import { defaultResumeData, type ResumeData } from "@reactive-resume/schema";
-import { ErrorMessage } from "@reactive-resume/utils";
-import { pageSizeMap } from "@reactive-resume/utils";
+import { ErrorMessage, pageSizeMap } from "@reactive-resume/utils";
 import retry from "async-retry";
 import { PDFDocument } from "pdf-lib";
 import { Browser, launch } from "puppeteer";
@@ -221,12 +220,20 @@ export class PrinterService {
         if (!pageElement) throw new Error(`[data-page="${index}"] not found`);
 
         // 隔离当前页：仅显示目标页，隐藏其它页，避免资源与布局丢失
-        await page.addStyleTag({
-          content: `
+        // 使用带 id 的 <style>，并在稍后精确移除，避免影响自定义 CSS 的注入顺序
+        await page.evaluate((i) => {
+          const style = document.createElement("style");
+          style.id = "puppeteer-page-isolation";
+          style.textContent = `
             [data-page] { display: none !important; }
-            [data-page="${index}"] { display: block !important; }
-          `,
-        });
+            [data-page="${i}"] { display: block !important; }
+          `;
+          document.head.append(style);
+
+          // 再次将自定义 CSS（如存在）移动到末尾，确保其仍在 head 最后
+          const custom = document.querySelector("#custom-css");
+          if (custom) document.head.append(custom);
+        }, index);
 
         // 稍作等待，确保样式生效与布局稳定；并等待字体与图片加载
         await page.evaluate(async () => {
@@ -250,36 +257,77 @@ export class PrinterService {
           await new Promise((r) => setTimeout(r, 100));
         });
 
-        // 以用户选择的页面规格固定输出尺寸（mm），确保为精确的 A4/Letter 物理尺寸
+        // 计算是否需要缩放以“单页适配”（仅当内容超过目标纸张高度时生效）
+        const contentHeightPx = await page.evaluate((i) => {
+          const el = document.querySelector(`[data-page="${i}"]`);
+          if (!el) return 0;
+          // 使用 scrollHeight 以获得完整内容高度
+          return (el as HTMLElement).scrollHeight || 0;
+        }, index);
+
         const orientation = resumeDataForPrint.metadata.page.orientation;
         const format = resumeDataForPrint.metadata.page.format;
-        const mmWidthBase = resumeDataForPrint.metadata.page.custom.enabled
-          ? resumeDataForPrint.metadata.page.custom.width
-          : pageSizeMap[format].width;
         const mmHeightBase = resumeDataForPrint.metadata.page.custom.enabled
           ? resumeDataForPrint.metadata.page.custom.height
           : pageSizeMap[format].height;
-        const mmWidth = orientation === "landscape" ? mmHeightBase : mmWidthBase;
-        const mmHeight = orientation === "landscape" ? mmWidthBase : mmHeightBase;
+        const targetMmHeight =
+          orientation === "landscape" ? pageSizeMap[format].width : mmHeightBase;
+        const MM_TO_PX = 3.78; // 与前端一致的近似换算
+        const targetPxHeight = targetMmHeight * MM_TO_PX;
+        const fitScaleRaw =
+          targetPxHeight > 0 && contentHeightPx > 0 ? targetPxHeight / contentHeightPx : 1;
+        // 限定缩放区间，避免异常值；只在内容超出时缩小（<=1）
+        const fitScale = Math.max(0.5, Math.min(1, fitScaleRaw));
 
+        // 若需要，将当前页内容包裹并以 CSS 方式缩放到一页内，避免分页算法将整块推到下一页
+        if (fitScale < 1) {
+          await page.evaluate(
+            (i, scale, targetPxHeight) => {
+              const pageEl = document.querySelector(`[data-page="${i}"]`);
+              if (!pageEl) return;
+
+              // 仅包一次
+              const pageElHtml: HTMLElement = pageEl as HTMLElement;
+              let wrapper = pageElHtml.querySelector<HTMLElement>(":scope > .__fit_wrapper__");
+              if (!wrapper) {
+                wrapper = document.createElement("div");
+                wrapper.className = "__fit_wrapper__";
+                // 将现有子节点移动进 wrapper
+                while (pageEl.firstChild) wrapper.append(pageEl.firstChild as Node);
+                pageElHtml.append(wrapper);
+              }
+
+              // 限制可打印高度，绝对定位 + transform 缩放
+              pageElHtml.style.position = "relative";
+              pageElHtml.style.height = `${targetPxHeight}px`;
+              pageElHtml.style.overflow = "hidden";
+
+              wrapper.style.position = "absolute";
+              wrapper.style.top = "0";
+              wrapper.style.left = "0";
+              wrapper.style.width = "100%";
+              wrapper.style.transformOrigin = "top left";
+              wrapper.style.transform = `scale(${scale})`;
+            },
+            index,
+            fitScale,
+            targetPxHeight,
+          );
+        }
+
+        // 允许浏览器按 @page 自动分页；此时我们已将内容缩放进纸张高度
         const uint8array = await page.pdf({
-          width: `${mmWidth}mm`,
-          height: `${mmHeight}mm`,
           printBackground: true,
-          // 使用我们传入的物理尺寸，而不是依赖 CSS @page
-          preferCSSPageSize: false,
+          preferCSSPageSize: true,
           margin: { top: "0mm", right: "0mm", bottom: "0mm", left: "0mm" },
         });
         const buffer = Buffer.from(uint8array);
         pagesBuffer.push(buffer);
 
-        // 还原：移除隔离样式（移除最后一个 addStyleTag 注入的 <style>）
+        // 还原：精准移除隔离样式，避免误删自定义 CSS
         await page.evaluate(() => {
-          const styles = Array.prototype.slice.call(
-            document.querySelectorAll("style"),
-          ) as HTMLStyleElement[];
-          const last = styles.at(-1);
-          if (last) last.remove();
+          const iso = document.querySelector("#puppeteer-page-isolation");
+          if (iso) iso.remove();
         });
       };
 
@@ -288,12 +336,14 @@ export class PrinterService {
         await processPage(index);
       }
 
-      // 合并各页 PDF（保持矢量）
+      // 合并各页 PDF（保持矢量），并复制每次生成 PDF 的全部页
       const pdf = await PDFDocument.create();
       for (const element of pagesBuffer) {
-        const page = await PDFDocument.load(element);
-        const [copiedPage] = await pdf.copyPages(page, [0]);
-        pdf.addPage(copiedPage);
+        const doc = await PDFDocument.load(element);
+        const total = doc.getPageCount();
+        const indices = Array.from({ length: total }, (_, i) => i);
+        const copiedPages = await pdf.copyPages(doc, indices);
+        for (const p of copiedPages) pdf.addPage(p);
       }
 
       // Save the PDF to storage and return the URL to download the resume

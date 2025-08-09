@@ -31,12 +31,16 @@
 - 如需增强持久化与多用户，扩展用户认证与存储权限校验；字体删除与持久化也可进一步完善。
 
 ## 本次调整
-- 统一字体资源 URL 构造：改为使用 `STORAGE_URL` 作为稳定前缀，不再通过 `PUBLIC_URL` 端口替换（5173→3000）。
-  - 位置：`apps/server/src/font/font.service.ts`
-  - 影响：
-    - 上传后返回的 `FontResponseDto.url` 现在直接为绝对 URL（来源于 `StorageService.uploadObject`，已基于 `STORAGE_URL` 构造）。
-    - 扫描磁盘恢复字体列表时，也用 `STORAGE_URL` 拼接 `/api/storage/...`，确保不同部署形态下一致。
-    - 对历史相对 URL 做兜底补齐，兼容旧缓存。
+- 打印/导出一致性改造（允许自动分页 + 全页合并 + CSS 注入顺序一致）：
+  - 服务端：
+    - `apps/server/src/printer/printer.service.ts`
+      - `page.pdf` 改为 `preferCSSPageSize: true`，不再强制 `width/height`，允许浏览器按 `@page` 自动分页。
+      - 隔离当前 `data-page` 时用具名 `<style id="puppeteer-page-isolation">`，并在结束后精准移除，避免误删自定义 CSS。
+      - 合并 PDF 时复制每次生成的“全部页”（不再只复制第 0 页）。
+  - 前端（Artboard）：
+    - `apps/artboard/src/pages/artboard.tsx`
+      - 注入 `<style id="print-page-size">`，按简历设置计算 `@page { size: ..; margin: 0 }`，保证打印尺寸与方向一致。
+      - 继续确保 `<style id="custom-css">` 在 `<head>` 末尾，保持覆盖优先级。
 
 # 项目分析要点（Reactive-Resume / Nx 19 + pnpm）
 
@@ -110,15 +114,10 @@
 - 新增 `.env.example`：补充本地开发变量示例
 - （已删除）CI 工作流：`.github/workflows/lint-test-build.yml`；同步清理 `nx.json` 对 `sharedGlobals` 的引用与依赖
 
-### 2025-08-08 打印导出缺失内容问题修复
-- 症状：`/artboard/preview` 预览正常，但导出 PDF（使用 Puppeteer）时页面底部/部分区块消失（示例：`test/reactive_resume-cme335lt200019nyw3uvgteil.json`）。
-- 根因：`apps/server/src/printer/printer.service.ts` 在 `page.pdf` 传入 `width/height` 为数字，Puppeteer 期望带单位的字符串，导致回退到默认纸张尺寸而发生裁剪；并且在把单页克隆到 `body` 后未再次精确测量高度。
-- 处理：
-  - 替换为 `"${width}px"/"${height}px"`，并启用 `preferCSSPageSize: true`、`margin: 0`。
-  - 克隆单页后使用 `getBoundingClientRect + scrollHeight` 重新测量尺寸。
-  - 注入仅打印兜底样式，强制 `[data-page]` 及子元素 `overflow: visible`，降低网格/负外边距导致的裁剪风险。
-  - 文件：`apps/server/src/printer/printer.service.ts`。
-  - Lint 已通过。
+### 2025-08-09 打印导出内容缺失问题修复
+- 症状：`/artboard/preview` 预览正常，但导出 PDF 时页底或某些区块缺失（尤以自定义 CSS 时明显）。
+- 根因：预览是“无限高画布”，打印强制固定纸张；超出部分被裁掉。另外当浏览器因 `@page` 自动分页时，合并逻辑只复制了第 0 页，导致额外页被丢弃。
+- 处理：允许自动分页（`preferCSSPageSize: true` + 注入 `@page`），并在合并阶段复制全部页；确保自定义 CSS 始终在 `<head>` 末尾。
 
 ### 2025-08-08 矢量 PDF 保持（禁用截图方案）
 - 说明：用户要求严格保持矢量 PDF，不可用截图。

@@ -226,3 +226,7 @@
 - 运行 `pnpm i` 后执行 `nx run-many -t build,lint,test`；再验证 `pnpm electron:dev` 正常启动。
 - 手测主要路径：`/dashboard/*`、公开简历路由、打印预览与导出。
 
+## 速记：Puppeteer page.pdf 的 pageRanges 说明（2025-08-09）
+- `pageRanges: "1"`：只导出第 1 页（页码从 1 开始）。
+- 可用示例：`"1-3,5,7-9"` 表示导出第 1 至 3、5、7 至 9 页。
+- 若希望导出所有页：删除该参数或留空（即不传 `pageRanges`）。

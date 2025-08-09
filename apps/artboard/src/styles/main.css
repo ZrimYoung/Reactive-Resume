@@ -37,9 +37,13 @@ html {
 }
 
 [data-page] {
+  /* 允许内容在预览中自然溢出展示，避免被裁剪 */
   height: auto;
   overflow: visible;
 }
+
+/* 避免容器把内部元素在边界处裁断；仍允许正常换行 */
+/* 移除全局 break-inside 规则，避免阻止分页导致内容被裁剪 */
 
 [data-page] * {
   overflow: visible;

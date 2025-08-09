@@ -228,8 +228,27 @@ export class PrinterService {
           `,
         });
 
-        // 稍作等待，确保样式生效与布局稳定
-        await page.evaluate(() => new Promise((r) => setTimeout(r, 50)));
+        // 稍作等待，确保样式生效与布局稳定；并等待字体与图片加载
+        await page.evaluate(async () => {
+          await (document as Document & { fonts: { ready: Promise<void> } }).fonts.ready;
+          // eslint-disable-next-line unicorn/prefer-spread
+          const images: HTMLImageElement[] = Array.from(document.images);
+          await Promise.all(
+            images.map((img) => {
+              if (img.complete) {
+                return Promise.resolve();
+              }
+              return new Promise<void>((resolve) => {
+                const done = () => {
+                  resolve();
+                };
+                img.addEventListener("load", done, { once: true });
+                img.addEventListener("error", done, { once: true });
+              });
+            }),
+          );
+          await new Promise((r) => setTimeout(r, 100));
+        });
 
         // 以用户选择的页面规格固定输出尺寸（mm），确保为精确的 A4/Letter 物理尺寸
         const orientation = resumeDataForPrint.metadata.page.orientation;
@@ -249,7 +268,7 @@ export class PrinterService {
           printBackground: true,
           // 使用我们传入的物理尺寸，而不是依赖 CSS @page
           preferCSSPageSize: false,
-          margin: { top: "0px", right: "0px", bottom: "0px", left: "0px" },
+          margin: { top: "0mm", right: "0mm", bottom: "0mm", left: "0mm" },
         });
         const buffer = Buffer.from(uint8array);
         pagesBuffer.push(buffer);

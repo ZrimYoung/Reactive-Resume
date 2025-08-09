@@ -1,3 +1,49 @@
+2025-08-09 自定义 CSS 检查（不修改）
+
+- 目标：检查 `test/reactive_resume-cme335lt200019nyw3uvgteil (4).json` 中 `metadata.css.value` 的选择器是否匹配 Gengar 模板，验证 CSS 注入逻辑。
+
+已做工作
+- 核对 Gengar 模板 DOM：`.sidebar`、`.main`、`.p-custom`、`<section id=...>`、`.wysiwyg` 均存在且与选择器匹配。
+- 确认自定义 CSS 注入：在 `apps/artboard/src/pages/artboard.tsx` 里使用 `<style id="custom-css">` 注入，并确保位于 `<head>` 末尾（有移动到尾部的副作用）。
+
+发现的潜在风险/改进点（仅记录，不修改）
+- 全局 `* { color: ... !important; }` 可能覆盖主题文本色（含 `.sidebar` 顶部蓝底区域的白字），建议后续考虑缩小作用域或减少 `!important`。
+- 字体 `'OPPO Sans 4.0'` 未在当前应用内显式加载，PDF/无该字体环境将回退到系统 sans-serif。
+- 想“移除 section 间距”的规则 `.main .p-custom > section { margin-bottom: -8px; }` 对 Tailwind 的 `space-y-4`（使用兄弟选择器设置 margin-top）不完全生效，后续如需严格控距建议改为覆盖 `section + section` 的 `margin-top`。
+- 若未来更换模板/类名，像 `.sidebar .flex.flex-col.items-start.gap-y-2` 这类“精确到多个类名”的选择器稳定性较弱。
+
+新增问题定位（依据用户给出的 HTML，纯分析）
+- 主体列 Section 间距未按预期变化：
+  - 根因：`.main .p-custom` 容器使用 `space-y-4` 产生的是“兄弟元素的 margin-top”，而现有自定义 CSS 调整了每个 `section` 的 `margin-bottom`，二者不冲突，导致无效。
+  - 证据：模板中有 `"p-custom space-y-4"`（主体与侧栏均有）。
+    ```
+    598:605:apps/artboard/src/templates/gengar.tsx
+    <div className="p-custom space-y-4"> ... </div>
+    ```
+- 每个 Section 内条目块之间的间距未明显减小：
+  - 根因：每个 Section 内部使用了 `grid gap-y-3` 产生“行间隙（row-gap）”，这不是子元素 margin 能覆盖的，需要直接覆盖容器的 row-gap。
+  - 证据：模板条目容器为 `grid gap-x-6 gap-y-3`：
+    ```
+    195:199:apps/artboard/src/templates/gengar.tsx
+    <div className="grid gap-x-6 gap-y-3" style={{ gridTemplateColumns: `repeat(${section.columns}, 1fr)` }}>
+    ```
+- 条目内部标题与正文之间的细小间距：
+  - 现有规则 `.main .space-y-2 > * + * { margin-top: 3px !important; }` 可覆盖大多数由 `space-y-2` 带来的 `margin-top`，一般有效；但视觉上仍可能被上层 `gap-y-3` 的行间隙掩盖。
+
+后续可选对策（待确认再实施）
+- 取消主体列 Section 间距（等价移除 `space-y-4`）：
+  - 方案 A（较稳）：覆盖兄弟选择器的 `margin-top`，如：`.main .p-custom > section + section { margin-top: 0 !important; }`。
+  - 方案 B（更通用）：`.main .p-custom > :not([hidden]) ~ :not([hidden]) { margin-top: 0 !important; }`。
+- 减少 Section 内条目行与行的距离：
+  - 直接覆写条目容器的 row-gap：`.main section .grid { row-gap: 2px !important; }`（或更小/更大按需）。
+- 如需侧栏也同步减距：
+  - 追加侧栏容器：`.sidebar .p-custom > :not([hidden]) ~ :not([hidden]) { margin-top: 0 !important; }` 与/或 `.sidebar section .grid { row-gap: 2px !important; }`。
+
+建议下一步（待确认再实施）
+- 限缩全局颜色覆盖或去掉 `!important`，避免与主题色冲突。
+- 通过自定义字体上传或在 `metadata.typography.font.family` 中统一配置并加载 `'OPPO Sans 4.0'`，保证跨端一致性。
+- 使用 `section + section` 或覆盖 Tailwind `space-y-*` 生成的兄弟选择器来精确控制模块间距。
+
 # 项目分析日志（简要）
 
 - 日期：2025-08-09

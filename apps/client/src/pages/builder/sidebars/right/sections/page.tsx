@@ -1,5 +1,6 @@
 import { t } from "@lingui/macro";
 import {
+  Input,
   Label,
   Select,
   SelectContent,
@@ -16,7 +17,7 @@ import { SectionIcon } from "../shared/section-icon";
 
 export const PageSection = () => {
   const setValue = useResumeStore((state) => state.setValue);
-  const page = useResumeStore((state) => state.resume?.data?.metadata?.page);
+  const page = useResumeStore((state) => state.resume.data.metadata.page);
 
   if (!page) return null;
 
@@ -42,10 +43,73 @@ export const PageSection = () => {
               <SelectValue placeholder={t`Format`} />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="a3">{t`A3`}</SelectItem>
               <SelectItem value="a4">{t`A4`}</SelectItem>
+              <SelectItem value="b4">{t`B4`}</SelectItem>
+              <SelectItem value="b5">{t`B5`}</SelectItem>
               <SelectItem value="letter">{t`Letter`}</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label>{t`Orientation`}</Label>
+          <Select
+            value={page.orientation}
+            onValueChange={(value) => {
+              setValue("metadata.page.orientation", value);
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder={t`Orientation`} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="portrait">{t`Portrait`}</SelectItem>
+              <SelectItem value="landscape">{t`Landscape`}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-x-4">
+            <Switch
+              id="metadata.page.custom.enabled"
+              checked={page.custom?.enabled}
+              onCheckedChange={(checked) => {
+                setValue("metadata.page.custom.enabled", checked);
+              }}
+            />
+            <Label htmlFor="metadata.page.custom.enabled">{t`Custom size (mm)`}</Label>
+          </div>
+
+          {page.custom?.enabled && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>{t`Width (mm)`}</Label>
+                <Input
+                  type="number"
+                  value={page.custom?.width ?? 210}
+                  min={50}
+                  max={1000}
+                  onChange={(e) => {
+                    setValue("metadata.page.custom.width", Number(e.target.value));
+                  }}
+                />
+              </div>
+              <div>
+                <Label>{t`Height (mm)`}</Label>
+                <Input
+                  type="number"
+                  value={page.custom?.height ?? 297}
+                  min={50}
+                  max={1000}
+                  onChange={(e) => {
+                    setValue("metadata.page.custom.height", Number(e.target.value));
+                  }}
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="space-y-1.5">

@@ -314,6 +314,8 @@ export const sampleResume: ResumeData = {
     page: {
       margin: 14,
       format: "a4",
+      orientation: "portrait",
+      custom: { enabled: false, width: 210, height: 297 },
       options: {
         breakLine: true,
         pageNumbers: true,

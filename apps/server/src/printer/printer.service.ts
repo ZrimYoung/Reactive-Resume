@@ -4,6 +4,7 @@ import { ConfigService } from "@nestjs/config";
 import { ResumeDto } from "@reactive-resume/dto";
 import { defaultResumeData, type ResumeData } from "@reactive-resume/schema";
 import { ErrorMessage } from "@reactive-resume/utils";
+import { pageSizeMap } from "@reactive-resume/utils";
 import retry from "async-retry";
 import { PDFDocument } from "pdf-lib";
 import { Browser, launch } from "puppeteer";
@@ -176,7 +177,8 @@ export class PrinterService {
       }, resumeDataForPrint);
 
       await page.goto(`${url}/artboard/preview`, { waitUntil: "networkidle0" });
-      await page.emulateMediaType("screen");
+      // 使用打印媒体，保证与 PDF 渲染一致
+      await page.emulateMediaType("print");
 
       // 等待所有字体与图片资源加载完成，确保与 Artboard 视觉一致
       await page.evaluate(async () => {
@@ -210,14 +212,7 @@ export class PrinterService {
         await new Promise((resolve) => setTimeout(resolve, 300));
       });
 
-      // 追加仅用于打印的兜底样式，尽量避免内容被裁剪
-      await page.addStyleTag({
-        content: `
-          html, body { overflow: visible !important; height: auto !important; }
-          [data-page] { height: auto !important; min-height: auto !important; overflow: visible !important; }
-          [data-page] * { overflow: visible !important; }
-        `,
-      });
+      // 兜底样式已前移到前端（artboard），这里不再注入覆盖性样式，避免与用户自定义 CSS 冲突
 
       const pagesBuffer: Buffer[] = [];
 
@@ -236,37 +231,24 @@ export class PrinterService {
         // 稍作等待，确保样式生效与布局稳定
         await page.evaluate(() => new Promise((r) => setTimeout(r, 50)));
 
-        // 精确测量尺寸（包含文档层面的溢出高度，避免底部被裁剪）
-        const { width, height } = await page.evaluate(
-          (element: HTMLDivElement) => {
-            const rect = element.getBoundingClientRect();
-            const w = Math.ceil(
-              Math.max(
-                rect.width,
-                element.scrollWidth,
-                document.documentElement.scrollWidth,
-                document.body.scrollWidth,
-              ),
-            );
-            const h = Math.ceil(
-              Math.max(
-                rect.height,
-                element.scrollHeight,
-                document.documentElement.scrollHeight,
-                document.body.scrollHeight,
-              ) + 2,
-            );
-            return { width: w, height: h };
-          },
-          pageElement as unknown as HTMLDivElement,
-        );
+        // 以用户选择的页面规格固定输出尺寸（mm），确保为精确的 A4/Letter 物理尺寸
+        const orientation = resumeDataForPrint.metadata.page.orientation;
+        const format = resumeDataForPrint.metadata.page.format;
+        const mmWidthBase = resumeDataForPrint.metadata.page.custom.enabled
+          ? resumeDataForPrint.metadata.page.custom.width
+          : pageSizeMap[format].width;
+        const mmHeightBase = resumeDataForPrint.metadata.page.custom.enabled
+          ? resumeDataForPrint.metadata.page.custom.height
+          : pageSizeMap[format].height;
+        const mmWidth = orientation === "landscape" ? mmHeightBase : mmWidthBase;
+        const mmHeight = orientation === "landscape" ? mmWidthBase : mmHeightBase;
 
-        // 使用 Puppeteer 原生 PDF（矢量），以像素单位设定页面尺寸
         const uint8array = await page.pdf({
-          width: `${width}px`,
-          height: `${height}px`,
+          width: `${mmWidth}mm`,
+          height: `${mmHeight}mm`,
           printBackground: true,
-          preferCSSPageSize: true,
+          // 使用我们传入的物理尺寸，而不是依赖 CSS @page
+          preferCSSPageSize: false,
           margin: { top: "0px", right: "0px", bottom: "0px", left: "0px" },
         });
         const buffer = Buffer.from(uint8array);

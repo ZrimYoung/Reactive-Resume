@@ -76,7 +76,8 @@ export const FontUploadDialog = ({ isOpen, onClose, onSuccess }: FontUploadDialo
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
-      const files = [...e.dataTransfer.files];
+      // 使用扩展运算符将 FileList 转为数组，避免迭代器类型告警
+      const files = [...(e.dataTransfer.files as unknown as File[])];
       if (files.length > 0) {
         handleFileSelect(files[0]);
       }
@@ -195,7 +196,7 @@ export const FontUploadDialog = ({ isOpen, onClose, onSuccess }: FontUploadDialo
 
           {/* 文件上传区域 */}
           <div className="space-y-4">
-            <Label>{t`选择字体文件`}</Label>
+            <Label htmlFor="fontFile">{t`选择字体文件`}</Label>
 
             {selectedFile ? (
               <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
@@ -238,6 +239,9 @@ export const FontUploadDialog = ({ isOpen, onClose, onSuccess }: FontUploadDialo
                   type="file"
                   accept=".ttf,.otf,.woff,.woff2"
                   className="hidden"
+                  id="fontFile"
+                  aria-label={t`选择字体文件`}
+                  title={t`选择字体文件`}
                   onChange={handleFileInput}
                 />
               </div>

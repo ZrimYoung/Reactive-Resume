@@ -1,5 +1,9 @@
+import { t } from "@lingui/macro";
+import { SidebarSimple } from "@phosphor-icons/react";
+import { Outlet } from "react-router";
 import { useBreakpoint } from "@reactive-resume/hooks";
 import {
+  Button,
   Panel,
   PanelGroup,
   PanelResizeHandle,
@@ -11,7 +15,6 @@ import {
   VisuallyHidden,
 } from "@reactive-resume/ui";
 import { cn } from "@reactive-resume/utils";
-import { Outlet } from "react-router";
 
 import { useBuilderStore } from "@/client/stores/builder";
 
@@ -46,41 +49,83 @@ export const BuilderLayout = () => {
 
   const leftHandle = useBuilderStore((state) => state.panel.left.handle);
   const rightHandle = useBuilderStore((state) => state.panel.right.handle);
+  const leftCollapsed = useBuilderStore((state) => state.panel.left.collapsed);
+  const toggleLeftCollapsed = useBuilderStore((state) => state.panel.left.toggleCollapsed);
+  const rightCollapsed = useBuilderStore((state) => state.panel.right.collapsed);
+  const toggleRightCollapsed = useBuilderStore((state) => state.panel.right.toggleCollapsed);
 
   if (isDesktop) {
     return (
       <div className="relative size-full overflow-hidden">
         <PanelGroup direction="horizontal">
-          <Panel
-            minSize={25}
-            maxSize={45}
-            defaultSize={30}
-            className={cn("z-10 bg-background", !leftHandle.isDragging && "transition-[flex]")}
-            onResize={leftSetSize}
-          >
-            <LeftSidebar />
-          </Panel>
-          <PanelResizeHandle
-            isDragging={leftHandle.isDragging}
-            onDragging={leftHandle.setDragging}
-          />
+          {!leftCollapsed && (
+            <>
+              <Panel
+                minSize={25}
+                maxSize={45}
+                defaultSize={30}
+                className={cn("z-10 bg-background", !leftHandle.isDragging && "transition-[flex]")}
+                onResize={leftSetSize}
+              >
+                <LeftSidebar />
+              </Panel>
+              <PanelResizeHandle
+                isDragging={leftHandle.isDragging}
+                onDragging={leftHandle.setDragging}
+              />
+            </>
+          )}
           <Panel>
             <OutletSlot />
           </Panel>
-          <PanelResizeHandle
-            isDragging={rightHandle.isDragging}
-            onDragging={rightHandle.setDragging}
-          />
-          <Panel
-            minSize={25}
-            maxSize={45}
-            defaultSize={30}
-            className={cn("z-10 bg-background", !rightHandle.isDragging && "transition-[flex]")}
-            onResize={rightSetSize}
-          >
-            <RightSidebar />
-          </Panel>
+          {!rightCollapsed && (
+            <>
+              <PanelResizeHandle
+                isDragging={rightHandle.isDragging}
+                onDragging={rightHandle.setDragging}
+              />
+              <Panel
+                minSize={25}
+                maxSize={45}
+                defaultSize={30}
+                className={cn("z-10 bg-background", !rightHandle.isDragging && "transition-[flex]")}
+                onResize={rightSetSize}
+              >
+                <RightSidebar />
+              </Panel>
+            </>
+          )}
         </PanelGroup>
+
+        {leftCollapsed && (
+          <div className="pointer-events-none absolute left-2 top-20 z-30 hidden lg:block">
+            <div className="pointer-events-auto rounded-md bg-secondary-accent/50 backdrop-blur-md">
+              <Button
+                size="icon"
+                variant="ghost"
+                aria-label={t`Expand Left Sidebar`}
+                onClick={toggleLeftCollapsed}
+              >
+                <SidebarSimple />
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {rightCollapsed && (
+          <div className="pointer-events-none absolute right-2 top-20 z-30 hidden lg:block">
+            <div className="pointer-events-auto rounded-md bg-secondary-accent/50 backdrop-blur-md">
+              <Button
+                size="icon"
+                variant="ghost"
+                aria-label={t`Expand Right Sidebar`}
+                onClick={toggleRightCollapsed}
+              >
+                <SidebarSimple />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     );
   }

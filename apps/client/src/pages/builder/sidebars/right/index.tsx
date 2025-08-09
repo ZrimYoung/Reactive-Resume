@@ -54,16 +54,7 @@ export const RightSidebar = () => {
       </ScrollArea>
 
       <div className="hidden basis-12 flex-col items-center justify-between bg-secondary-accent/30 py-4 sm:flex">
-        <div>
-          <Button
-            size="icon"
-            variant="ghost"
-            aria-label={t`Collapse Right Sidebar`}
-            onClick={toggleRightCollapsed}
-          >
-            <SidebarSimple className="-scale-x-100" />
-          </Button>
-        </div>
+        <div />
 
         <div className="flex flex-col items-center justify-center gap-y-2">
           <SectionIcon

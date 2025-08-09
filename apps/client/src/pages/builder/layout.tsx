@@ -1,6 +1,5 @@
 import { t } from "@lingui/macro";
 import { SidebarSimple } from "@phosphor-icons/react";
-import { Outlet } from "react-router";
 import { useBreakpoint } from "@reactive-resume/hooks";
 import {
   Button,
@@ -15,6 +14,7 @@ import {
   VisuallyHidden,
 } from "@reactive-resume/ui";
 import { cn } from "@reactive-resume/utils";
+import { Outlet } from "react-router";
 
 import { useBuilderStore } from "@/client/stores/builder";
 
@@ -97,35 +97,31 @@ export const BuilderLayout = () => {
           )}
         </PanelGroup>
 
-        {leftCollapsed && (
-          <div className="pointer-events-none absolute left-2 top-20 z-30 hidden lg:block">
-            <div className="pointer-events-auto rounded-md bg-secondary-accent/50 backdrop-blur-md">
-              <Button
-                size="icon"
-                variant="ghost"
-                aria-label={t`Expand Left Sidebar`}
-                onClick={toggleLeftCollapsed}
-              >
-                <SidebarSimple />
-              </Button>
-            </div>
+        <div className="pointer-events-none absolute left-2 top-20 z-30 hidden lg:block">
+          <div className="pointer-events-auto rounded-md bg-secondary-accent/50 backdrop-blur-md">
+            <Button
+              size="icon"
+              variant="ghost"
+              aria-label={leftCollapsed ? t`Expand Left Sidebar` : t`Collapse Left Sidebar`}
+              onClick={toggleLeftCollapsed}
+            >
+              <SidebarSimple />
+            </Button>
           </div>
-        )}
+        </div>
 
-        {rightCollapsed && (
-          <div className="pointer-events-none absolute right-2 top-20 z-30 hidden lg:block">
-            <div className="pointer-events-auto rounded-md bg-secondary-accent/50 backdrop-blur-md">
-              <Button
-                size="icon"
-                variant="ghost"
-                aria-label={t`Expand Right Sidebar`}
-                onClick={toggleRightCollapsed}
-              >
-                <SidebarSimple />
-              </Button>
-            </div>
+        <div className="pointer-events-none absolute right-2 top-20 z-30 hidden lg:block">
+          <div className="pointer-events-auto rounded-md bg-secondary-accent/50 backdrop-blur-md">
+            <Button
+              size="icon"
+              variant="ghost"
+              aria-label={rightCollapsed ? t`Expand Right Sidebar` : t`Collapse Right Sidebar`}
+              onClick={toggleRightCollapsed}
+            >
+              <SidebarSimple className="-scale-x-100" />
+            </Button>
           </div>
-        )}
+        </div>
       </div>
     );
   }

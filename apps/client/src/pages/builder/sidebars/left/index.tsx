@@ -1,5 +1,5 @@
 import { t } from "@lingui/macro";
-import { Plus, PlusCircle, SidebarSimple } from "@phosphor-icons/react";
+import { Plus, PlusCircle } from "@phosphor-icons/react";
 import type {
   Award,
   Certification,
@@ -17,12 +17,10 @@ import type {
 } from "@reactive-resume/schema";
 import { Button, ScrollArea, Separator } from "@reactive-resume/ui";
 import { Fragment, useRef } from "react";
-import { Link } from "react-router";
 
-import { Icon } from "@/client/components/icon";
 import { UserAvatar } from "@/client/components/user-avatar";
 import { UserOptions } from "@/client/components/user-options";
-import { useBuilderStore } from "@/client/stores/builder";
+// import { useBuilderStore } from "@/client/stores/builder";
 import { useResumeStore } from "@/client/stores/resume";
 
 import { BasicsSection } from "./sections/basics";
@@ -32,7 +30,7 @@ import { SummarySection } from "./sections/summary";
 
 export const LeftSidebar = () => {
   const containterRef = useRef<HTMLDivElement | null>(null);
-  const toggleLeftCollapsed = useBuilderStore((state) => state.panel.left.toggleCollapsed);
+  // const toggleLeftCollapsed = useBuilderStore((state) => state.panel.left.toggleCollapsed);
 
   const addSection = useResumeStore((state) => state.addSection);
   const customSections = useResumeStore((state) => state.resume.data.sections.custom);
@@ -45,22 +43,7 @@ export const LeftSidebar = () => {
   return (
     <div className="flex bg-secondary-accent/30">
       <div className="hidden basis-12 flex-col items-center justify-between bg-secondary-accent/30 py-4 sm:flex">
-        <div>
-          <Button
-            size="icon"
-            variant="ghost"
-            aria-label={t`Collapse Left Sidebar`}
-            onClick={toggleLeftCollapsed}
-          >
-            <SidebarSimple />
-          </Button>
-        </div>
-
-        <Button asChild size="icon" variant="ghost" className="size-8 rounded-full">
-          <Link to="/dashboard">
-            <Icon size={14} />
-          </Link>
-        </Button>
+        <div />
 
         <div className="flex flex-col items-center justify-center gap-y-2">
           <SectionIcon

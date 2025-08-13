@@ -58,43 +58,41 @@ export const BuilderLayout = () => {
     return (
       <div className="relative size-full overflow-hidden">
         <PanelGroup direction="horizontal">
+          <Panel
+            key={leftCollapsed ? "left-collapsed" : "left-expanded"}
+            minSize={leftCollapsed ? 0 : 25}
+            maxSize={leftCollapsed ? 0 : 45}
+            defaultSize={leftCollapsed ? 0 : 30}
+            className={cn("z-10 bg-background", !leftHandle.isDragging && "transition-[flex]")}
+            onResize={leftSetSize}
+          >
+            {!leftCollapsed && <LeftSidebar />}
+          </Panel>
           {!leftCollapsed && (
-            <>
-              <Panel
-                minSize={25}
-                maxSize={45}
-                defaultSize={30}
-                className={cn("z-10 bg-background", !leftHandle.isDragging && "transition-[flex]")}
-                onResize={leftSetSize}
-              >
-                <LeftSidebar />
-              </Panel>
-              <PanelResizeHandle
-                isDragging={leftHandle.isDragging}
-                onDragging={leftHandle.setDragging}
-              />
-            </>
+            <PanelResizeHandle
+              isDragging={leftHandle.isDragging}
+              onDragging={leftHandle.setDragging}
+            />
           )}
           <Panel>
             <OutletSlot />
           </Panel>
           {!rightCollapsed && (
-            <>
-              <PanelResizeHandle
-                isDragging={rightHandle.isDragging}
-                onDragging={rightHandle.setDragging}
-              />
-              <Panel
-                minSize={25}
-                maxSize={45}
-                defaultSize={30}
-                className={cn("z-10 bg-background", !rightHandle.isDragging && "transition-[flex]")}
-                onResize={rightSetSize}
-              >
-                <RightSidebar />
-              </Panel>
-            </>
+            <PanelResizeHandle
+              isDragging={rightHandle.isDragging}
+              onDragging={rightHandle.setDragging}
+            />
           )}
+          <Panel
+            key={rightCollapsed ? "right-collapsed" : "right-expanded"}
+            minSize={rightCollapsed ? 0 : 25}
+            maxSize={rightCollapsed ? 0 : 45}
+            defaultSize={rightCollapsed ? 0 : 30}
+            className={cn("z-10 bg-background", !rightHandle.isDragging && "transition-[flex]")}
+            onResize={rightSetSize}
+          >
+            {!rightCollapsed && <RightSidebar />}
+          </Panel>
         </PanelGroup>
 
         <div className="pointer-events-none absolute left-2 top-20 z-30 hidden lg:block">

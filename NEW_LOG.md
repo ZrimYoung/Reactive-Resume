@@ -275,3 +275,41 @@
 - `pageRanges: "1"`：只导出第 1 页（页码从 1 开始）。
 - 可用示例：`"1-3,5,7-9"` 表示导出第 1 至 3、5、7 至 9 页。
 - 若希望导出所有页：删除该参数或留空（即不传 `pageRanges`）。
+ - 若希望导出所有页：删除该参数或留空（即不传 `pageRanges`）。
+
+2025-08-13 Electron 打包后后端无法启动的定位与修复（已修改）
+
+- 已做工作
+  - 在 `electron.js` 中为后端子进程补齐 `NODE_PATH`（新增包含路径）：
+    - `resources/app.asar/node_modules`
+    - `resources/app.asar.unpacked/node_modules`
+    - `userData/node_modules`（已存在）
+    - `resources/app.asar.unpacked/node_modules/.prisma/client`
+  - 目的：确保子进程可解析 `@nestjs/*`、`@prisma/*` 等依赖，解决打包后 `Cannot find module` 类错误。
+- 验证
+  - 已执行：`pnpm run preelectron:build`（准备 Puppeteer + Nx 构建）、`pnpm run electron:build`（dir 目标，生成 win-unpacked）。
+  - 已启动最新 `win-unpacked/Reactive Resume.exe` 进行本地验证（观察日志中）。
+- 下一步建议
+  - 若仍出现后端启动异常，请检查 `%AppData%/Reactive Resume/logs/backend.log` 与 `electron-main.log`。
+  - 如遇 Prisma 引擎错误，确认 `asarUnpack` 已包含 `@prisma/engines` 与 `.prisma/client`，以及主进程设置的 `PRISMA_ENGINES_*` 环境变量是否生效。
+
+2025-08-13 修复 Prisma 引擎类型导致后端崩溃（已修改）
+
+- 现象
+  - 打包后应用启动时，后端子进程秒退，前端显示“无法连接服务器”。
+  - `backend.log` 报错：Invalid client engine type, please use `library` or `binary`。
+- 根因
+  - 主进程为后端子进程设置了 `PRISMA_CLIENT_ENGINE_TYPE=binary`，而 Prisma 5 客户端在本地 Node 环境需要使用 `library`（Node-API）。
+- 修改
+  - `electron.js`：将 `childEnv.PRISMA_CLIENT_ENGINE_TYPE` 从 `'binary'` 改为 `'library'`（保持 `PRISMA_QUERY_ENGINE_LIBRARY` 指向 unpacked 的 dll）。
+- 影响
+  - 后端将以 Prisma LibraryEngine 运行，避免初始化时抛出“Invalid client engine type”并退出。
+- 追加修复（Windows 文件名校正）
+  - 发现 Prisma 在 Windows 下的 Node-API 库文件实际为 `query_engine-windows.dll.node`（无 `lib` 前缀）。
+  - 将 `electron.js` 中 `PRISMA_QUERY_ENGINE_LIBRARY` 从 `libquery_engine-windows.dll.node` 修正为 `query_engine-windows.dll.node`，与打包产物一致。
+- 验证步骤（PowerShell）
+  - 执行：`pnpm run preelectron:dist`
+  - 执行：`pnpm run electron:dist`
+  - 启动打包产物后检查日志：
+    - `%APPDATA%/\@reactive-resume/source/logs/backend.log` 应出现 Nest 启动完成日志与监听端口。
+    - `%APPDATA%/\@reactive-resume/source/logs/electron-main.log` 不再出现 60 次轮询失败。

@@ -21,7 +21,7 @@ export type UploadType = ImageUploadType | DocumentUploadType | FontUploadType;
 @Injectable()
 export class StorageService implements OnModuleInit {
   private readonly logger = new Logger(StorageService.name);
-  private readonly storageRoot = "./storage";
+  private readonly storageRoot = process.env.STORAGE_DIR || path.join(process.cwd(), "storage");
 
   constructor(private readonly configService: ConfigService) {}
 

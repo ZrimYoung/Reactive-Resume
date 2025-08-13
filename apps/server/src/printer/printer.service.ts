@@ -31,7 +31,9 @@ export class PrinterService {
       if (!this.browser?.connected) {
         this.logger.log("启动本地 Puppeteer 浏览器实例...");
 
-        this.browser = await launch({
+        const chromePath =
+          process.env.CHROME_PATH || process.env.PUPPETEER_EXECUTABLE_PATH || undefined;
+        const launchOptions: Parameters<typeof launch>[0] = {
           headless: true,
           args: [
             "--no-sandbox",
@@ -47,7 +49,14 @@ export class PrinterService {
             "--disable-features=TranslateUI",
             "--disable-ipc-flooding-protection",
           ],
-        });
+        };
+
+        if (chromePath) {
+          this.logger.log(`使用指定的 Chrome 可执行文件: ${chromePath}`);
+          (launchOptions as any).executablePath = chromePath;
+        }
+
+        this.browser = await launch(launchOptions);
 
         this.logger.log("Puppeteer 浏览器实例已启动");
       }

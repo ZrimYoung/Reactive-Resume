@@ -63,3 +63,4 @@ tools/prisma/local-resume.db-journal
 
 tools/prisma/migrations/
 test/
+tools/puppeteer/cache/*

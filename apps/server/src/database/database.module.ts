@@ -12,8 +12,8 @@ import {
       isGlobal: true,
       useFactory: () => ({
         prismaOptions: { 
-          // 使用本地 SQLite 数据库，不再依赖环境变量
-          datasourceUrl: "file:./local-resume.db" 
+          // 优先使用外部注入的 DATABASE_URL（Electron 主进程在生产态设置），否则回退到相对路径
+          datasourceUrl: process.env.DATABASE_URL ?? "file:./local-resume.db"
         },
         middlewares: [
           loggingMiddleware({

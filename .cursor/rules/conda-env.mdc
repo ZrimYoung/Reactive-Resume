@@ -1,0 +1,4 @@
+---
+alwaysApply: true
+---
+use 'resume' as the default conda environment.

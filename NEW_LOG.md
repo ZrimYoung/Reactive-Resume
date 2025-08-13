@@ -1,3 +1,14 @@
+- 2025-08-13 修复编辑器双侧折叠导致画布与按钮消失问题：
+  - 保持左右 `Panel` 始终渲染，折叠时宽度设为 1%，避免 `PanelGroup` 仅剩单面板引发行为异常（编辑 `apps/client/src/pages/builder/layout.tsx`）。
+  - 两个 `PanelResizeHandle` 始终存在，确保面板结构完整；中间 `Panel` 的默认宽度根据左右面板尺寸动态计算。
+  - 提升左右浮动折叠按钮的层级至 `z-[70]`，防止被内容遮挡。
+  - 将编辑器 iframe 宽度由 `w-screen` 调整为 `w-full`（编辑 `apps/client/src/pages/builder/page.tsx`），避免布局溢出导致的异常。
+  - 通过 ESLint 校验，无新增告警/错误。
+
+下一步建议：
+- 将左右折叠状态持久化到本地存储以增强体验；
+- 如果需要折叠状态下允许通过拖拽恢复宽度，可将折叠宽度从 1% 改为更易命中的最小宽度并提供 hover 提示；
+- 补充 e2e 用例覆盖“依次折叠左右侧栏”的场景。
 2025-08-09 自定义 CSS 检查（不修改）
 
 - 目标：检查 `test/reactive_resume-cme335lt200019nyw3uvgteil (4).json` 中 `metadata.css.value` 的选择器是否匹配 Gengar 模板，验证 CSS 注入逻辑。

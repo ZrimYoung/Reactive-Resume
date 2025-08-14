@@ -66,15 +66,15 @@ export class ResumeService {
       // 确保数据结构完整，合并默认值
       const safeData = {
         ...parsedData,
-        basics: parsedData.basics || {},
-        sections: parsedData.sections || {},
+        basics: parsedData.basics,
+        sections: parsedData.sections,
         metadata: {
           ...defaultMetadata,
           ...parsedData.metadata,
           css: {
             ...defaultMetadata.css,
             ...parsedData.metadata.css,
-            visible: parsedData.metadata.css.visible ?? false,
+            visible: parsedData.metadata.css.visible,
           },
           typography: {
             ...defaultMetadata.typography,
@@ -259,16 +259,27 @@ export class ResumeService {
   }
 
   async remove(userId: string, id: string) {
+    // 先获取记录以确定实际的 PDF 文件名（打印时使用 slugify(title) 作为文件名）
+    const { title, slug } = await this.prisma.resume.findUniqueOrThrow({
+      where: { userId_id: { userId, id } },
+      select: { title: true, slug: true },
+    });
+
+    const titleSlug = slugify(title);
+    const candidates = [...new Set([titleSlug, slug, id].filter(Boolean))] as string[];
+
     await Promise.all([
-      // Remove files in storage, and their cached keys
-      this.storageService.deleteObject(userId, "resumes", id),
+      // 预览文件名固定为 id
       this.storageService.deleteObject(userId, "previews", id),
+      // PDF 可能历史上用过不同命名：slugify(title) / slug / id，全部尝试删除；
+      // StorageService.deleteObject 已忽略不存在文件（force: true）
+      ...candidates.map((name) => this.storageService.deleteObject(userId, "resumes", name)),
     ]);
 
     return this.prisma.resume.delete({ where: { userId_id: { userId, id } } });
   }
 
-  async printResume(resume: ResumeDto, userId?: string) {
+  async printResume(resume: ResumeDto) {
     const url = await this.printerService.printResume(resume);
     return url;
   }

@@ -118,8 +118,9 @@ export class StorageService implements OnModuleInit {
     const filepath = this.getSafePath(userId, type, finalFilename);
 
     try {
-      await fs.unlink(filepath);
-      this.logger.log(`文件删除成功: ${filepath}`);
+      // 使用 rm 并强制删除，不存在时不抛错（等价于忽略 ENOENT）
+      await fs.rm(filepath, { force: true });
+      this.logger.log(`文件删除成功或不存在（已忽略）: ${filepath}`);
     } catch (error) {
       this.logger.error(`文件删除失败: ${filepath}`, error);
       throw new InternalServerErrorException(`文件删除失败: ${filepath}`);

@@ -35,11 +35,8 @@ export class FontController {
         data: result,
       };
     } catch (error) {
-      return {
-        success: false,
-        message: error.message || "字体上传失败",
-        data: null,
-      };
+      const message = error instanceof Error ? error.message : "字体上传失败";
+      return { success: false, message, data: null };
     }
   }
 

@@ -11,14 +11,14 @@ const uploadFontSchema = z.object({
 export class UploadFontDto extends createZodDto(uploadFontSchema) {}
 
 export class FontResponseDto {
-  id: string;
-  fontFamily: string;
-  category: string;
-  originalName: string;
-  fileSize: number;
-  format: string;
-  url: string;
-  uploadedAt: string;
-  userId: string;
+  id!: string;
+  fontFamily!: string;
+  category!: string;
+  originalName!: string;
+  fileSize!: number;
+  format!: string;
+  url!: string;
+  uploadedAt!: string;
+  userId!: string;
   variableFont?: VariableFontInfo;
 }

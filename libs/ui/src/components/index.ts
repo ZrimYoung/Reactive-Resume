@@ -5,6 +5,7 @@ export * from "./aspect-ratio";
 export * from "./avatar";
 export * from "./badge";
 export * from "./badge-input";
+export * from "./brand-icon";
 export * from "./button";
 export * from "./card";
 export * from "./checkbox";

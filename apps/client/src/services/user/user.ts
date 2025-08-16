@@ -1,29 +1,37 @@
-// 本地用户服务 - 不再依赖服务器
 import { detect, fromStorage } from "@lingui/detect-locale";
+import type { UserDto } from "@reactive-resume/dto";
+import { useQuery } from "@tanstack/react-query";
 
+import { USER_KEY } from "@/client/constants/query-keys";
+import { axios } from "@/client/libs/axios";
 import { defaultLocale } from "@/client/libs/lingui";
 
 const detectedLocale = detect(fromStorage("locale"), defaultLocale) ?? defaultLocale;
 
-// 将用户对象定义为常量，确保其在多次调用之间保持稳定
-const localUser = {
-  id: "local-user",
-  name: "Local User", // eslint-disable-line lingui/no-unlocalized-strings
-  email: "local@example.com",
-  username: "local-user",
-  locale: detectedLocale,
-};
-
-export const fetchUser = () => {
-  // 返回稳定的本地用户数据
-  return localUser;
+export const fetchUser = async (): Promise<UserDto> => {
+  const response = await axios.get<UserDto>("/user/me");
+  return response.data;
 };
 
 export const useUser = () => {
-  // 直接返回稳定的本地用户数据，不需要查询服务器
-  return {
-    user: localUser,
-    loading: false,
-    error: null,
-  };
+  const {
+    data,
+    isPending: loading,
+    error,
+  } = useQuery<UserDto>({
+    queryKey: USER_KEY,
+    queryFn: fetchUser,
+    placeholderData: () => ({
+      // 使用与服务端一致的本地用户标识，避免前后端不一致
+      id: "local-user-id",
+      name: "本地用户",
+      email: "local@example.com",
+      username: "local-user",
+      locale: detectedLocale,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }),
+  });
+
+  return { user: data, loading, error };
 };

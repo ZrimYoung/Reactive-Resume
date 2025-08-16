@@ -14,10 +14,10 @@ export class StorageHealthIndicator extends HealthIndicator {
 
   isHealthy(): HealthIndicatorResult {
     try {
-      // 检查本地存储目录是否存在
-      const uploadsDir = path.join(process.cwd(), "uploads");
-      if (!fs.existsSync(uploadsDir)) {
-        fs.mkdirSync(uploadsDir, { recursive: true });
+      // 检查本地存储目录是否存在（与 StorageService 保持一致）
+      const storageDir = process.env.STORAGE_DIR || path.join(process.cwd(), "storage");
+      if (!fs.existsSync(storageDir)) {
+        fs.mkdirSync(storageDir, { recursive: true });
       }
 
       return this.getStatus("storage", true);

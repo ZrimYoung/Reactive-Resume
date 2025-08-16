@@ -15,7 +15,8 @@ export class BrowserHealthIndicator extends HealthIndicator {
 
       return this.getStatus("browser", true, { version });
     } catch (error) {
-      return this.getStatus("browser", false, { message: error.message });
+      const message = error instanceof Error ? error.message : String(error);
+      return this.getStatus("browser", false, { message });
     }
   }
 }

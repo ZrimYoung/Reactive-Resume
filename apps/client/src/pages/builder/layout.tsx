@@ -1,5 +1,8 @@
+import { t } from "@lingui/macro";
+import { SidebarSimple } from "@phosphor-icons/react";
 import { useBreakpoint } from "@reactive-resume/hooks";
 import {
+  Button,
   Panel,
   PanelGroup,
   PanelResizeHandle,
@@ -46,25 +49,36 @@ export const BuilderLayout = () => {
 
   const leftHandle = useBuilderStore((state) => state.panel.left.handle);
   const rightHandle = useBuilderStore((state) => state.panel.right.handle);
+  // const leftSize = useBuilderStore((state) => state.panel.left.size);
+  // const rightSize = useBuilderStore((state) => state.panel.right.size);
+  const leftCollapsed = useBuilderStore((state) => state.panel.left.collapsed);
+  const toggleLeftCollapsed = useBuilderStore((state) => state.panel.left.toggleCollapsed);
+  const rightCollapsed = useBuilderStore((state) => state.panel.right.collapsed);
+  const toggleRightCollapsed = useBuilderStore((state) => state.panel.right.toggleCollapsed);
 
   if (isDesktop) {
     return (
       <div className="relative size-full overflow-hidden">
-        <PanelGroup direction="horizontal">
+        <PanelGroup id="builder-panels" direction="horizontal">
           <Panel
-            minSize={25}
-            maxSize={45}
+            id="left-panel"
+            minSize={leftCollapsed ? 1 : 25}
+            maxSize={leftCollapsed ? 1 : 45}
             defaultSize={30}
-            className={cn("z-10 bg-background", !leftHandle.isDragging && "transition-[flex]")}
+            className={cn(
+              "z-10",
+              !leftCollapsed && "bg-background",
+              !leftHandle.isDragging && "transition-[flex]",
+            )}
             onResize={leftSetSize}
           >
-            <LeftSidebar />
+            {!leftCollapsed && <LeftSidebar />}
           </Panel>
           <PanelResizeHandle
             isDragging={leftHandle.isDragging}
             onDragging={leftHandle.setDragging}
           />
-          <Panel>
+          <Panel id="center-panel" minSize={10} className="relative">
             <OutletSlot />
           </Panel>
           <PanelResizeHandle
@@ -72,15 +86,46 @@ export const BuilderLayout = () => {
             onDragging={rightHandle.setDragging}
           />
           <Panel
-            minSize={25}
-            maxSize={45}
+            id="right-panel"
+            minSize={rightCollapsed ? 1 : 25}
+            maxSize={rightCollapsed ? 1 : 45}
             defaultSize={30}
-            className={cn("z-10 bg-background", !rightHandle.isDragging && "transition-[flex]")}
+            className={cn(
+              "z-10",
+              !rightCollapsed && "bg-background",
+              !rightHandle.isDragging && "transition-[flex]",
+            )}
             onResize={rightSetSize}
           >
-            <RightSidebar />
+            {!rightCollapsed && <RightSidebar />}
           </Panel>
         </PanelGroup>
+
+        <div className="pointer-events-none absolute left-2 top-20 z-[70] hidden lg:block">
+          <div className="pointer-events-auto rounded-md bg-secondary-accent/50 backdrop-blur-md">
+            <Button
+              size="icon"
+              variant="ghost"
+              aria-label={leftCollapsed ? t`Expand Left Sidebar` : t`Collapse Left Sidebar`}
+              onClick={toggleLeftCollapsed}
+            >
+              <SidebarSimple />
+            </Button>
+          </div>
+        </div>
+
+        <div className="pointer-events-none absolute right-2 top-20 z-[70] hidden lg:block">
+          <div className="pointer-events-auto rounded-md bg-secondary-accent/50 backdrop-blur-md">
+            <Button
+              size="icon"
+              variant="ghost"
+              aria-label={rightCollapsed ? t`Expand Right Sidebar` : t`Collapse Right Sidebar`}
+              onClick={toggleRightCollapsed}
+            >
+              <SidebarSimple className="-scale-x-100" />
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }

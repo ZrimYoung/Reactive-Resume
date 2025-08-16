@@ -5,6 +5,8 @@
     "sourceMap": true,
     "declaration": false,
     "importHelpers": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
     "strictNullChecks": true,
     "moduleResolution": "node",
     "emitDecoratorMetadata": true,

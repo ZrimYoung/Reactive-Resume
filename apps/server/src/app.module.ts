@@ -1,13 +1,11 @@
 import path from "node:path";
 
-import { HttpException, Module } from "@nestjs/common";
-import { APP_INTERCEPTOR, APP_PIPE } from "@nestjs/core";
+import { Module } from "@nestjs/common";
+import { APP_PIPE } from "@nestjs/core";
 import { ServeStaticModule } from "@nestjs/serve-static";
-import { RavenInterceptor, RavenModule } from "nest-raven";
 import { ZodValidationPipe } from "nestjs-zod";
 
 import { ConfigModule } from "./config/config.module";
-import { ContributorsModule } from "./contributors/contributors.module";
 import { DatabaseModule } from "./database/database.module";
 import { FontModule } from "./font/font.module";
 import { HealthModule } from "./health/health.module";
@@ -17,21 +15,28 @@ import { StorageModule } from "./storage/storage.module";
 import { TranslationModule } from "./translation/translation.module";
 import { UserModule } from "./user/user.module";
 
-// 只在生产环境下配置静态文件服务
+// 只在生产环境下配置静态文件服务，并兼容 Electron asar 打包路径
+function resolveStaticRoot(relative: string): string {
+  const electronResources = process.env.ELECTRON_RESOURCES_PATH;
+  if (electronResources) {
+    // 由 Electron 主进程传入的 resources 路径
+    return path.join(electronResources, "app.asar.unpacked", "dist", "apps", relative);
+  }
+  // 本地/开发构建或非 Electron 运行时
+  // eslint-disable-next-line unicorn/prefer-module
+  return path.join(__dirname, "..", relative);
+}
+
 const staticFileModules =
   process.env.NODE_ENV === "production"
     ? [
-        // Static Assets for Artboard
         ServeStaticModule.forRoot({
           serveRoot: "/artboard",
-          // eslint-disable-next-line unicorn/prefer-module
-          rootPath: path.join(__dirname, "..", "artboard"),
+          rootPath: resolveStaticRoot("artboard"),
         }),
-        // Static Assets for Client
         ServeStaticModule.forRoot({
           renderPath: "/*",
-          // eslint-disable-next-line unicorn/prefer-module
-          rootPath: path.join(__dirname, "..", "client"),
+          rootPath: resolveStaticRoot("client"),
         }),
       ]
     : [];
@@ -41,7 +46,6 @@ const staticFileModules =
     // Core Modules
     ConfigModule,
     DatabaseModule,
-    RavenModule,
     HealthModule,
 
     // Feature Modules
@@ -51,7 +55,6 @@ const staticFileModules =
     FontModule,
     PrinterModule,
     TranslationModule,
-    ContributorsModule,
 
     // Static Assets (仅在生产环境)
     ...staticFileModules,
@@ -60,18 +63,6 @@ const staticFileModules =
     {
       provide: APP_PIPE,
       useClass: ZodValidationPipe,
-    },
-    {
-      provide: APP_INTERCEPTOR,
-      useValue: new RavenInterceptor({
-        filters: [
-          // Filter all HttpException with status code <= 500
-          {
-            type: HttpException,
-            filter: (exception: HttpException) => exception.getStatus() < 500,
-          },
-        ],
-      }),
     },
   ],
 })

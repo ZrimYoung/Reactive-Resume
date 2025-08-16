@@ -1,9 +1,11 @@
 import { t } from "@lingui/macro";
-import { ScrollArea, Separator } from "@reactive-resume/ui";
+import { SidebarSimple } from "@phosphor-icons/react";
+import { Button, ScrollArea, Separator } from "@reactive-resume/ui";
 import { useRef } from "react";
 
 import { Copyright } from "@/client/components/copyright";
 import { ThemeSwitch } from "@/client/components/theme-switch";
+import { useBuilderStore } from "@/client/stores/builder";
 
 import { CssSection } from "./sections/css";
 import { ExportSection } from "./sections/export";
@@ -18,6 +20,7 @@ import { SectionIcon } from "./shared/section-icon";
 
 export const RightSidebar = () => {
   const containterRef = useRef<HTMLDivElement | null>(null);
+  const toggleRightCollapsed = useBuilderStore((state) => state.panel.right.toggleCollapsed);
 
   const scrollIntoView = (selector: string) => {
     const section = containterRef.current?.querySelector(selector);

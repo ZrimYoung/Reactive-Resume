@@ -15,6 +15,9 @@ type Panel = {
   size: number;
   setSize: (size: number) => void;
   handle: PanelHandle;
+  collapsed: boolean;
+  setCollapsed: (collapsed: boolean) => void;
+  toggleCollapsed: () => void;
 };
 
 type BuilderState = {
@@ -81,6 +84,17 @@ export const useBuilderStore = create<BuilderState & BuilderActions>()(
             });
           },
         },
+        collapsed: false,
+        setCollapsed: (collapsed) => {
+          set((state) => {
+            state.panel.left.collapsed = collapsed;
+          });
+        },
+        toggleCollapsed: () => {
+          set((state) => {
+            state.panel.left.collapsed = !state.panel.left.collapsed;
+          });
+        },
       },
       right: {
         size: 0,
@@ -96,6 +110,17 @@ export const useBuilderStore = create<BuilderState & BuilderActions>()(
               state.panel.right.handle.isDragging = dragging;
             });
           },
+        },
+        collapsed: false,
+        setCollapsed: (collapsed) => {
+          set((state) => {
+            state.panel.right.collapsed = collapsed;
+          });
+        },
+        toggleCollapsed: () => {
+          set((state) => {
+            state.panel.right.collapsed = !state.panel.right.collapsed;
+          });
         },
       },
     },

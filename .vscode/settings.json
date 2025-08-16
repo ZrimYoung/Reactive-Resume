@@ -7,5 +7,16 @@
     ["cn\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"]
   ],
   "python.pythonPath": "C:\\Users\\Zrim\\anaconda3\\envs\\resume\\python.exe",
-  "nxConsole.generateAiAgentRules": true
+  "nxConsole.generateAiAgentRules": true,
+  "terminal.integrated.profiles.windows": {
+    "Conda (resume)": {
+      "source": "PowerShell",
+      "args": [
+        "-NoExit",
+        "-Command",
+        "conda activate resume"
+      ]
+    }
+  },
+  "terminal.integrated.defaultProfile.windows": "Conda (resume)"
 }

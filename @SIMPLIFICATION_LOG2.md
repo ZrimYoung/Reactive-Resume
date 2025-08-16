@@ -69,3 +69,26 @@
 - 测试导入旧版JSON文件是否不再出现错误
 - 如有需要，可以考虑添加更多图片格式支持（目前强制转换为JPG）
 - 考虑添加图片压缩和尺寸优化功能 
+ 
+### 4. 架构梳理 ✅
+- Nx 工作区（Nx 19.8.14，包管理使用 pnpm），采用 apps + libs 的模块化单仓结构
+- Apps：
+  - `apps/client`：React + Vite 主应用，负责简历编辑、账户与仪表盘、国际化与网络请求
+  - `apps/artboard`：React + Vite 画板/模板渲染应用，专注简历模板预览与前端排版
+  - `apps/server`：NestJS 后端 API，模块化（`resume`/`printer`/`font`/`translation`/`contributors`/`health`/`user` 等），对接数据库与文件系统
+- Libs（可被多端复用）：
+  - `libs/dto`：前后端共享的 DTO 与类型
+  - `libs/schema`：简历领域数据结构与校验 schema
+  - `libs/parser`：外部数据解析（LinkedIn / JSON Resume / v3 迁移等）
+  - `libs/ui`：跨应用复用的 UI 组件库
+  - `libs/utils`：工具方法与通用命名空间
+  - `libs/hooks`：React Hooks 集合
+- 基建：
+  - Prisma（`tools/prisma`）管理数据库 schema、迁移与种子数据
+  - 前端样式：Tailwind/PostCSS；国际化：Lingui（多语言 `.po` 文件）
+- 关键数据流：`client`/`artboard` →（REST/JSON）→ `server` →（Prisma）→ 数据库；PDF 由 `server/printer` 生成，`artboard` 负责前端模板预览
+
+## 建议的下一步
+- 用 Nx project graph 明确依赖边界并配置 tags 限制跨层依赖
+- 在 CI 中增加 schema/DTO 兼容性与类型检查
+- 为打印与导入链路添加端到端用例（包含字体与图片资源）

@@ -32,9 +32,12 @@
     "electron": "concurrently \"pnpm dev\" \"wait-on http://localhost:5173 http://localhost:3000 && .\\node_modules\\.bin\\electron.CMD electron.js\"",
     "electron:dev": "concurrently \"pnpm dev\" \"wait-on http://localhost:5173 http://localhost:3000 && cross-env NODE_ENV=development .\\node_modules\\.bin\\electron.CMD electron.js\"",
     "electron:simple": ".\\node_modules\\.bin\\electron.CMD electron.js",
-    "electron:build": "pnpm build && electron-builder",
-    "electron:dist": "pnpm build && electron-builder --publish=never",
-    "postinstall": "electron-builder install-app-deps"
+    "puppeteer:download": "node tools/puppeteer/download.js",
+    "preelectron:build": "node tools/electron/prepack.js build",
+    "electron:build": "node tools/build-electron.js --dir",
+    "preelectron:dist": "node tools/electron/prepack.js build",
+    "electron:dist": "node tools/build-electron.js --publish=never",
+    "postinstall": "echo postinstall skipped"
   },
   "devDependencies": {
     "@babel/core": "^7.26.7",
@@ -146,7 +149,6 @@
     "@nestjs/core": "^10.4.15",
     "@nestjs/platform-express": "^10.4.15",
     "@nestjs/serve-static": "^4.0.2",
-    "@nestjs/swagger": "^7.4.2",
     "@nestjs/terminus": "^10.3.0",
     "@paralleldrive/cuid2": "^2.2.2",
     "@phosphor-icons/react": "^2.1.7",
@@ -186,7 +188,6 @@
     "@tiptap/pm": "^2.11.5",
     "@tiptap/react": "^2.11.5",
     "@tiptap/starter-kit": "^2.11.5",
-    "@types/puppeteer": "^7.0.4",
     "async-retry": "^1.3.3",
     "axios": "^1.7.9",
     "class-variance-authority": "^0.7.1",
@@ -205,7 +206,6 @@
     "lodash.debounce": "^4.0.8",
     "lodash.get": "^4.4.2",
     "lodash.set": "^4.3.2",
-    "nest-raven": "^10.1.0",
     "nestjs-prisma": "^0.24.0",
     "nestjs-zod": "^3.0.0",
     "openai": "^4.82.0",
@@ -251,16 +251,27 @@
     "schema": "tools/prisma/schema.prisma",
     "seed": "node tools/prisma/seed.js"
   },
-  "main": "dist/electron/main.js",
+  "main": "electron.js",
   "homepage": "./",
   "build": {
+    "asarUnpack": [
+      "dist/apps/**",
+      "node_modules/@prisma/**",
+      "node_modules/.prisma/**",
+      "node_modules/puppeteer/**",
+      "node_modules/tslib/**",
+      "**/*.node"
+    ],
+    "npmRebuild": false,
     "appId": "com.reactiveresume.app",
     "productName": "Reactive Resume",
     "copyright": "Copyright © 2025 Reactive Resume",
+    "publish": null,
     "directories": {
-      "output": "dist-electron"
+      "output": "dist-electron-new"
     },
     "files": [
+      "electron.js",
       "dist/electron/**/*",
       "dist/apps/**/*",
       "node_modules/**/*",
@@ -282,6 +293,20 @@
       {
         "from": "tools/prisma/schema.prisma",
         "to": "prisma/schema.prisma"
+      },
+      {
+        "from": "node_modules/.prisma/client",
+        "to": ".prisma/client",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "tools/puppeteer/cache",
+        "to": "puppeteer",
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "win": {
@@ -299,7 +324,7 @@
           ]
         }
       ],
-      "icon": "apps/client/public/icon/icon.ico"
+      "icon": "apps/artboard/public/favicon.ico"
     },
     "mac": {
       "target": [
@@ -333,9 +358,9 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "installerIcon": "apps/client/public/icon/icon.ico",
-      "uninstallerIcon": "apps/client/public/icon/icon.ico",
-      "installerHeaderIcon": "apps/client/public/icon/icon.ico",
+      "installerIcon": "apps/artboard/public/favicon.ico",
+      "uninstallerIcon": "apps/artboard/public/favicon.ico",
+      "installerHeaderIcon": "apps/artboard/public/favicon.ico",
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true
     }

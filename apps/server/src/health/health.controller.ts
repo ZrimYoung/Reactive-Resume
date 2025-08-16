@@ -1,5 +1,4 @@
 import { Controller, Get, NotFoundException } from "@nestjs/common";
-import { ApiTags } from "@nestjs/swagger";
 import { HealthCheck, HealthCheckService } from "@nestjs/terminus";
 
 import { configSchema } from "../config/schema";
@@ -7,7 +6,6 @@ import { BrowserHealthIndicator } from "./browser.health";
 import { DatabaseHealthIndicator } from "./database.health";
 import { StorageHealthIndicator } from "./storage.health";
 
-@ApiTags("Health")
 @Controller("health")
 export class HealthController {
   constructor(

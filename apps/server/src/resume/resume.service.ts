@@ -66,15 +66,15 @@ export class ResumeService {
       // 确保数据结构完整，合并默认值
       const safeData = {
         ...parsedData,
-        basics: parsedData.basics || {},
-        sections: parsedData.sections || {},
+        basics: parsedData.basics,
+        sections: parsedData.sections,
         metadata: {
           ...defaultMetadata,
           ...parsedData.metadata,
           css: {
             ...defaultMetadata.css,
             ...parsedData.metadata.css,
-            visible: parsedData.metadata.css.visible ?? false,
+            visible: parsedData.metadata.css.visible,
           },
           typography: {
             ...defaultMetadata.typography,
@@ -105,8 +105,12 @@ export class ResumeService {
         },
       });
     } catch (error) {
-      this.logger.error(`简历导入失败: ${error.message}`, error.stack);
-      throw new BadRequestException(`简历导入失败: ${error.message}`);
+      const err = error as Error;
+      this.logger.error(
+        `简历导入失败: ${err.message}`,
+        (err as unknown as { stack?: string }).stack,
+      );
+      throw new BadRequestException(`简历导入失败: ${err.message}`);
     }
   }
 
@@ -187,7 +191,8 @@ export class ResumeService {
               })}`,
             );
           } catch (validationError) {
-            this.logger.error(`简历数据验证失败: ${validationError.message}`, validationError);
+            const e = validationError as Error;
+            this.logger.error(`简历数据验证失败: ${e.message}`, e);
 
             // 如果验证失败，尝试使用原始数据但修复已知问题
             if (parsedData.metadata?.css) {
@@ -202,8 +207,12 @@ export class ResumeService {
             this.logger.warn("使用修复后的数据而非验证通过的数据");
           }
         } catch (parseError) {
-          this.logger.error(`简历数据解析失败: ${parseError.message}`, parseError.stack);
-          throw new BadRequestException(`无效的简历数据格式: ${parseError.message}`);
+          const e = parseError as Error;
+          this.logger.error(
+            `简历数据解析失败: ${e.message}`,
+            (e as unknown as { stack?: string }).stack,
+          );
+          throw new BadRequestException(`无效的简历数据格式: ${e.message}`);
         }
       }
 
@@ -224,17 +233,21 @@ export class ResumeService {
             : updatedResume.data,
       };
     } catch (error) {
-      this.logger.error(`简历更新失败: ${error.message}`, error.stack);
+      const err = error as Error & { code?: string };
+      this.logger.error(
+        `简历更新失败: ${err.message}`,
+        (err as unknown as { stack?: string }).stack,
+      );
 
-      if (error.code === "P2025") {
+      if (err.code === "P2025") {
         throw new InternalServerErrorException("简历不存在或无权限访问");
       }
 
-      if (error instanceof BadRequestException) {
-        throw error;
+      if (err instanceof BadRequestException) {
+        throw err;
       }
 
-      throw new InternalServerErrorException(`简历更新失败: ${error.message}`);
+      throw new InternalServerErrorException(`简历更新失败: ${err.message}`);
     }
   }
 
@@ -246,16 +259,27 @@ export class ResumeService {
   }
 
   async remove(userId: string, id: string) {
+    // 先获取记录以确定实际的 PDF 文件名（打印时使用 slugify(title) 作为文件名）
+    const { title, slug } = await this.prisma.resume.findUniqueOrThrow({
+      where: { userId_id: { userId, id } },
+      select: { title: true, slug: true },
+    });
+
+    const titleSlug = slugify(title);
+    const candidates = [...new Set([titleSlug, slug, id].filter(Boolean))] as string[];
+
     await Promise.all([
-      // Remove files in storage, and their cached keys
-      this.storageService.deleteObject(userId, "resumes", id),
+      // 预览文件名固定为 id
       this.storageService.deleteObject(userId, "previews", id),
+      // PDF 可能历史上用过不同命名：slugify(title) / slug / id，全部尝试删除；
+      // StorageService.deleteObject 已忽略不存在文件（force: true）
+      ...candidates.map((name) => this.storageService.deleteObject(userId, "resumes", name)),
     ]);
 
     return this.prisma.resume.delete({ where: { userId_id: { userId, id } } });
   }
 
-  async printResume(resume: ResumeDto, userId?: string) {
+  async printResume(resume: ResumeDto) {
     const url = await this.printerService.printResume(resume);
     return url;
   }

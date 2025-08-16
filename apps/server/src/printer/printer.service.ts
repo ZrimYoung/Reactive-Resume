@@ -32,7 +32,7 @@ export class PrinterService {
         this.logger.log("启动本地 Puppeteer 浏览器实例...");
 
         const chromePath =
-          process.env.CHROME_PATH || process.env.PUPPETEER_EXECUTABLE_PATH || undefined;
+          process.env.CHROME_PATH ?? process.env.PUPPETEER_EXECUTABLE_PATH ?? undefined;
         const launchOptions: Parameters<typeof launch>[0] = {
           headless: true,
           args: [
@@ -53,7 +53,7 @@ export class PrinterService {
 
         if (chromePath) {
           this.logger.log(`使用指定的 Chrome 可执行文件: ${chromePath}`);
-          (launchOptions as any).executablePath = chromePath;
+          (launchOptions as { executablePath?: string }).executablePath = chromePath;
         }
 
         this.browser = await launch(launchOptions);
@@ -75,6 +75,16 @@ export class PrinterService {
     const browser = await this.getBrowser();
     const version = await browser.version();
     return version;
+  }
+
+  // 预热浏览器，降低首次打印超时概率
+  async onModuleInit() {
+    try {
+      await this.getBrowser();
+      this.logger.log("Puppeteer 预热完成");
+    } catch {
+      // 预热失败不阻断启动；后续调用仍会重试
+    }
   }
 
   async printResume(resume: ResumeDto) {
@@ -118,6 +128,9 @@ export class PrinterService {
     try {
       const browser = await this.getBrowser();
       const page = await browser.newPage();
+      // 冷启动时首次导航可能较慢，放宽默认超时
+      page.setDefaultNavigationTimeout(120_000);
+      page.setDefaultTimeout(120_000);
 
       const publicUrl = this.configService.getOrThrow<string>("PUBLIC_URL");
 
@@ -184,7 +197,11 @@ export class PrinterService {
         window.localStorage.setItem("resume", JSON.stringify(data));
       }, resumeDataForPrint);
 
-      await page.goto(`${url}/artboard/preview`, { waitUntil: "networkidle0" });
+      // 使用 domcontentloaded，后续我们会显式等待字体与图片等资源
+      await page.goto(`${url}/artboard/preview`, {
+        waitUntil: "domcontentloaded",
+        timeout: 120_000,
+      });
       // 使用打印媒体，保证与 PDF 渲染一致
       await page.emulateMediaType("print");
 
@@ -385,6 +402,9 @@ export class PrinterService {
     try {
       const browser = await this.getBrowser();
       const page = await browser.newPage();
+      // 冷启动时首次导航可能较慢，放宽默认超时
+      page.setDefaultNavigationTimeout(120_000);
+      page.setDefaultTimeout(120_000);
 
       const publicUrl = this.configService.getOrThrow<string>("PUBLIC_URL");
 
@@ -447,7 +467,10 @@ export class PrinterService {
 
       await page.setViewport({ width: 794, height: 1123 });
 
-      await page.goto(`${url}/artboard/preview`, { waitUntil: "networkidle0" });
+      await page.goto(`${url}/artboard/preview`, {
+        waitUntil: "domcontentloaded",
+        timeout: 120_000,
+      });
 
       // 等待字体与图片资源，并移除 body 溢出裁剪
       await page.evaluate(async () => {

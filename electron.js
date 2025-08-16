@@ -79,8 +79,8 @@ function startBackendProcess() {
   childEnv.STORAGE_DIR = path.join(userDataDir, 'storage');
   childEnv.DATABASE_URL = `file:./local-resume.db`; // Path is now relative to the CWD of the child process
   childEnv.SESSION_SECRET = childEnv.SESSION_SECRET || 'reactive-resume-offline-secret';
-  console.log('Backend database path (relative to CWD):', childEnv.DATABASE_URL);
-  console.log('Backend storage path:', childEnv.STORAGE_DIR);
+  console.log('Backend database path configured');
+  console.log('Backend storage path configured');
   
   // Add module resolution paths so the backend can resolve deps from packaged app
   const userNodeModules = path.join(userDataDir, 'node_modules');
@@ -147,11 +147,7 @@ function startBackendProcess() {
         childEnv.PRISMA_QUERY_ENGINE_LIBRARY = path.join(enginesDir, 'libquery_engine-linux-musl.so.node');
         childEnv.PRISMA_SCHEMA_ENGINE_BINARY = path.join(enginesDir, 'schema-engine-linux-musl');
       }
-      console.log('Configured Prisma engines for backend:', {
-        type: childEnv.PRISMA_CLIENT_ENGINE_TYPE,
-        binary: childEnv.PRISMA_QUERY_ENGINE_BINARY,
-        library: childEnv.PRISMA_QUERY_ENGINE_LIBRARY,
-      });
+      console.log('Configured Prisma engines for backend (engine type and paths set)');
     } else {
       console.warn('Prisma engines directory not found at:', enginesDir);
     }
@@ -434,7 +430,8 @@ async function startEmbeddedServer_DEPRECATED() {
       const newNodePath = [...pathsToAdd, ...currentNodePath].join(path.delimiter);
       process.env.NODE_PATH = newNodePath;
       Module._initPaths();
-      console.log('Extended NODE_PATH for module resolution:', process.env.NODE_PATH);
+      const nodePathSegmentCount = (newNodePath || '').split(path.delimiter).filter(Boolean).length;
+      console.log(`Extended NODE_PATH for module resolution (segments: ${nodePathSegmentCount})`);
 
       // Provide Prisma engine locations explicitly to avoid asar path issues
       try {

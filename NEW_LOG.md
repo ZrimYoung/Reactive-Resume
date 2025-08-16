@@ -324,3 +324,20 @@
   - 启动打包产物后检查日志：
     - `%APPDATA%/\@reactive-resume/source/logs/backend.log` 应出现 Nest 启动完成日志与监听端口。
     - `%APPDATA%/\@reactive-resume/source/logs/electron-main.log` 不再出现 60 次轮询失败。
+
+# 变更记录（自动）
+
+- 日期：2025-08-16
+- 修改范围：`electron.js`
+- 背景：CI/CodeQL 报告“Clear-text logging of sensitive information（明文记录敏感信息）”。
+
+## 已完成
+- 移除/改写了将环境变量或敏感路径明文输出到日志的代码：
+  - 不再输出 `process.env.NODE_PATH`，改为仅输出段数量。
+  - 启动后端时关于数据库/存储路径的日志改为泛化描述，不含具体值。
+  - Prisma 引擎配置日志改为不包含具体路径。
+- 全仓库检索未发现其它直接将 `process.env.*` 输出到日志的用法。
+
+## 建议的下一步
+- 重新运行 CodeQL 扫描确认告警消除。
+- 对日志输出做一次总览，确保未来新增日志遵循“只记结构/状态，不记具体值”的原则。

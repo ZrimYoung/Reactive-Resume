@@ -344,7 +344,7 @@ function checkServerConnection(host = 'localhost', port = 5173) {
   });
 }
 
-// 该函数现在被废弃，因为后端服务已在独立的子进程中启动。
+/* 该函数现在被废弃，因为后端服务已在独立的子进程中启动。
 // 保留函数体和其中的复杂环境设置逻辑，以备将来参考或在子进程内部需要时复用。
 async function startEmbeddedServer_DEPRECATED() {
   if (!isProd) return;
@@ -612,6 +612,7 @@ async function startEmbeddedServer_DEPRECATED() {
     } catch {}
   }
 }
+*/
 
 async function createWindow() {
   console.log('Creating Electron window...');

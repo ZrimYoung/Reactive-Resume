@@ -3,10 +3,12 @@
 ![App Version](https://img.shields.io/github/package-json/version/AmruthPillai/Reactive-Resume?label=version)
 [![Docker Pulls](https://img.shields.io/docker/pulls/amruthpillai/reactive-resume)](https://hub.docker.com/repository/docker/amruthpillai/reactive-resume)
 [![GitHub Sponsors](https://img.shields.io/github/sponsors/AmruthPillai)](https://github.com/sponsors/AmruthPillai)
-[![Crowdin](https://badges.crowdin.net/reactive-resume/localized.svg)](https://crowdin.com/project/reactive-resume)
+<!-- Crowdin badge removed for local/desktop edition -->
 [![Discord](https://img.shields.io/discord/1173518977851473940?label=discord&link=https%3A%2F%2Fdiscord.gg%2FhzwkZbyvUW)](https://discord.gg/hzwkZbyvUW)
 
 # Reactive Resume
+
+> 本仓库为本地/桌面版简化发行：不包含在线账户、公开分享、OAuth、OpenAI 集成、Crowdin 在线翻译等云端特性；默认使用本地 SQLite 数据库与本地文件存储。
 
 A free and open-source resume builder that simplifies the process of creating, updating, and sharing your resume.
 

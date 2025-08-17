@@ -3,4 +3,4 @@ description:
 globs: 
 alwaysApply: true
 ---
-简要记录已经做的工作和下一步工作建议于 NEW_LOG.md
+简要记录已经做的工作和下一步工作建议于 update_logs\NEW_LOG.md

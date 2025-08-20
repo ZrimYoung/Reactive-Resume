@@ -855,7 +855,19 @@ msgstr "尺寸（以像素为单位）"
 
 #: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:228
 msgid "Slug"
-msgstr "简历"
+msgstr "唯一标识"
+
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx
+msgid "Lock slug"
+msgstr "锁定标识"
+
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx
+msgid "Unlock slug"
+msgstr "解锁标识"
+
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx
+msgid "A unique identifier used in links or file names. Supports non-Latin characters and will not change automatically once edited or locked."
+msgstr "用于链接或文件名的唯一标识，支持非拉丁字符。一旦你手动编辑或锁定，它将不再被标题自动覆盖。"
 
 #: apps/client/src/services/errors/translate-error.ts:22
 msgid "Something went wrong while grabbing a preview your resume. Please try again later or raise an issue on GitHub."

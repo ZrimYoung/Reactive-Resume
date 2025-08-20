@@ -13,7 +13,6 @@ import {
 } from "@reactive-resume/schema";
 import type { DeepPartial } from "@reactive-resume/utils";
 import { ErrorMessage, generateRandomName } from "@reactive-resume/utils";
-import slugify from "@sindresorhus/slugify";
 import deepmerge from "deepmerge";
 import { PrismaService } from "nestjs-prisma";
 
@@ -31,6 +30,15 @@ export class ResumeService {
     private readonly storageService: StorageService,
   ) {}
 
+  private generateUnicodeSlug(input: string): string {
+    // 允许 Unicode：保留字母与数字，空白转为连字符，移除其它符号
+    const normalized = (input ?? "").trim().toLowerCase();
+    if (!normalized) return "";
+    const dashed = normalized.replace(/\s+/g, "-");
+    // 保留所有 Unicode 字母/数字/下划线/连字符
+    return dashed.replace(/[^\p{L}\p{N}_-]+/gu, "");
+  }
+
   async create(userId: string, createResumeDto: CreateResumeDto) {
     const { name, email } = await this.prisma.user.findUniqueOrThrow({
       where: { id: userId },
@@ -46,7 +54,10 @@ export class ResumeService {
         data: JSON.stringify(data),
         userId,
         title: createResumeDto.title,
-        slug: createResumeDto.slug ?? slugify(createResumeDto.title),
+        slug:
+          createResumeDto.slug ||
+          this.generateUnicodeSlug(createResumeDto.title) ||
+          this.generateUnicodeSlug(generateRandomName()),
       },
     });
 
@@ -101,7 +112,10 @@ export class ResumeService {
           userId,
           data: processedData,
           title: importResumeDto.title ?? randomTitle,
-          slug: importResumeDto.slug ?? slugify(randomTitle),
+          slug:
+            importResumeDto.slug ||
+            this.generateUnicodeSlug(importResumeDto.title ?? randomTitle) ||
+            this.generateUnicodeSlug(randomTitle),
         },
       });
     } catch (error) {
@@ -265,7 +279,7 @@ export class ResumeService {
       select: { title: true, slug: true },
     });
 
-    const titleSlug = slugify(title);
+    const titleSlug = this.generateUnicodeSlug(title);
     const candidates = [...new Set([titleSlug, slug, id].filter(Boolean))] as string[];
 
     await Promise.all([

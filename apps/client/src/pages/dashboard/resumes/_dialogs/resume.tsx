@@ -85,7 +85,7 @@ export const ResumeDialog = () => {
   // 仅当 slug 为空、未锁定、且用户未手动修改过时，根据标题自动生成
   useEffect(() => {
     const subscription = form.watch((value, ctx) => {
-      if (ctx?.name === "title") {
+      if (ctx.name === "title") {
         const currentSlug = form.getValues("slug");
         if (!currentSlug && !slugLocked && !slugEditedRef.current) {
           const next = unicodeSlugify(value.title ?? "");
@@ -93,7 +93,9 @@ export const ResumeDialog = () => {
         }
       }
     });
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [form, slugLocked, unicodeSlugify]);
 
   const onSubmit = async (values: FormValues) => {

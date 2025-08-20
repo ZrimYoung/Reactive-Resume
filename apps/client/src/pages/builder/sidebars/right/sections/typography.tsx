@@ -214,7 +214,7 @@ export const TypographySection = () => {
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          {/* 添加上传字体按钮 */}
+          {/* Upload custom font button */}
           <Button
             variant="outline"
             className="flex h-12 items-center justify-center gap-2 border-dashed border-primary/40 text-primary hover:bg-primary/10"
@@ -223,7 +223,7 @@ export const TypographySection = () => {
             }}
           >
             <Plus className="size-4" />
-            {t`上传字体`}
+            {t`Upload Font`}
           </Button>
 
           {fontSuggestions

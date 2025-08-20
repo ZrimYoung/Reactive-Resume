@@ -61,7 +61,7 @@ export const FontUploadDialog = ({ isOpen, onClose, onSuccess }: FontUploadDialo
     // 验证文件
     const validation = customFontUtils.validateFontFile(file);
     if (!validation.valid) {
-      setUploadState((prev) => ({ ...prev, error: validation.error ?? "文件验证失败" }));
+      setUploadState((prev) => ({ ...prev, error: validation.error ?? t`File validation failed` }));
       return;
     }
 
@@ -103,7 +103,7 @@ export const FontUploadDialog = ({ isOpen, onClose, onSuccess }: FontUploadDialo
   // 上传字体
   const handleUpload = useCallback(async () => {
     if (!selectedFile || !fontFamily.trim()) {
-      setUploadState((prev) => ({ ...prev, error: "请选择文件并输入字体名称" }));
+      setUploadState((prev) => ({ ...prev, error: t`Please select a file and enter a font name` }));
       return;
     }
 
@@ -131,7 +131,7 @@ export const FontUploadDialog = ({ isOpen, onClose, onSuccess }: FontUploadDialo
       clearInterval(progressInterval);
 
       if (!response.ok) {
-        throw new Error(`上传失败: ${response.statusText}`);
+        throw new Error(`Upload failed: ${response.statusText}`);
       }
 
       const result = await response.json();
@@ -149,13 +149,13 @@ export const FontUploadDialog = ({ isOpen, onClose, onSuccess }: FontUploadDialo
           onClose();
         }, 1000);
       } else {
-        throw new Error(result.message || "上传失败");
+        throw new Error(result.message || t`Upload failed`);
       }
     } catch (error) {
       setUploadState((prev) => ({
         ...prev,
         uploading: false,
-        error: error instanceof Error ? error.message : "上传失败",
+        error: error instanceof Error ? error.message : t`Upload failed`,
       }));
     }
   }, [selectedFile, fontFamily, onSuccess, onClose, resetState, frameRef]);
@@ -182,21 +182,21 @@ export const FontUploadDialog = ({ isOpen, onClose, onSuccess }: FontUploadDialo
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>{t`上传自定义字体`}</DialogTitle>
+          <DialogTitle>{t`Upload Custom Font`}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
           <Alert>
             <Info className="size-4" />
-            <AlertTitle>{t`提示`}</AlertTitle>
+            <AlertTitle>{t`Tip`}</AlertTitle>
             <AlertDescription>
-              {t`当前系统对可变字体（Variable Fonts）支持最佳。为确保所有字重和样式能正常工作，建议优先上传VF字体。`}
+              {t`Variable Fonts are best supported. To ensure all weights and styles work correctly, please prefer uploading a VF font.`}
             </AlertDescription>
           </Alert>
 
           {/* 文件上传区域 */}
           <div className="space-y-4">
-            <Label htmlFor="fontFile">{t`选择字体文件`}</Label>
+            <Label htmlFor="fontFile">{t`Select font file`}</Label>
 
             {selectedFile ? (
               <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
@@ -230,9 +230,9 @@ export const FontUploadDialog = ({ isOpen, onClose, onSuccess }: FontUploadDialo
                 onClick={() => fileInputRef.current?.click()}
               >
                 <Upload className="mx-auto mb-4 size-12 text-gray-400" />
-                <p className="mb-2 text-gray-600">{t`点击选择或拖拽字体文件到此处`}</p>
+                <p className="mb-2 text-gray-600">{t`Click to choose or drag and drop a font file here`}</p>
                 <p className="text-sm text-gray-500">
-                  {t`支持 TTF, OTF, WOFF, WOFF2 格式，最大 50MB`}
+                  {t`Supports TTF, OTF, WOFF, WOFF2 formats (max 50MB)`}
                 </p>
                 <input
                   ref={fileInputRef}
@@ -240,8 +240,8 @@ export const FontUploadDialog = ({ isOpen, onClose, onSuccess }: FontUploadDialo
                   accept=".ttf,.otf,.woff,.woff2"
                   className="hidden"
                   id="fontFile"
-                  aria-label={t`选择字体文件`}
-                  title={t`选择字体文件`}
+                  aria-label={t`Select font file`}
+                  title={t`Select font file`}
                   onChange={handleFileInput}
                 />
               </div>
@@ -251,11 +251,11 @@ export const FontUploadDialog = ({ isOpen, onClose, onSuccess }: FontUploadDialo
           {/* 字体名称输入 */}
           {selectedFile && (
             <div className="space-y-2">
-              <Label htmlFor="fontFamily">{t`字体名称`}</Label>
+              <Label htmlFor="fontFamily">{t`Font name`}</Label>
               <Input
                 id="fontFamily"
                 value={fontFamily}
-                placeholder={t`请输入字体名称`}
+                placeholder={t`Enter font name`}
                 disabled={uploadState.uploading}
                 onChange={(e) => {
                   setFontFamily(e.target.value);
@@ -268,7 +268,7 @@ export const FontUploadDialog = ({ isOpen, onClose, onSuccess }: FontUploadDialo
           {uploadState.uploading && (
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span>{t`上传中...`}</span>
+                <span>{t`Uploading...`}</span>
                 <span>{Math.round(uploadState.progress)}%</span>
               </div>
               <div className="h-2 w-full rounded-full bg-gray-200">
@@ -284,18 +284,18 @@ export const FontUploadDialog = ({ isOpen, onClose, onSuccess }: FontUploadDialo
           {uploadState.error && <Alert variant="error">{uploadState.error}</Alert>}
 
           {/* 成功信息 */}
-          {uploadState.success && <Alert>{t`字体上传成功！`}</Alert>}
+          {uploadState.success && <Alert>{t`Font uploaded successfully!`}</Alert>}
 
           {/* 操作按钮 */}
           <div className="flex justify-end space-x-3">
             <Button variant="outline" disabled={uploadState.uploading} onClick={handleClose}>
-              {t`取消`}
+              {t`Cancel`}
             </Button>
             <Button
               disabled={!selectedFile || !fontFamily.trim() || uploadState.uploading}
               onClick={handleUpload}
             >
-              {uploadState.uploading ? t`上传中...` : t`上传字体`}
+              {uploadState.uploading ? t`Uploading...` : t`Upload Font`}
             </Button>
           </div>
         </div>

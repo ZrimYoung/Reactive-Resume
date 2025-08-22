@@ -22,11 +22,21 @@ export const useCreateResume = () => {
   } = useMutation({
     mutationFn: createResume,
     onSuccess: (data) => {
-      queryClient.setQueryData<ResumeDto>(["resume", { id: data.id }], data);
+      // 注意：直接对类实例使用展开会丢失原型，先转为普通对象再处理
+      type AnyRecord = Record<string, unknown> & { data?: unknown };
+      const plain = JSON.parse(JSON.stringify(data)) as AnyRecord;
+      const raw = plain.data;
+      const normalizedData = typeof raw === "string" ? JSON.parse(raw) : raw;
+      const normalized: ResumeDto = {
+        ...(plain as Record<string, unknown>),
+        data: normalizedData as unknown,
+      } as ResumeDto;
+
+      queryClient.setQueryData<ResumeDto>(["resume", { id: normalized.id }], normalized);
 
       queryClient.setQueryData<ResumeDto[]>(["resumes"], (cache) => {
-        if (!cache) return [data];
-        return [...cache, data];
+        if (!cache) return [normalized];
+        return [...cache, normalized];
       });
     },
   });

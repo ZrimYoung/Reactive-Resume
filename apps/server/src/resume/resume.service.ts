@@ -107,7 +107,7 @@ export class ResumeService {
         })}`,
       );
 
-      return this.prisma.resume.create({
+      const resume = await this.prisma.resume.create({
         data: {
           userId,
           data: processedData,
@@ -118,6 +118,11 @@ export class ResumeService {
             this.generateUnicodeSlug(randomTitle),
         },
       });
+
+      return {
+        ...resume,
+        data: typeof resume.data === "string" ? JSON.parse(resume.data) : resume.data,
+      };
     } catch (error) {
       const err = error as Error;
       this.logger.error(

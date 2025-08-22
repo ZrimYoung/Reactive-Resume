@@ -1,3 +1,9 @@
+# 更新记录
+
+- 时间: 自动生成
+- 修改: 统一导入接口返回的 ResumeDto.data 为对象；前端在创建/导入成功时对写入缓存的数据做兜底规范化，避免 builder loader 命中新鲜但不规范（字符串）的 data。
+- 影响: 解决新建样例/复制/导入后立刻进入编辑页报错、刷新后恢复的问题；正常新建不受影响且更稳健。
+- 涉及: apps/server/src/resume/resume.service.ts, apps/client/src/services/resume/create.ts, apps/client/src/services/resume/import.ts
 - 2025-08-13 修复编辑器双侧折叠导致画布与按钮消失问题：
   - 保持左右 `Panel` 始终渲染，折叠时宽度设为 1%，避免 `PanelGroup` 仅剩单面板引发行为异常（编辑 `apps/client/src/pages/builder/layout.tsx`）。
   - 两个 `PanelResizeHandle` 始终存在，确保面板结构完整；中间 `Panel` 的默认宽度根据左右面板尺寸动态计算。

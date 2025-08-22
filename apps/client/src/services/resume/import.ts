@@ -22,11 +22,18 @@ export const useImportResume = () => {
   } = useMutation({
     mutationFn: importResume,
     onSuccess: (data) => {
-      queryClient.setQueryData<ResumeDto>(["resume", { id: data.id }], data);
+      const normalized: ResumeDto = {
+        ...data,
+        data: typeof (data as unknown as { data: unknown }).data === "string"
+          ? JSON.parse((data as unknown as { data: string }).data)
+          : (data as unknown as { data: unknown }).data,
+      } as ResumeDto;
+
+      queryClient.setQueryData<ResumeDto>(["resume", { id: normalized.id }], normalized);
 
       queryClient.setQueryData<ResumeDto[]>(["resumes"], (cache) => {
-        if (!cache) return [data];
-        return [...cache, data];
+        if (!cache) return [normalized];
+        return [...cache, normalized];
       });
     },
   });

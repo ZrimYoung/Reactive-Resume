@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { t } from "@lingui/macro";
-import { CaretDown, Flask, MagicWand, Plus } from "@phosphor-icons/react";
+import { CaretDown, Flask, Lock, LockOpen, MagicWand, Plus } from "@phosphor-icons/react";
 import type { ResumeDto } from "@reactive-resume/dto";
 import { createResumeSchema } from "@reactive-resume/dto";
 import { idSchema, sampleResume } from "@reactive-resume/schema";
@@ -35,8 +35,7 @@ import {
   Tooltip,
 } from "@reactive-resume/ui";
 import { cn, generateRandomName } from "@reactive-resume/utils";
-import slugify from "@sindresorhus/slugify";
-import { useEffect } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -68,14 +67,36 @@ export const ResumeDialog = () => {
     defaultValues: { title: "", slug: "" },
   });
 
+  // 记录用户是否手动编辑过 slug
+  const [slugLocked, setSlugLocked] = useState(false);
+  const slugEditedRef = useRef(false);
+
+  const unicodeSlugify = useMemo(() => {
+    return (value: string) => {
+      const text = (value || "").trim().toLowerCase();
+      return text.replace(/\s+/g, "-").replace(/[^\p{L}\p{N}_-]+/gu, "");
+    };
+  }, []);
+
   useEffect(() => {
     if (isOpen) onReset();
   }, [isOpen, payload]);
 
+  // 仅当 slug 为空、未锁定、且用户未手动修改过时，根据标题自动生成
   useEffect(() => {
-    const slug = slugify(form.watch("title"));
-    form.setValue("slug", slug);
-  }, [form.watch("title")]);
+    const subscription = form.watch((value, ctx) => {
+      if (ctx.name === "title") {
+        const currentSlug = form.getValues("slug");
+        if (!currentSlug && !slugLocked && !slugEditedRef.current) {
+          const next = unicodeSlugify(value.title ?? "");
+          form.setValue("slug", next);
+        }
+      }
+    });
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [form, slugLocked, unicodeSlugify]);
 
   const onSubmit = async (values: FormValues) => {
     if (isCreate) {
@@ -112,6 +133,8 @@ export const ResumeDialog = () => {
   };
 
   const onReset = () => {
+    slugEditedRef.current = false;
+    setSlugLocked(false);
     if (isCreate) form.reset({ title: "", slug: "" });
     if (isUpdate)
       form.reset({ id: payload.item?.id, title: payload.item?.title, slug: payload.item?.slug });
@@ -124,7 +147,10 @@ export const ResumeDialog = () => {
   const onGenerateRandomName = () => {
     const name = generateRandomName();
     form.setValue("title", name);
-    form.setValue("slug", slugify(name));
+    if (!slugLocked && !slugEditedRef.current && !form.getValues("slug")) {
+      const next = unicodeSlugify(name);
+      form.setValue("slug", next);
+    }
   };
 
   const onCreateSample = async () => {
@@ -132,7 +158,7 @@ export const ResumeDialog = () => {
 
     await duplicateResume({
       title: randomName,
-      slug: slugify(randomName),
+      slug: unicodeSlugify(randomName),
       data: sampleResume,
     });
 
@@ -227,8 +253,35 @@ export const ResumeDialog = () => {
                 <FormItem>
                   <FormLabel>{t`Slug`}</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <div className="flex items-center gap-x-2">
+                      <Input
+                        {...field}
+                        disabled={slugLocked}
+                        onChange={(e) => {
+                          slugEditedRef.current = true;
+                          field.onChange(e);
+                        }}
+                      />
+                      <div className="flex items-center gap-x-2">
+                        <Tooltip content={slugLocked ? t`Unlock slug` : t`Lock slug`}>
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant={slugLocked ? "primary" : "outline"}
+                            aria-label={slugLocked ? t`Unlock slug` : t`Lock slug`}
+                            onClick={() => {
+                              setSlugLocked((s) => !s);
+                            }}
+                          >
+                            {slugLocked ? <Lock /> : <LockOpen />}
+                          </Button>
+                        </Tooltip>
+                      </div>
+                    </div>
                   </FormControl>
+                  <FormDescription>
+                    {t`A unique identifier used in links or file names. Supports non-Latin characters and will not change automatically once edited or locked.`}
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

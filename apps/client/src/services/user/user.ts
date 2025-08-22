@@ -24,7 +24,8 @@ export const useUser = () => {
     placeholderData: () => ({
       // 使用与服务端一致的本地用户标识，避免前后端不一致
       id: "local-user-id",
-      name: "本地用户",
+      // eslint-disable-next-line lingui/no-unlocalized-strings
+      name: "Local User",
       email: "local@example.com",
       username: "local-user",
       locale: detectedLocale,

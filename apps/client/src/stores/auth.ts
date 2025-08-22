@@ -20,7 +20,8 @@ type AuthState = {
 export const useAuthStore = create<AuthState>((set) => ({
   user: {
     id: LOCAL_USER_ID,
-    name: "本地用户",
+    // eslint-disable-next-line lingui/no-unlocalized-strings
+    name: "Local User",
     email: "local@example.com",
     username: "local-user",
     locale: "zh-CN",

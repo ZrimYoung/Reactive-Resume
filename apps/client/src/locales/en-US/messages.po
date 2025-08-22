@@ -42,6 +42,10 @@ msgstr "A passion project by <0>Amruth Pillai</0>"
 msgid "A resume with this slug already exists, please pick a different unique identifier."
 msgstr "A resume with this slug already exists, please pick a different unique identifier."
 
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:283
+msgid "A unique identifier used in links or file names. Supports non-Latin characters and will not change automatically once edited or locked."
+msgstr "A unique identifier used in links or file names. Supports non-Latin characters and will not change automatically once edited or locked."
+
 #: apps/client/src/pages/builder/sidebars/right/sections/page.tsx:46
 msgid "A3"
 msgstr "A3"
@@ -106,7 +110,7 @@ msgstr "Apply Custom CSS"
 msgid "Are you sure you want to delete this item?"
 msgstr "Are you sure you want to delete this item?"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:149
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:175
 msgid "Are you sure you want to delete your resume?"
 msgstr "Are you sure you want to delete your resume?"
 
@@ -164,9 +168,10 @@ msgstr "Border Radius"
 msgid "By the community, for the community."
 msgstr "By the community, for the community."
 
+#: apps/client/src/components/font-upload-dialog.tsx:292
 #: apps/client/src/pages/builder/sidebars/left/sections/shared/section-dialog.tsx:135
 #: apps/client/src/pages/dashboard/resumes/_dialogs/lock.tsx:49
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:156
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:182
 msgid "Cancel"
 msgstr "Cancel"
 
@@ -174,7 +179,7 @@ msgstr "Cancel"
 msgid "Center Artboard"
 msgstr "Center Artboard"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:186
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:212
 msgid "Changed your mind about the name? Give it a new one."
 msgstr "Changed your mind about the name? Give it a new one."
 
@@ -185,6 +190,10 @@ msgstr "Changes saved successfully."
 #: apps/client/src/pages/builder/sidebars/left/sections/picture/options.tsx:144
 msgid "Circle"
 msgstr "Circle"
+
+#: apps/client/src/components/font-upload-dialog.tsx:233
+msgid "Click to choose or drag and drop a font file here"
+msgstr "Click to choose or drag and drop a font file here"
 
 #: apps/client/src/pages/builder/layout.tsx:109
 msgid "Collapse Left Sidebar"
@@ -207,7 +216,7 @@ msgid "Copy"
 msgstr "Copy"
 
 #: apps/client/src/pages/builder/sidebars/left/sections/shared/section-dialog.tsx:179
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:244
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:297
 msgid "Create"
 msgstr "Create"
 
@@ -215,13 +224,13 @@ msgstr "Create"
 msgid "Create a new item"
 msgstr "Create a new item"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:178
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:204
 #: apps/client/src/pages/dashboard/resumes/_layouts/grid/_components/create-card.tsx:28
 #: apps/client/src/pages/dashboard/resumes/_layouts/list/_components/create-item.tsx:18
 msgid "Create a new resume"
 msgstr "Create a new resume"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:259
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:312
 msgid "Create Sample Resume"
 msgstr "Create Sample Resume"
 
@@ -262,7 +271,7 @@ msgid "Date or Date Range"
 msgstr "Date or Date Range"
 
 #: apps/client/src/pages/builder/sidebars/left/sections/shared/section-dialog.tsx:137
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:158
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:184
 #: apps/client/src/pages/dashboard/resumes/_layouts/grid/_components/resume-card.tsx:121
 #: apps/client/src/pages/dashboard/resumes/_layouts/list/_components/resume-item.tsx:127
 #: apps/client/src/pages/dashboard/resumes/_layouts/list/_components/resume-item.tsx:172
@@ -311,7 +320,7 @@ msgid "Download PDF"
 msgstr "Download PDF"
 
 #: apps/client/src/pages/builder/sidebars/left/sections/shared/section-dialog.tsx:181
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:246
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:299
 #: apps/client/src/pages/dashboard/resumes/_layouts/grid/_components/resume-card.tsx:105
 #: apps/client/src/pages/dashboard/resumes/_layouts/list/_components/resume-item.tsx:95
 #: apps/client/src/pages/dashboard/resumes/_layouts/list/_components/resume-item.tsx:156
@@ -322,7 +331,7 @@ msgstr "Duplicate"
 msgid "Duplicate an existing item"
 msgstr "Duplicate an existing item"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:180
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:206
 msgid "Duplicate an existing resume"
 msgstr "Duplicate an existing resume"
 
@@ -342,6 +351,10 @@ msgstr "Email"
 #: apps/client/src/pages/builder/sidebars/right/sections/information.tsx:78
 msgid "Email me"
 msgstr "Email me"
+
+#: apps/client/src/components/font-upload-dialog.tsx:258
+msgid "Enter font name"
+msgstr "Enter font name"
 
 #: apps/client/src/pages/builder/sidebars/left/sections/custom/section.tsx:63
 msgid "Enter Phosphor Icon"
@@ -373,6 +386,10 @@ msgstr "Export"
 msgid "File"
 msgstr "File"
 
+#: apps/client/src/components/font-upload-dialog.tsx:64
+msgid "File validation failed"
+msgstr "File validation failed"
+
 #: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:221
 msgid "Filetype"
 msgstr "Filetype"
@@ -381,6 +398,10 @@ msgstr "Filetype"
 msgid "Font Family"
 msgstr "Font Family"
 
+#: apps/client/src/components/font-upload-dialog.tsx:254
+msgid "Font name"
+msgstr "Font name"
+
 #: apps/client/src/pages/builder/sidebars/right/sections/typography.tsx:277
 msgid "Font Size"
 msgstr "Font Size"
@@ -388,6 +409,10 @@ msgstr "Font Size"
 #: apps/client/src/pages/builder/sidebars/right/sections/typography.tsx:253
 msgid "Font Subset"
 msgstr "Font Subset"
+
+#: apps/client/src/components/font-upload-dialog.tsx:287
+msgid "Font uploaded successfully!"
+msgstr "Font uploaded successfully!"
 
 #: apps/client/src/pages/builder/sidebars/right/sections/typography.tsx:264
 msgid "Font Variants"
@@ -410,11 +435,11 @@ msgstr "Found a bug, or have a new feature idea?"
 msgid "Full Name"
 msgstr "Full Name"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:202
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:228
 msgid "Generate a random title for your resume"
 msgstr "Generate a random title for your resume"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:187
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:213
 msgid "Give your old resume a new name."
 msgstr "Give your old resume a new name."
 
@@ -590,6 +615,11 @@ msgstr "Location"
 msgid "Lock"
 msgstr "Lock"
 
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:266
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:271
+msgid "Lock slug"
+msgstr "Lock slug"
+
 #: apps/client/src/pages/dashboard/resumes/_dialogs/lock.tsx:43
 msgid "Locking a resume will prevent any further changes to it. This is useful when you have already shared your resume with someone and you don't want to accidentally make any changes to it."
 msgstr "Locking a resume will prevent any further changes to it. This is useful when you have already shared your resume with someone and you don't want to accidentally make any changes to it."
@@ -694,6 +724,10 @@ msgstr "Phone"
 msgid "Picture"
 msgstr "Picture"
 
+#: apps/client/src/components/font-upload-dialog.tsx:106
+msgid "Please select a file and enter a font name"
+msgstr "Please select a file and enter a font name"
+
 #: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:225
 msgid "Please select a file type"
 msgstr "Please select a file type"
@@ -791,7 +825,7 @@ msgid "Rounded"
 msgstr "Rounded"
 
 #: apps/client/src/pages/builder/sidebars/left/sections/shared/section-dialog.tsx:180
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:245
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:298
 #: apps/client/src/pages/dashboard/settings/_sections/account.tsx:132
 #: apps/client/src/pages/dashboard/settings/_sections/profile.tsx:127
 msgid "Save Changes"
@@ -817,6 +851,12 @@ msgstr "Search for a language"
 #: apps/client/src/pages/dashboard/settings/_sections/security.tsx:7
 msgid "Security"
 msgstr "Security"
+
+#: apps/client/src/components/font-upload-dialog.tsx:199
+#: apps/client/src/components/font-upload-dialog.tsx:243
+#: apps/client/src/components/font-upload-dialog.tsx:244
+msgid "Select font file"
+msgstr "Select font file"
 
 #: apps/client/src/pages/builder/sidebars/left/sections/shared/section-options.tsx:97
 msgid "Separate Links"
@@ -853,7 +893,7 @@ msgstr "Since you're running in local mode, password changes and two-factor auth
 msgid "Size (in px)"
 msgstr "Size (in px)"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:228
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:254
 msgid "Slug"
 msgstr "Slug"
 
@@ -879,7 +919,7 @@ msgstr "Square"
 msgid "Start building from scratch"
 msgstr "Start building from scratch"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:185
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:211
 msgid "Start building your resume by giving it a name."
 msgstr "Start building your resume by giving it a name."
 
@@ -898,6 +938,10 @@ msgstr "Summary"
 #: apps/client/src/pages/builder/sidebars/right/sections/information.tsx:18
 msgid "Support the app by donating what you can!"
 msgstr "Support the app by donating what you can!"
+
+#: apps/client/src/components/font-upload-dialog.tsx:235
+msgid "Supports TTF, OTF, WOFF, WOFF2 formats (max 50MB)"
+msgstr "Supports TTF, OTF, WOFF, WOFF2 formats (max 50MB)"
 
 #: apps/client/src/pages/dashboard/settings/_sections/profile.tsx:81
 msgid "System"
@@ -940,7 +984,7 @@ msgstr "There was an error connecting to the browser. Please make sure 'chrome' 
 msgid "This action can be reverted by clicking on the undo button in the floating toolbar."
 msgstr "This action can be reverted by clicking on the undo button in the floating toolbar."
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:151
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:177
 msgid "This action cannot be undone. This will permanently delete your resume and cannot be recovered."
 msgstr "This action cannot be undone. This will permanently delete your resume and cannot be recovered."
 
@@ -952,7 +996,11 @@ msgstr "This resume is locked, please unlock to make further changes."
 msgid "This section is reserved for your personal notes specific to this resume. The content here remains private and is not shared with anyone else."
 msgstr "This section is reserved for your personal notes specific to this resume. The content here remains private and is not shared with anyone else."
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:216
+#: apps/client/src/components/font-upload-dialog.tsx:191
+msgid "Tip"
+msgstr "Tip"
+
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:242
 msgid "Tip: You can name the resume referring to the position you are applying for."
 msgstr "Tip: You can name the resume referring to the position you are applying for."
 
@@ -961,7 +1009,7 @@ msgctxt "Name of the Award"
 msgid "Title"
 msgstr "Title"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:196
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:222
 msgid "Title"
 msgstr "Title"
 
@@ -1003,6 +1051,11 @@ msgstr "Undo"
 msgid "Unlock"
 msgstr "Unlock"
 
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:266
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:271
+msgid "Unlock slug"
+msgstr "Unlock slug"
+
 #: apps/client/src/pages/dashboard/resumes/_dialogs/lock.tsx:44
 msgid "Unlocking a resume will allow you to make changes to it again."
 msgstr "Unlocking a resume will allow you to make changes to it again."
@@ -1011,13 +1064,32 @@ msgstr "Unlocking a resume will allow you to make changes to it again."
 msgid "Update an existing item"
 msgstr "Update an existing item"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:179
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:205
 msgid "Update an existing resume"
 msgstr "Update an existing resume"
 
 #: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:212
 msgid "Upload a file from one of the accepted sources to parse existing data and import it into Reactive Resume for easier editing."
 msgstr "Upload a file from one of the accepted sources to parse existing data and import it into Reactive Resume for easier editing."
+
+#: apps/client/src/components/font-upload-dialog.tsx:185
+msgid "Upload Custom Font"
+msgstr "Upload Custom Font"
+
+#: apps/client/src/components/font-upload-dialog.tsx:152
+#: apps/client/src/components/font-upload-dialog.tsx:158
+msgid "Upload failed"
+msgstr "Upload failed"
+
+#: apps/client/src/components/font-upload-dialog.tsx:298
+#: apps/client/src/pages/builder/sidebars/right/sections/typography.tsx:226
+msgid "Upload Font"
+msgstr "Upload Font"
+
+#: apps/client/src/components/font-upload-dialog.tsx:271
+#: apps/client/src/components/font-upload-dialog.tsx:298
+msgid "Uploading..."
+msgstr "Uploading..."
 
 #: apps/client/src/pages/builder/sidebars/left/sections/shared/url-input.tsx:61
 msgid "URL must start with https://"
@@ -1039,6 +1111,10 @@ msgstr "Validated"
 #: apps/client/src/pages/builder/sidebars/left/sections/custom/section.tsx:97
 msgid "Value"
 msgstr "Value"
+
+#: apps/client/src/components/font-upload-dialog.tsx:193
+msgid "Variable Fonts are best supported. To ensure all weights and styles work correctly, please prefer uploading a VF font."
+msgstr "Variable Fonts are best supported. To ensure all weights and styles work correctly, please prefer uploading a VF font."
 
 #: apps/client/src/pages/builder/sidebars/left/sections/shared/section-list-item.tsx:87
 msgid "Visible"
@@ -1092,55 +1168,3 @@ msgstr "Zoom In"
 #: apps/client/src/pages/builder/_components/toolbar.tsx:114
 msgid "Zoom Out"
 msgstr "Zoom Out"
-
-#: apps/client/src/components/font-upload-dialog.tsx:271
-#: apps/client/src/components/font-upload-dialog.tsx:298
-msgid "上传中..."
-msgstr "上传中..."
-
-#: apps/client/src/components/font-upload-dialog.tsx:298
-#: apps/client/src/pages/builder/sidebars/right/sections/typography.tsx:226
-msgid "上传字体"
-msgstr "上传字体"
-
-#: apps/client/src/components/font-upload-dialog.tsx:185
-msgid "上传自定义字体"
-msgstr "上传自定义字体"
-
-#: apps/client/src/components/font-upload-dialog.tsx:292
-msgid "取消"
-msgstr "取消"
-
-#: apps/client/src/components/font-upload-dialog.tsx:287
-msgid "字体上传成功！"
-msgstr "字体上传成功！"
-
-#: apps/client/src/components/font-upload-dialog.tsx:254
-msgid "字体名称"
-msgstr "字体名称"
-
-#: apps/client/src/components/font-upload-dialog.tsx:193
-msgid "当前系统对可变字体（Variable Fonts）支持最佳。为确保所有字重和样式能正常工作，建议优先上传VF字体。"
-msgstr "当前系统对可变字体（Variable Fonts）支持最佳。为确保所有字重和样式能正常工作，建议优先上传VF字体。"
-
-#: apps/client/src/components/font-upload-dialog.tsx:191
-msgid "提示"
-msgstr "提示"
-
-#: apps/client/src/components/font-upload-dialog.tsx:235
-msgid "支持 TTF, OTF, WOFF, WOFF2 格式，最大 50MB"
-msgstr "支持 TTF, OTF, WOFF, WOFF2 格式，最大 50MB"
-
-#: apps/client/src/components/font-upload-dialog.tsx:233
-msgid "点击选择或拖拽字体文件到此处"
-msgstr "点击选择或拖拽字体文件到此处"
-
-#: apps/client/src/components/font-upload-dialog.tsx:258
-msgid "请输入字体名称"
-msgstr "请输入字体名称"
-
-#: apps/client/src/components/font-upload-dialog.tsx:199
-#: apps/client/src/components/font-upload-dialog.tsx:243
-#: apps/client/src/components/font-upload-dialog.tsx:244
-msgid "选择字体文件"
-msgstr "选择字体文件"

@@ -3,10 +3,8 @@ import { ScrollArea, Separator } from "@reactive-resume/ui";
 import { motion } from "framer-motion";
 import { Helmet } from "react-helmet-async";
 
-import { AccountSettings } from "./_sections/account";
 import { DangerZoneSettings } from "./_sections/danger";
 import { ProfileSettings } from "./_sections/profile";
-import { SecuritySettings } from "./_sections/security";
 
 export const SettingsPage = () => (
   <>
@@ -27,10 +25,6 @@ export const SettingsPage = () => (
 
       <div className="h-[calc(100vh-140px)] overflow-y-auto lg:h-[calc(100vh-88px)]">
         <div className="space-y-6">
-          <AccountSettings />
-          <Separator />
-          <SecuritySettings />
-          <Separator />
           <ProfileSettings />
           <Separator />
           <DangerZoneSettings />

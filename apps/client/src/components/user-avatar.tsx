@@ -1,6 +1,6 @@
 import { getInitials } from "@reactive-resume/utils";
 
-import { useUser } from "../services/user";
+import { useAuthStore } from "../stores/auth";
 
 type Props = {
   size?: number;
@@ -8,9 +8,7 @@ type Props = {
 };
 
 export const UserAvatar = ({ size = 36, className }: Props) => {
-  const { user } = useUser();
-
-  if (!user) return null;
+  const user = useAuthStore((s) => s.user);
 
   const initials = getInitials(user.name);
 

@@ -13,9 +13,6 @@ export const configSchema = z.object({
   // Database (SQLite)
   DATABASE_URL: z.string().default("file:./local-resume.db"),
 
-  // Session Secret (用于会话管理)
-  SESSION_SECRET: z.string().default("local-session-secret-key-for-development"),
-
   // PDF Generation (现在使用本地 Puppeteer)
   CHROME_URL: z.string().optional().default("http://localhost:6173"),
   CHROME_IGNORE_HTTPS_ERRORS: z

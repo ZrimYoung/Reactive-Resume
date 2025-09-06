@@ -2,8 +2,6 @@ import { Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { NestFactory } from "@nestjs/core";
 import type { NestExpressApplication } from "@nestjs/platform-express";
-import cookieParser from "cookie-parser";
-import session from "express-session";
 import helmet from "helmet";
 
 import { AppModule } from "./app.module";
@@ -16,22 +14,8 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService<Config>);
 
-  const sessionSecret = configService.getOrThrow("SESSION_SECRET");
   const publicUrl = configService.getOrThrow("PUBLIC_URL");
   const isHTTPS = publicUrl.startsWith("https://");
-
-  // Cookie Parser
-  app.use(cookieParser());
-
-  // Session
-  app.use(
-    session({
-      resave: false,
-      saveUninitialized: false,
-      secret: sessionSecret,
-      cookie: { httpOnly: true, secure: isHTTPS },
-    }),
-  );
 
   // CORS
   // 开发环境：基于 PUBLIC_URL 动态允许来源，并兼容常用本地端口
@@ -47,7 +31,7 @@ async function bootstrap() {
     ? [/^https:\/\/.+$/]
     : [publicOrigin, "http://localhost:5173", "http://localhost:3000"].filter(Boolean);
 
-  app.enableCors({ credentials: true, origin: allowedOrigins as (string | RegExp)[] });
+  app.enableCors({ origin: allowedOrigins as (string | RegExp)[] });
 
   // Helmet - enabled only in production
   if (isHTTPS) app.use(helmet({ contentSecurityPolicy: false }));

@@ -16,7 +16,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { LocaleComboboxPopover } from "@/client/components/locale-combobox";
-import { useUpdateUser, useUser } from "@/client/services/user";
+import { useAuthStore } from "@/client/stores/auth";
 
 const formSchema = z.object({
   theme: z.enum(["system", "light", "dark"]).default("system"),
@@ -26,9 +26,9 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 export const ProfileSettings = () => {
-  const { user } = useUser();
+  const user = useAuthStore((s) => s.user);
+  const setUser = useAuthStore((s) => s.setUser);
   const { theme, setTheme } = useTheme();
-  const { updateUser, loading } = useUpdateUser();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -42,14 +42,11 @@ export const ProfileSettings = () => {
   }, [user, theme, form.reset]);
 
   const onSubmit = async (data: FormValues) => {
-    if (!user) return;
-
     setTheme(data.theme);
 
     if (user.locale !== data.locale) {
       window.localStorage.setItem("locale", data.locale);
-      await updateUser({ locale: data.locale });
-
+      setUser({ locale: data.locale });
       window.location.reload();
     }
 
@@ -123,7 +120,7 @@ export const ProfileSettings = () => {
               form.formState.isDirty && "flex animate-in fade-in",
             )}
           >
-            <Button type="submit" disabled={loading}>
+            <Button type="submit">
               {t`Save Changes`}
             </Button>
             <Button

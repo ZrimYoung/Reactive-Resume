@@ -64,7 +64,7 @@ async function bootstrap() {
 
   await app.listen(port);
 
-  Logger.log(`🚀 Server is up and running on port ${port}`, "Bootstrap");
+  Logger.log(`Server is up and running on port ${port}`, "Bootstrap");
 }
 
 // eslint-disable-next-line unicorn/prefer-top-level-await

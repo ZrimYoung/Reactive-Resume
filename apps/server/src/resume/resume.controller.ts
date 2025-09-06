@@ -83,7 +83,7 @@ export class ResumeController {
   async debugUpdate(@Param("id") id: string, @Body() updateResumeDto: UpdateResumeDto) {
     try {
       Logger.debug(
-        `DEBUG: 接收到的更新数据 ${JSON.stringify(updateResumeDto, null, 2)}`,
+        `DEBUG: Received update payload ${JSON.stringify(updateResumeDto, null, 2)}`,
         "ResumeController",
       );
 
@@ -94,7 +94,7 @@ export class ResumeController {
             : updateResumeDto.data;
 
         Logger.debug(
-          `DEBUG: CSS状态 ${JSON.stringify({
+          `DEBUG: CSS status ${JSON.stringify({
             hasCss: !!parsedData.metadata?.css,
             cssVisible: parsedData.metadata?.css?.visible,
             cssValueLength: parsedData.metadata?.css?.value?.length || 0,
@@ -107,7 +107,7 @@ export class ResumeController {
       return { success: true, result };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      Logger.debug(`DEBUG: 更新失败 ${message}`, "ResumeController");
+      Logger.debug(`DEBUG: Update failed ${message}`, "ResumeController");
       return { success: false, error: message };
     }
   }

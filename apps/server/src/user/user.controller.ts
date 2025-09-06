@@ -25,18 +25,18 @@ export class UserController {
   @Get("me")
   async fetch() {
     try {
-      // 尝试从数据库获取真实的本地用户数据
+      // Try to fetch real local user from database
       const user = await this.userService.getLocalUser();
       return user;
     } catch {
-      // 如果数据库中没有用户，返回默认值
-      Logger.warn("本地用户不存在，返回默认用户数据");
+      // If not found in DB, return default user
+      Logger.warn("Local user not found, returning default user data");
       return {
         id: LOCAL_USER_ID,
-        name: "本地用户",
+        name: "Local User",
         email: "local@example.com",
         username: "local-user",
-        locale: "zh-CN",
+        locale: "en-US",
       };
     }
   }
@@ -44,30 +44,30 @@ export class UserController {
   @Patch("me")
   async update(@Body() updateUserDto: UpdateUserDto) {
     try {
-      // 尝试更新数据库中的用户
+      // Try to update user in database
       const user = await this.userService.updateByEmail("local@example.com", updateUserDto);
       return user;
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-        // 使用通用错误替代已删除的UserAlreadyExists
+        // Use generic error instead of removed UserAlreadyExists
         throw new BadRequestException(ErrorMessage.SomethingWentWrong);
       }
 
       Logger.error(error);
-      // 如果更新失败，返回模拟数据
+      // If update fails, return fallback data
       return {
         id: LOCAL_USER_ID,
-        name: updateUserDto.name ?? "本地用户",
+        name: updateUserDto.name ?? "Local User",
         email: updateUserDto.email ?? "local@example.com",
         username: updateUserDto.username ?? "local-user",
-        locale: updateUserDto.locale ?? "zh-CN",
+        locale: updateUserDto.locale ?? "en-US",
       };
     }
   }
 
   @Delete("me")
   delete(@Res({ passthrough: true }) response: Response) {
-    // 在本地应用中，删除用户操作可以简化
+    // In local app, user deletion can be simplified
     response.status(200).send({ message: "Sorry to see you go, goodbye!" });
   }
 }

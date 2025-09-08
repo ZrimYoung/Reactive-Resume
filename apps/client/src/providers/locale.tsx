@@ -7,7 +7,6 @@ import { languages } from "@reactive-resume/utils";
 import { useEffect } from "react";
 
 import { defaultLocale, dynamicActivate } from "../libs/lingui";
-import { updateUser } from "../services/user";
 import { useAuthStore } from "../stores/auth";
 
 type Props = {
@@ -38,7 +37,7 @@ export const changeLanguage = async (locale: string) => {
 
   // Update locale in user profile, if authenticated
   const state = useAuthStore.getState();
-  if (state.user) await updateUser({ locale }).catch(() => null);
+  if (state.user) state.setUser({ locale });
 
   // Reload the page for language switch to take effect
   window.location.reload();

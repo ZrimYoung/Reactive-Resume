@@ -19,7 +19,7 @@ type UploadedFile = {
 @Injectable()
 export class FontService {
   private readonly logger = new Logger(FontService.name);
-  // 简单的内存存储，实际应该使用数据库
+  // Simple in-memory storage; ideally use a database
   private readonly userFonts = new Map<string, FontResponseDto[]>();
 
   constructor(
@@ -33,27 +33,27 @@ export class FontService {
     userId: string,
     dto: UploadFontDto,
   ): Promise<FontResponseDto> {
-    this.logger.log(`上传字体文件: ${file.originalname}, 用户: ${userId}`);
+    this.logger.log(`Uploading font: ${file.originalname}, user: ${userId}`);
 
-    // 验证文件
+    // Validate file
     const validation = customFontUtils.validateFontFile(file);
     if (!validation.valid) {
       throw new BadRequestException(validation.error);
     }
 
-    // 将字体名称安全地编码到文件名中
+    // Safely encode font family into filename
     const safeFontFamily = dto.fontFamily.replace(/[^\dA-Za-z-]/g, "_");
     const fileExtension = path.extname(file.originalname).toLowerCase();
     const fileName = `${safeFontFamily}_${randomUUID()}${fileExtension}`;
 
-    // 确定字体格式
+    // Determine font format
     const format = this.getFormatFromExtension(fileExtension);
 
-    // 解析可变字体信息
+    // Parse variable font info
     const variableFontInfo = this.variableFontParser.parseFont(file.buffer, file.originalname);
 
     try {
-      // 上传文件到存储服务（已返回绝对 URL，基于 STORAGE_URL 构造）
+      // Upload file to storage service (returns absolute URL based on STORAGE_URL)
       const fileUrl = await this.storageService.uploadObject(
         userId,
         "fonts",
@@ -61,7 +61,7 @@ export class FontService {
         fileName,
       );
 
-      // 构造响应
+      // Build response
       const fontResponse: FontResponseDto = {
         id: randomUUID(),
         fontFamily: dto.fontFamily,
@@ -69,13 +69,13 @@ export class FontService {
         originalName: file.originalname,
         fileSize: file.size,
         format,
-        url: fileUrl, // 使用存储服务返回的绝对 URL
+        url: fileUrl, // Absolute URL from storage service
         uploadedAt: new Date().toISOString(),
         userId,
         variableFont: variableFontInfo,
       };
 
-      // 保存到内存存储
+      // Save to in-memory storage
       if (!this.userFonts.has(userId)) {
         this.userFonts.set(userId, []);
       }
@@ -84,40 +84,40 @@ export class FontService {
         userFontList.push(fontResponse);
       }
 
-      this.logger.log(`字体上传成功: ${fontResponse.fontFamily}, URL: ${fileUrl}`);
+      this.logger.log(`Font uploaded: ${fontResponse.fontFamily}, URL: ${fileUrl}`);
       return fontResponse;
     } catch (error) {
       const err = error as Error;
-      this.logger.error(`字体上传失败: ${err.message}`, (err as unknown as { stack?: string })?.stack);
-      throw new BadRequestException("字体文件上传失败");
+      this.logger.error(`Font upload failed: ${err.message}`, err.stack);
+      throw new BadRequestException("Font file upload failed");
     }
   }
 
   async getUserFonts(userId: string): Promise<FontResponseDto[]> {
     const fonts = this.userFonts.get(userId) ?? [];
 
-    // 如果缓存为空，则尝试从 storage 文件夹扫描已上传字体，构建字体列表
+    // If cache is empty, scan storage folder for uploaded fonts to build list
     if (fonts.length === 0) {
       try {
         const storageRoot = path.resolve("./storage");
         const userFontDir = path.resolve(storageRoot, userId, "fonts");
 
-        // 安全检查：确保路径在预期的 storage 目录内
+        // Security check: ensure path stays within expected storage directory
         if (!userFontDir.startsWith(storageRoot)) {
-          this.logger.warn(`检测到潜在的路径遍历攻击: ${userId}`);
+          this.logger.warn(`Potential path traversal detected: ${userId}`);
           return [];
         }
 
-        // 检查目录是否存在，如果不存在则创建
+        // Ensure directory exists; create if missing
         try {
           await fs.access(userFontDir);
         } catch {
-          this.logger.debug(`字体目录不存在，正在创建: ${userFontDir}`);
+          this.logger.debug(`Font directory missing, creating: ${userFontDir}`);
           await fs.mkdir(userFontDir, { recursive: true });
         }
 
         const files = await fs.readdir(userFontDir);
-        this.logger.debug(`在 ${userFontDir} 中找到 ${files.length} 个文件`);
+        this.logger.debug(`Found ${files.length} files in ${userFontDir}`);
 
         const fonts = await Promise.all(
           files
@@ -133,22 +133,22 @@ export class FontService {
                 this.configService.get<string>("STORAGE_URL") ?? "http://localhost:3000";
               const absoluteUrl = `${storageBaseUrl}/api/storage/${userId}/fonts/${file}`;
 
-              // 获取文件信息
+              // Get file info
               let fileSize = 0;
               try {
                 const stats = await fs.stat(filePath);
                 fileSize = stats.size;
               } catch {
-                // 忽略文件状态读取错误
+                // Ignore stat errors
               }
 
-              // 尝试从文件名解析字体名称
+              // Parse font family from filename
               const [fontFamily, _uuid] = file.split("_");
-              if (!fontFamily) return null; // 跳过不符合命名规则的文件
+              if (!fontFamily) return null; // Skip non-conforming filenames
 
               return {
                 id: randomUUID(),
-                fontFamily: fontFamily.replace(/_/g, " "), // 将下划线替换回空格
+                fontFamily: fontFamily.replace(/_/g, " "),
                 category: "custom",
                 originalName: file,
                 fileSize,
@@ -160,22 +160,22 @@ export class FontService {
             }),
         );
 
-        // 过滤掉解析失败的条目
+        // Filter out failed parses
         const validFonts = fonts.filter((font): font is FontResponseDto => font !== null);
 
-        // 缓存结果
+        // Cache results
         this.userFonts.set(userId, validFonts);
-        this.logger.log(`从磁盘扫描恢复 ${validFonts.length} 个字体文件`);
+        this.logger.log(`Recovered ${validFonts.length} font files from disk scan`);
       } catch (error) {
         const err = error as Error;
-        this.logger.error(`扫描字体目录失败: ${err.message}`);
+        this.logger.error(`Failed to scan font directory: ${err.message}`);
         return [];
       }
     }
 
-    this.logger.debug(`为用户 ${userId} 返回 ${fonts.length} 个字体`);
+    this.logger.debug(`Returning ${fonts.length} fonts for user ${userId}`);
 
-    // 兜底处理：如果缓存中存在历史相对 URL，这里用 STORAGE_URL 兜底补齐
+    // Fallback: if cache has historical relative URLs, prepend STORAGE_URL as fallback
     const storageBaseUrl = this.configService.get<string>("STORAGE_URL") ?? "http://localhost:3000";
 
     return fonts.map((font) => {
@@ -197,17 +197,16 @@ export class FontService {
   }
 
   async deleteFont(fontId: string, userId: string): Promise<void> {
-    this.logger.log(`删除字体: ${fontId}, 用户: ${userId}`);
+    this.logger.log(`Delete font: ${fontId}, user: ${userId}`);
 
     try {
-      // 这里应该从数据库删除字体记录并删除文件
-      // 暂时只记录日志
-      this.logger.log(`字体删除成功: ${fontId}`);
+      // Should delete DB record and file; logging only for now
+      this.logger.log(`Font deleted: ${fontId}`);
       await Promise.resolve();
     } catch (error) {
       const err = error as Error;
-      this.logger.error(`删除字体失败: ${err.message}`);
-      throw new BadRequestException("删除字体失败");
+      this.logger.error(`Failed to delete font: ${err.message}`);
+      throw new BadRequestException("Failed to delete font");
     }
   }
 

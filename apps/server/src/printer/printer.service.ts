@@ -27,9 +27,9 @@ export class PrinterService {
 
   private async getBrowser() {
     try {
-      // 如果浏览器实例不存在或已断开连接，则创建新实例
+      // If browser instance doesn't exist or is disconnected, create a new one
       if (!this.browser?.connected) {
-        this.logger.log("启动本地 Puppeteer 浏览器实例...");
+        this.logger.log("Starting local Puppeteer browser instance...");
 
         const chromePath =
           process.env.CHROME_PATH ?? process.env.PUPPETEER_EXECUTABLE_PATH ?? undefined;
@@ -52,18 +52,18 @@ export class PrinterService {
         };
 
         if (chromePath) {
-          this.logger.log(`使用指定的 Chrome 可执行文件: ${chromePath}`);
+          this.logger.log(`Using specified Chrome executable: ${chromePath}`);
           (launchOptions as { executablePath?: string }).executablePath = chromePath;
         }
 
         this.browser = await launch(launchOptions);
 
-        this.logger.log("Puppeteer 浏览器实例已启动");
+        this.logger.log("Puppeteer browser instance started");
       }
 
       return this.browser;
     } catch (error) {
-      this.logger.error("无法启动 Puppeteer 浏览器:", error);
+      this.logger.error("Failed to start Puppeteer browser:", error);
       throw new InternalServerErrorException(
         ErrorMessage.InvalidBrowserConnection,
         (error as Error).message,
@@ -77,13 +77,13 @@ export class PrinterService {
     return version;
   }
 
-  // 预热浏览器，降低首次打印超时概率
+  // Warm up the browser to reduce initial print timeouts
   async onModuleInit() {
     try {
       await this.getBrowser();
-      this.logger.log("Puppeteer 预热完成");
+      this.logger.log("Puppeteer warmup completed");
     } catch {
-      // 预热失败不阻断启动；后续调用仍会重试
+      // Warmup failure shouldn't block startup; subsequent calls will retry
     }
   }
 
@@ -94,14 +94,14 @@ export class PrinterService {
       retries: 3,
       randomize: true,
       onRetry: (_, attempt) => {
-        this.logger.log(`重试打印简历 #${resume.id}，第 ${attempt} 次尝试`);
+        this.logger.log(`Retry printing resume #${resume.id}, attempt ${attempt}`);
       },
     });
 
     const duration = Number(performance.now() - start).toFixed(0);
     const numberPages = resume.data.metadata?.layout?.length || 1;
 
-    this.logger.debug(`PDF 生成耗时 ${duration}ms，共 ${numberPages} 页`);
+    this.logger.debug(`PDF generated in ${duration}ms, total ${numberPages} pages`);
 
     return url;
   }
@@ -113,13 +113,13 @@ export class PrinterService {
       retries: 3,
       randomize: true,
       onRetry: (_, attempt) => {
-        this.logger.log(`重试生成简历预览 #${resume.id}，第 ${attempt} 次尝试`);
+        this.logger.log(`Retry generating preview #${resume.id}, attempt ${attempt}`);
       },
     });
 
     const duration = Number(performance.now() - start).toFixed(0);
 
-    this.logger.debug(`预览生成耗时 ${duration}ms`);
+    this.logger.debug(`Preview generated in ${duration}ms`);
 
     return url;
   }
@@ -128,19 +128,19 @@ export class PrinterService {
     try {
       const browser = await this.getBrowser();
       const page = await browser.newPage();
-      // 冷启动时首次导航可能较慢，放宽默认超时
+      // First navigation can be slow on cold start; increase default timeouts
       page.setDefaultNavigationTimeout(120_000);
       page.setDefaultTimeout(120_000);
 
       const publicUrl = this.configService.getOrThrow<string>("PUBLIC_URL");
 
-      // 本地模式下不需要 host.docker.internal 转换
+      // No host.docker.internal conversion needed in local mode
       const url = publicUrl;
 
       // Set the data of the resume to be printed in the browser's session storage
       const numberPages = resume.data.metadata?.layout?.length || 1;
 
-      // 1) 显式对象合并：与 Artboard Providers 一致（数组覆盖不拼接）
+      // 1) Explicit object merge: align with Artboard Providers (arrays overwrite)
       const input = resume.data as ResumeData;
       const resumeDataForPrint: ResumeData = {
         basics: {
@@ -189,28 +189,28 @@ export class PrinterService {
         },
       } as ResumeData;
 
-      this.logger.debug(`PDF生成 - CSS状态: ${resumeDataForPrint.metadata.css.visible}`);
-      this.logger.debug(`PDF生成 - CSS内容长度: ${resumeDataForPrint.metadata.css.value.length}`);
-      this.logger.debug(`PDF生成 - 简历ID: ${resume.id}`);
+      this.logger.debug(`PDF - CSS visible: ${resumeDataForPrint.metadata.css.visible}`);
+      this.logger.debug(`PDF - CSS length: ${resumeDataForPrint.metadata.css.value.length}`);
+      this.logger.debug(`PDF - Resume ID: ${resume.id}`);
 
       await page.evaluateOnNewDocument((data) => {
         window.localStorage.setItem("resume", JSON.stringify(data));
       }, resumeDataForPrint);
 
-      // 使用 domcontentloaded，后续我们会显式等待字体与图片等资源
+      // Use domcontentloaded, then explicitly wait for fonts and images
       await page.goto(`${url}/artboard/preview`, {
         waitUntil: "domcontentloaded",
         timeout: 120_000,
       });
-      // 使用打印媒体，保证与 PDF 渲染一致
+      // Use print media for consistent PDF rendering
       await page.emulateMediaType("print");
 
-      // 等待所有字体与图片资源加载完成，确保与 Artboard 视觉一致
+      // Wait for all fonts and images to load to match Artboard visuals
       await page.evaluate(async () => {
-        // 1) 等待字体就绪
+        // 1) Wait for fonts
         await (document as Document & { fonts: { ready: Promise<void> } }).fonts.ready;
 
-        // 2) 等待所有图片（包括头像、自定义图像）加载完成
+        // 2) Wait for all images (including avatars and custom images)
         // eslint-disable-next-line unicorn/prefer-spread
         const images: HTMLImageElement[] = Array.from(document.images);
         await Promise.all(
@@ -227,17 +227,17 @@ export class PrinterService {
           ),
         );
 
-        // 3) 移除预览样式里的 body 溢出裁剪，避免 PDF 高度被剪切
+        // 3) Remove body overflow clipping in preview styles to avoid PDF cut-off
         document.documentElement.style.overflow = "visible";
         document.body.style.overflow = "visible";
         document.documentElement.style.height = "auto";
         document.body.style.height = "auto";
 
-        // 4) 给予少量缓冲，保证脚本驱动的图标/样式完成绘制
+        // 4) Small buffer to ensure script-driven icons/styles finish rendering
         await new Promise((resolve) => setTimeout(resolve, 300));
       });
 
-      // 兜底样式已前移到前端（artboard），这里不再注入覆盖性样式，避免与用户自定义 CSS 冲突
+      // Fallback styles moved to frontend (artboard); avoid injecting overriding styles here
 
       const pagesBuffer: Buffer[] = [];
 
@@ -245,8 +245,8 @@ export class PrinterService {
         const pageElement = await page.$(`[data-page="${index}"]`);
         if (!pageElement) throw new Error(`[data-page="${index}"] not found`);
 
-        // 隔离当前页：仅显示目标页，隐藏其它页，避免资源与布局丢失
-        // 使用带 id 的 <style>，并在稍后精确移除，避免影响自定义 CSS 的注入顺序
+        // Isolate current page: show only target page to avoid resource/layout loss
+        // Use a style tag with id and remove it later to keep CSS order
         await page.evaluate((i) => {
           const style = document.createElement("style");
           style.id = "puppeteer-page-isolation";
@@ -256,12 +256,12 @@ export class PrinterService {
           `;
           document.head.append(style);
 
-          // 再次将自定义 CSS（如存在）移动到末尾，确保其仍在 head 最后
+          // Move custom CSS (if any) to the end to ensure it stays last in head
           const custom = document.querySelector("#custom-css");
           if (custom) document.head.append(custom);
         }, index);
 
-        // 稍作等待，确保样式生效与布局稳定；并等待字体与图片加载
+        // Wait briefly to ensure styles take effect; also wait for fonts and images
         await page.evaluate(async () => {
           await (document as Document & { fonts: { ready: Promise<void> } }).fonts.ready;
           // eslint-disable-next-line unicorn/prefer-spread
@@ -283,11 +283,11 @@ export class PrinterService {
           await new Promise((r) => setTimeout(r, 100));
         });
 
-        // 计算是否需要缩放以“单页适配”（仅当内容超过目标纸张高度时生效）
+        // Calculate if scaling is needed to fit content in one page (only when overflow)
         const contentHeightPx = await page.evaluate((i) => {
           const el = document.querySelector(`[data-page="${i}"]`);
           if (!el) return 0;
-          // 使用 scrollHeight 以获得完整内容高度
+          // Use scrollHeight to get full content height
           return (el as HTMLElement).scrollHeight || 0;
         }, index);
 
@@ -298,32 +298,32 @@ export class PrinterService {
           : pageSizeMap[format].height;
         const targetMmHeight =
           orientation === "landscape" ? pageSizeMap[format].width : mmHeightBase;
-        const MM_TO_PX = 3.78; // 与前端一致的近似换算
+        const MM_TO_PX = 3.78; // Approximate conversion same as frontend
         const targetPxHeight = targetMmHeight * MM_TO_PX;
         const fitScaleRaw =
           targetPxHeight > 0 && contentHeightPx > 0 ? targetPxHeight / contentHeightPx : 1;
-        // 限定缩放区间，避免异常值；只在内容超出时缩小（<=1）
+        // Clamp scale range; only shrink when content overflows (<=1)
         const fitScale = Math.max(0.5, Math.min(1, fitScaleRaw));
 
-        // 若需要，将当前页内容包裹并以 CSS 方式缩放到一页内，避免分页算法将整块推到下一页
+        // If needed, wrap page content and scale via CSS to fit into a single page
         if (fitScale < 1) {
           await page.evaluate(
             (i, scale, targetPxHeight) => {
               const pageEl = document.querySelector(`[data-page="${i}"]`);
               if (!pageEl) return;
 
-              // 仅包一次
+              // Wrap once
               const pageElHtml: HTMLElement = pageEl as HTMLElement;
               let wrapper = pageElHtml.querySelector<HTMLElement>(":scope > .__fit_wrapper__");
               if (!wrapper) {
                 wrapper = document.createElement("div");
                 wrapper.className = "__fit_wrapper__";
-                // 将现有子节点移动进 wrapper
+                // Move existing children into wrapper
                 while (pageEl.firstChild) wrapper.append(pageEl.firstChild as Node);
                 pageElHtml.append(wrapper);
               }
 
-              // 限制可打印高度，绝对定位 + transform 缩放
+              // Limit printable height; use absolute positioning + transform scale
               pageElHtml.style.position = "relative";
               pageElHtml.style.height = `${targetPxHeight}px`;
               pageElHtml.style.overflow = "hidden";
@@ -341,7 +341,7 @@ export class PrinterService {
           );
         }
 
-        // 允许浏览器按 @page 自动分页；此时我们已将内容缩放进纸张高度
+        // Let the browser paginate using @page; content is now within page height
         const uint8array = await page.pdf({
           printBackground: true,
           preferCSSPageSize: true,
@@ -350,7 +350,7 @@ export class PrinterService {
         const buffer = Buffer.from(uint8array);
         pagesBuffer.push(buffer);
 
-        // 还原：精准移除隔离样式，避免误删自定义 CSS
+        // Restore: precisely remove isolation style to avoid deleting custom CSS
         await page.evaluate(() => {
           const iso = document.querySelector("#puppeteer-page-isolation");
           if (iso) iso.remove();
@@ -362,7 +362,7 @@ export class PrinterService {
         await processPage(index);
       }
 
-      // 合并各页 PDF（保持矢量），并复制每次生成 PDF 的全部页
+      // Merge all page PDFs (keep vector) and copy all pages each time
       const pdf = await PDFDocument.create();
       for (const element of pagesBuffer) {
         const doc = await PDFDocument.load(element);
@@ -372,8 +372,7 @@ export class PrinterService {
         for (const p of copiedPages) pdf.addPage(p);
       }
 
-      // Save the PDF to storage and return the URL to download the resume
-      // Store the URL in cache for future requests, under the previously generated hash digest
+      // Save the PDF to storage and return the URL; cache under generated hash
       const buffer = Buffer.from(await pdf.save());
 
       // This step will also save the resume URL in cache
@@ -389,7 +388,7 @@ export class PrinterService {
 
       return resumeUrl;
     } catch (error) {
-      this.logger.error("生成PDF时出错:", error);
+      this.logger.error("Error generating PDF:", error);
 
       throw new InternalServerErrorException(
         ErrorMessage.ResumePrinterError,
@@ -402,16 +401,16 @@ export class PrinterService {
     try {
       const browser = await this.getBrowser();
       const page = await browser.newPage();
-      // 冷启动时首次导航可能较慢，放宽默认超时
+      // First navigation can be slow on cold start; increase default timeouts
       page.setDefaultNavigationTimeout(120_000);
       page.setDefaultTimeout(120_000);
 
       const publicUrl = this.configService.getOrThrow<string>("PUBLIC_URL");
 
-      // 本地模式下不需要 host.docker.internal 转换
+      // No host.docker.internal conversion needed in local mode
       const url = publicUrl;
 
-      // 对齐前端数据合并，规范化 CSS 字段（数组覆盖）
+      // Align with frontend data merge; normalize CSS fields (arrays overwrite)
       const input = resume.data as ResumeData;
       const resumeDataForPrint: ResumeData = {
         basics: {
@@ -472,7 +471,7 @@ export class PrinterService {
         timeout: 120_000,
       });
 
-      // 等待字体与图片资源，并移除 body 溢出裁剪
+      // Wait for fonts and images; remove body overflow clipping
       await page.evaluate(async () => {
         await (document as Document & { fonts: { ready: Promise<void> } }).fonts.ready;
         // eslint-disable-next-line unicorn/prefer-spread
@@ -515,7 +514,7 @@ export class PrinterService {
 
       return previewUrl;
     } catch (error) {
-      this.logger.error("生成预览时出错:", error);
+      this.logger.error("Error generating preview:", error);
 
       throw new InternalServerErrorException(
         ErrorMessage.ResumePrinterError,
@@ -524,11 +523,11 @@ export class PrinterService {
     }
   }
 
-  // 清理资源的方法
+  // Cleanup resources
   async onModuleDestroy() {
     if (this.browser) {
       await this.browser.close();
-      this.logger.log("Puppeteer 浏览器实例已关闭");
+      this.logger.log("Puppeteer browser instance closed");
     }
   }
 }

@@ -10,7 +10,7 @@ import { Copyright } from "@/client/components/copyright";
 import { Icon } from "@/client/components/icon";
 import { UserAvatar } from "@/client/components/user-avatar";
 import { UserOptions } from "@/client/components/user-options";
-import { useUser } from "@/client/services/user";
+import { useAuthStore } from "@/client/stores/auth";
 
 type Props = {
   className?: string;
@@ -64,7 +64,7 @@ type SidebarProps = {
 };
 
 export const Sidebar = ({ setOpen }: SidebarProps) => {
-  const { user } = useUser();
+  const user = useAuthStore((s) => s.user);
   const navigate = useNavigate();
 
   useKeyboardShortcut(["shift", "r"], () => {

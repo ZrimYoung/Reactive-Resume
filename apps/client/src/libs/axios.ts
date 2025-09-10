@@ -6,7 +6,7 @@ import _axios from "axios";
 import { toast } from "../hooks/use-toast";
 import { translateError } from "../services/errors/translate-error";
 
-export const axios = _axios.create({ baseURL: "/api", withCredentials: true });
+export const axios = _axios.create({ baseURL: "/api" });
 
 // Intercept responses to transform ISO dates to JS date objects
 axios.interceptors.response.use(

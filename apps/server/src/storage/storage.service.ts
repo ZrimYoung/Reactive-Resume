@@ -39,12 +39,12 @@ export class StorageService implements OnModuleInit {
 
   async onModuleInit() {
     try {
-      // 确保存储目录存在
+      // Ensure storage directory exists
       await fs.mkdir(this.storageRoot, { recursive: true });
-      this.logger.log("本地存储服务初始化成功");
+      this.logger.log("Local storage service initialized successfully");
     } catch (error) {
-      this.logger.error("本地存储服务初始化失败", error);
-      throw new InternalServerErrorException("存储服务初始化失败");
+      this.logger.error("Failed to initialize local storage service", error);
+      throw new InternalServerErrorException("Failed to initialize storage service");
     }
   }
 
@@ -81,11 +81,11 @@ export class StorageService implements OnModuleInit {
     const url = `${storageUrl}/api/storage/${userId}/${type}/${normalizedFilename}.${extension}`;
 
     try {
-      // 确保用户目录存在
+      // Ensure user directory exists
       await fs.mkdir(userDir, { recursive: true });
 
       if (type === "pictures" || type === "previews") {
-        // 如果是图片，使用 sharp 调整大小
+        // If image, resize using sharp
         buffer = await sharp(buffer)
           .resize({ width: 600, height: 600, fit: sharp.fit.outside })
           .jpeg({ quality: 80 })
@@ -93,12 +93,12 @@ export class StorageService implements OnModuleInit {
       }
 
       await fs.writeFile(filepath, buffer);
-      this.logger.log(`文件上传成功: ${url}`);
+      this.logger.log(`File uploaded successfully: ${url}`);
 
       return url;
     } catch (error) {
-      this.logger.error("文件上传失败", error);
-      throw new InternalServerErrorException("文件上传失败");
+      this.logger.error("File upload failed", error);
+      throw new InternalServerErrorException("File upload failed");
     }
   }
 
@@ -118,12 +118,12 @@ export class StorageService implements OnModuleInit {
     const filepath = this.getSafePath(userId, type, finalFilename);
 
     try {
-      // 使用 rm 并强制删除，不存在时不抛错（等价于忽略 ENOENT）
+      // Use rm with force; ignore if not exists (ENOENT)
       await fs.rm(filepath, { force: true });
-      this.logger.log(`文件删除成功或不存在（已忽略）: ${filepath}`);
+      this.logger.log(`File deleted or not found (ignored): ${filepath}`);
     } catch (error) {
-      this.logger.error(`文件删除失败: ${filepath}`, error);
-      throw new InternalServerErrorException(`文件删除失败: ${filepath}`);
+      this.logger.error(`File deletion failed: ${filepath}`, error);
+      throw new InternalServerErrorException(`File deletion failed: ${filepath}`);
     }
   }
 
@@ -163,8 +163,8 @@ export class StorageService implements OnModuleInit {
     try {
       return await fs.readFile(filepath);
     } catch (error) {
-      this.logger.error(`文件读取失败: ${filepath}`, error);
-      throw new InternalServerErrorException(`文件读取失败: ${filepath}`);
+      this.logger.error(`File read failed: ${filepath}`, error);
+      throw new InternalServerErrorException(`File read failed: ${filepath}`);
     }
   }
 }

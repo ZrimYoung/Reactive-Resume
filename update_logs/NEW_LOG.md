@@ -1,6 +1,30 @@
 # 更新记录
 
 - 时间: 自动生成
+## 2025-09-06 本地单用户化：彻底移除账户功能
+
+- 前端
+  - Sidebar 与 UserAvatar 切换为 `useAuthStore` 本地状态（移除 `useUser` 依赖）。
+  - 删除设置页 `AccountSettings`、`SecuritySettings` 两个小节及引用。
+  - 将 `ProfileSettings` 改为纯本地：主题与语言保存在本地（`useTheme`/`localStorage` + `useAuthStore`）。
+  - 删除前端用户服务目录：`apps/client/src/services/user/*`。
+  - 取消 Axios `withCredentials` 配置。
+
+- 后端
+  - 删除 `apps/server/src/user/*`（控制器/服务/模块/装饰器）。
+  - 从 `app.module.ts` 移除 `UserModule`。
+  - `main.ts` 移除 `cookie-parser` 与 `express-session`，CORS 去掉 `credentials`。
+  - `config/schema.ts` 移除 `SESSION_SECRET`。
+  - 删除 `Request.user` 类型扩展，仅保留 `payload.resume`。
+  - 清理依赖：从 `package.json` 移除 `cookie-parser` 与 `express-session` 及其类型。
+
+- 影响
+  - 不再存在任何账户/鉴权行为；用户信息只作为本地偏好存在。
+  - 简历数据仍与固定 `local-user-id` 关联，数据库模型未改动（保持最小变更）。
+
+- 验证建议
+  - 运行 `pnpm i` 后执行 `nx run-many -t build,lint`；再手测 `/dashboard/*` 与简历 CRUD/打印。
+
 - 修改: 统一导入接口返回的 ResumeDto.data 为对象；前端在创建/导入成功时对写入缓存的数据做兜底规范化，避免 builder loader 命中新鲜但不规范（字符串）的 data。
 - 影响: 解决新建样例/复制/导入后立刻进入编辑页报错、刷新后恢复的问题；正常新建不受影响且更稳健。
 - 涉及: apps/server/src/resume/resume.service.ts, apps/client/src/services/resume/create.ts, apps/client/src/services/resume/import.ts

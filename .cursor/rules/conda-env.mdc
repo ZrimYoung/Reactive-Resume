@@ -1,4 +1,4 @@
 ---
 alwaysApply: true
 ---
-use 'resume' as the default conda environment.
+Always use 'resume' as the default conda environment. NEVER use 'base' as the default conda environment.

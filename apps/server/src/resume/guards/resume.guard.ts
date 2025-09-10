@@ -1,5 +1,4 @@
 import { CanActivate, ExecutionContext, Injectable, NotFoundException } from "@nestjs/common";
-import { UserWithSecrets } from "@reactive-resume/dto";
 import { ErrorMessage } from "@reactive-resume/utils";
 import { Request } from "express";
 
@@ -11,7 +10,6 @@ export class ResumeGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
-    const user = request.user as UserWithSecrets | false;
 
     try {
       // In local mode, we use a fixed local user ID

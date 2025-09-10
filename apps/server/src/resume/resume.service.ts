@@ -71,10 +71,10 @@ export class ResumeService {
     const randomTitle = generateRandomName();
 
     try {
-      // 验证和标准化导入的数据
+      // Validate and normalize imported data
       const parsedData = importResumeDto.data;
 
-      // 确保数据结构完整，合并默认值
+      // Ensure data structure completeness and merge defaults
       const safeData = {
         ...parsedData,
         basics: parsedData.basics,
@@ -94,12 +94,12 @@ export class ResumeService {
         },
       };
 
-      // 使用schema验证
+      // Validate with schema
       const validatedData = resumeDataSchema.parse(safeData);
       const processedData = JSON.stringify(validatedData);
 
       this.logger.debug(
-        `简历导入 - 数据验证成功: ${JSON.stringify({
+        `Resume import - data validation success: ${JSON.stringify({
           hasMetadata: !!validatedData.metadata,
           hasCss: !!validatedData.metadata.css,
           cssVisible: validatedData.metadata.css.visible,
@@ -126,10 +126,10 @@ export class ResumeService {
     } catch (error) {
       const err = error as Error;
       this.logger.error(
-        `简历导入失败: ${err.message}`,
+        `Resume import failed: ${err.message}`,
         (err as unknown as { stack?: string }).stack,
       );
-      throw new BadRequestException(`简历导入失败: ${err.message}`);
+      throw new BadRequestException(`Resume import failed: ${err.message}`);
     }
   }
 
@@ -165,19 +165,19 @@ export class ResumeService {
 
       if (locked) throw new BadRequestException(ErrorMessage.ResumeLocked);
 
-      // 验证和标准化数据
+      // Validate and normalize data
       let processedData: string | undefined;
       if (updateResumeDto.data) {
         try {
-          // 如果是字符串，先解析再重新序列化以验证格式
+          // If string, parse then re-serialize for validation
           const parsedData =
             typeof updateResumeDto.data === "string"
               ? JSON.parse(updateResumeDto.data)
               : updateResumeDto.data;
 
-          // 使用resumeDataSchema验证数据结构
+          // Validate structure with resumeDataSchema
           try {
-            // 在验证之前，先确保数据结构完整
+            // Ensure data structure completeness before validation
             const safeData = {
               ...parsedData,
               basics: parsedData.basics || {},
@@ -197,12 +197,12 @@ export class ResumeService {
               },
             };
 
-            // 使用schema验证
+            // Validate with schema
             const validatedData = resumeDataSchema.parse(safeData);
             processedData = JSON.stringify(validatedData);
 
             this.logger.debug(
-              `简历更新 - 数据验证成功: ${JSON.stringify({
+              `Resume update - data validation success: ${JSON.stringify({
                 hasMetadata: !!validatedData.metadata,
                 hasCss: !!validatedData.metadata.css,
                 cssVisible: validatedData.metadata.css.visible,
@@ -211,9 +211,9 @@ export class ResumeService {
             );
           } catch (validationError) {
             const e = validationError as Error;
-            this.logger.error(`简历数据验证失败: ${e.message}`, e);
+            this.logger.error(`Resume data validation failed: ${e.message}`, e);
 
-            // 如果验证失败，尝试使用原始数据但修复已知问题
+            // On validation failure, fallback to original data but fix known issues
             if (parsedData.metadata?.css) {
               const css = parsedData.metadata.css;
               parsedData.metadata.css = {
@@ -223,15 +223,15 @@ export class ResumeService {
             }
 
             processedData = JSON.stringify(parsedData);
-            this.logger.warn("使用修复后的数据而非验证通过的数据");
+            this.logger.warn("Using corrected data instead of validated data");
           }
         } catch (parseError) {
           const e = parseError as Error;
           this.logger.error(
-            `简历数据解析失败: ${e.message}`,
+            `Failed to parse resume data: ${e.message}`,
             (e as unknown as { stack?: string }).stack,
           );
-          throw new BadRequestException(`无效的简历数据格式: ${e.message}`);
+          throw new BadRequestException(`Invalid resume data format: ${e.message}`);
         }
       }
 
@@ -254,19 +254,19 @@ export class ResumeService {
     } catch (error) {
       const err = error as Error & { code?: string };
       this.logger.error(
-        `简历更新失败: ${err.message}`,
+        `Resume update failed: ${err.message}`,
         (err as unknown as { stack?: string }).stack,
       );
 
       if (err.code === "P2025") {
-        throw new InternalServerErrorException("简历不存在或无权限访问");
+        throw new InternalServerErrorException("Resume does not exist or access denied");
       }
 
       if (err instanceof BadRequestException) {
         throw err;
       }
 
-      throw new InternalServerErrorException(`简历更新失败: ${err.message}`);
+      throw new InternalServerErrorException(`Resume update failed: ${err.message}`);
     }
   }
 

@@ -13,7 +13,6 @@ import { PrinterModule } from "./printer/printer.module";
 import { ResumeModule } from "./resume/resume.module";
 import { StorageModule } from "./storage/storage.module";
 import { TranslationModule } from "./translation/translation.module";
-import { UserModule } from "./user/user.module";
 
 // 只在生产环境下配置静态文件服务，并兼容 Electron asar 打包路径
 function resolveStaticRoot(relative: string): string {
@@ -49,7 +48,6 @@ const staticFileModules =
     HealthModule,
 
     // Feature Modules
-    UserModule,
     ResumeModule,
     StorageModule,
     FontModule,

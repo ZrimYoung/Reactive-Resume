@@ -371,3 +371,41 @@
 ## 建议的下一步
 - 重新运行 CodeQL 扫描确认告警消除。
 - 对日志输出做一次总览，确保未来新增日志遵循“只记结构/状态，不记具体值”的原则。
+
+## 2025-09-10 安全：修复 Helmet 配置（启用 CSP）
+
+- 背景：CodeQL 告警 `js/insecure-helmet-configuration` 指出在 `apps/server/src/main.ts` 中将 `helmet({ contentSecurityPolicy: false })` 关闭了 CSP，存在 XSS/点击劫持等风险。
+- 变更：在仅生产（HTTPS）环境启用 `helmet()`，采用默认安全头，移除 `contentSecurityPolicy: false` 禁用项。
+  - 代码：
+    ```53:58:apps/server/src/main.ts
+    // Helmet - enabled only in production
+    if (isHTTPS) app.use(helmet());
+    ```
+  - 影响：默认开启 CSP、X-Frame-Options/Frame-guard 等。由于项目已移除 Swagger UI，默认 CSP 不再阻碍调试页面；如未来引入需要内联脚本/样式的页面，请通过 `helmet.contentSecurityPolicy` 显式放行必要来源（尽量避免 `unsafe-inline`）。
+- 验证：
+  - 运行 `pnpm nx run server:build` 或 `pnpm nx run-many -t build,lint`，确保无类型/构建错误。
+  - 在 HTTPS 部署环境验证响应头包含 `content-security-policy`、`x-frame-options`、`x-content-type-options`、`referrer-policy` 等。
+
+### 2025-09-10 安全：显式配置 CSP 与 Frameguard
+
+- 变更：对生产（HTTPS）环境下的 Helmet 进行显式、安全配置：
+  - `frameguard: { action: 'deny' }`
+  - `contentSecurityPolicy`：`useDefaults: true`，并设置 `defaultSrc 'self'`、`baseUri 'self'`、`frameAncestors 'none'`
+  - 代码：
+    ```53:66:apps/server/src/main.ts
+    if (isHTTPS)
+      app.use(
+        helmet({
+          frameguard: { action: "deny" },
+          contentSecurityPolicy: {
+            useDefaults: true,
+            directives: {
+              defaultSrc: ["'self'"],
+              baseUri: ["'self'"],
+              frameAncestors: ["'none'"],
+            },
+          },
+        }),
+      );
+    ```
+- 影响：更严格禁止被其它站点以 `<iframe>` 嵌入（防点击劫持）。如果未来确有需要嵌入的场景（如嵌入在受信任域的容器中），可在 `frameAncestors` 中添加允许的来源列表；避免回退到关闭 `frameguard` 或移除 CSP。

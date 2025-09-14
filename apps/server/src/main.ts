@@ -34,7 +34,20 @@ async function bootstrap() {
   app.enableCors({ origin: allowedOrigins as (string | RegExp)[] });
 
   // Helmet - enabled only in production
-  if (isHTTPS) app.use(helmet({ contentSecurityPolicy: false }));
+  if (isHTTPS)
+    app.use(
+      helmet({
+        frameguard: { action: "deny" },
+        contentSecurityPolicy: {
+          useDefaults: true,
+          directives: {
+            defaultSrc: ["'self'"],
+            baseUri: ["'self'"],
+            frameAncestors: ["'none'"],
+          },
+        },
+      }),
+    );
 
   // Global Prefix
   const globalPrefix = "api";

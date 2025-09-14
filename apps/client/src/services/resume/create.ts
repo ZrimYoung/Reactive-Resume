@@ -4,6 +4,7 @@ import type { AxiosResponse } from "axios";
 
 import { axios } from "@/client/libs/axios";
 import { queryClient } from "@/client/libs/query-client";
+import { previewResume } from "./preview";
 
 export const createResume = async (data: CreateResumeDto) => {
   const response = await axios.post<ResumeDto, AxiosResponse<ResumeDto>, CreateResumeDto>(
@@ -21,7 +22,7 @@ export const useCreateResume = () => {
     mutateAsync: createResumeFn,
   } = useMutation({
     mutationFn: createResume,
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       // 注意：直接对类实例使用展开会丢失原型，先转为普通对象再处理
       type AnyRecord = Record<string, unknown> & { data?: unknown };
       const plain = JSON.parse(JSON.stringify(data)) as AnyRecord;
@@ -38,6 +39,13 @@ export const useCreateResume = () => {
         if (!cache) return [normalized];
         return [...cache, normalized];
       });
+
+      // 创建成功后异步触发一次预览生成（不阻塞 UI）
+      try {
+        void previewResume({ id: normalized.id });
+      } catch {
+        // 忽略生成失败，列表将回退到模板图
+      }
     },
   });
 

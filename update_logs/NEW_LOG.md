@@ -1,3 +1,7 @@
+- feat(i18n): 为简历卡片菜单新增项“Refresh Preview”添加中文翻译（“刷新预览”）；并在卡片点击时调用生成接口并通过 cacheKey 强制刷新图片缓存。
+  - 位置：`apps/client/src/pages/dashboard/resumes/_layouts/grid/_components/resume-card.tsx`
+  - 语言文件：`apps/client/src/locales/zh-CN/messages.po`
+  - 建议：若后续新增文案，请同步更新 zh-CN 与其他语言包，避免出现英文回退。
 # 更新记录
 
 - 时间: 自动生成

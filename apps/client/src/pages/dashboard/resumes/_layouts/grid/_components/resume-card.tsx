@@ -1,5 +1,6 @@
 import { t } from "@lingui/macro";
 import {
+  ArrowClockwise,
   CopySimple,
   FolderOpen,
   Lock,
@@ -18,8 +19,10 @@ import {
 import { cn } from "@reactive-resume/utils";
 import dayjs from "dayjs";
 import { AnimatePresence, motion } from "framer-motion";
+import { useState } from "react";
 import { useNavigate } from "react-router";
 
+import { previewResume } from "@/client/services/resume/preview";
 import { useDialog } from "@/client/stores/dialog";
 
 import { BaseCard } from "./base-card";
@@ -33,8 +36,11 @@ export const ResumeCard = ({ resume }: Props) => {
   const { open } = useDialog<ResumeDto>("resume");
   const { open: lockOpen } = useDialog<ResumeDto>("lock");
 
-  const template = resume?.data?.metadata?.template || "rhyhorn";
+  const template = resume.data.metadata.template || "rhyhorn";
   const lastUpdated = dayjs().to(resume.updatedAt);
+  const fallbackSrc = `/templates/jpg/${template}.jpg`;
+  const [cacheKey, setCacheKey] = useState<number>(new Date(resume.updatedAt).getTime());
+  const previewSrc = `/api/storage/${resume.userId}/previews/${resume.id}.jpg?t=${cacheKey}`;
 
   const onOpen = () => {
     void navigate(`/builder/${resume.id}`);
@@ -54,6 +60,19 @@ export const ResumeCard = ({ resume }: Props) => {
 
   const onDelete = () => {
     open("delete", { id: "resume", item: resume });
+  };
+
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefreshPreview = async () => {
+    try {
+      setRefreshing(true);
+      await previewResume({ id: resume.id });
+      setCacheKey(Date.now());
+    } catch {
+      // 忽略错误；若失败仍会显示模板图或旧图
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   return (
@@ -84,9 +103,14 @@ export const ResumeCard = ({ resume }: Props) => {
           </div>
 
           <img
-            src={`/templates/jpg/${template}.jpg`}
+            src={previewSrc}
             alt={template}
             className="rounded-sm opacity-80"
+            loading="lazy"
+            onError={(e) => {
+              const img = e.currentTarget as HTMLImageElement;
+              if (img.src !== window.location.origin + fallbackSrc) img.src = fallbackSrc;
+            }}
           />
         </BaseCard>
       </DropdownMenuTrigger>
@@ -103,6 +127,10 @@ export const ResumeCard = ({ resume }: Props) => {
         <DropdownMenuItem onClick={onDuplicate}>
           <CopySimple size={14} className="mr-2" />
           {t`Duplicate`}
+        </DropdownMenuItem>
+        <DropdownMenuItem disabled={refreshing} onClick={onRefreshPreview}>
+          <ArrowClockwise size={14} className="mr-2" />
+          {t`Refresh Preview`}
         </DropdownMenuItem>
         {resume.locked ? (
           <DropdownMenuItem onClick={onLockChange}>

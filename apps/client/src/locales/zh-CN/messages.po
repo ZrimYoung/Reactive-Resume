@@ -327,6 +327,10 @@ msgstr "下载 PDF"
 msgid "Duplicate"
 msgstr "复制"
 
+#: apps/client/src/pages/dashboard/resumes/_layouts/grid/_components/resume-card.tsx:133
+msgid "Refresh Preview"
+msgstr "刷新预览"
+
 #: apps/client/src/pages/builder/sidebars/left/sections/shared/section-dialog.tsx:165
 msgid "Duplicate an existing item"
 msgstr "复制现有项目"

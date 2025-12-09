@@ -46,8 +46,16 @@ export const ArtboardPage = () => {
     const isGoogleFont = googleFonts.some((font) => font.family === family);
 
     if (isGoogleFont) {
-      const fontString = `${family}:wght@100;200;300;400;500;600;700;800;900`;
-      webfontloader.load({ google: { families: [fontString] } });
+      // 检查是否在 Electron 离线环境中
+      const isElectron = 'electron' in window;
+      if (!isElectron) {
+        const fontString = `${family}:wght@100;200;300;400;500;600;700;800;900`;
+        webfontloader.load({ google: { families: [fontString] } });
+      } else {
+        // 离线模式下，尝试加载本地缓存的字体，或者回退到系统字体
+        // 暂时不进行主动 WebFont 加载，避免请求 Google Fonts 失败报错
+        console.log(`[Offline] Skipping Google Font load for ${family}`);
+      }
     }
   }, [metadata.typography.font.family]);
 

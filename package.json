@@ -276,6 +276,8 @@
     },
     "files": [
       "electron.js",
+      "loading.html",
+      "preload.js",
       "dist/electron/**/*",
       "dist/apps/**/*",
       "node_modules/**/*",

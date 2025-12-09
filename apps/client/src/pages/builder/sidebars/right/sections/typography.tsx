@@ -115,12 +115,12 @@ export const TypographySection = () => {
     try {
       const response = await fetch("/api/fonts/user/local-user-id");
       if (response.ok) {
-        const fonts = await response.json();
-        const fontFamilies = fonts.map((font: any) => font.fontFamily || font.family);
-        setCustomFonts(fontFamilies);
+        const fonts = (await response.json()) as { fontFamily?: string; family?: string }[];
+        const fontFamilies = fonts.map((font) => font.fontFamily || font.family || "");
+        setCustomFonts(fontFamilies.filter(Boolean));
       }
-    } catch (error) {
-      console.warn("加载自定义字体失败:", error);
+    } catch {
+      // 忽略加载错误
     } finally {
       setIsLoadingFonts(false);
     }
@@ -130,6 +130,9 @@ export const TypographySection = () => {
   const fontSuggestions = getfontSuggestions(customFonts);
 
   const loadFontSuggestions = useCallback(() => {
+    // Electron 环境下跳过 Google Fonts 加载
+    if ("electron" in window) return;
+
     for (const font of fontSuggestions) {
       if (localFonts.includes(font) || customFonts.includes(font)) continue;
 
@@ -139,7 +142,7 @@ export const TypographySection = () => {
         google: { families: [font], text: font },
       });
     }
-  }, [fontSuggestions]);
+  }, [fontSuggestions, customFonts]);
 
   const handleUploadSuccess = useCallback(
     (fontFamily: string) => {
@@ -158,7 +161,7 @@ export const TypographySection = () => {
 
   // 只在组件首次加载时执行
   useEffect(() => {
-    loadCustomFonts();
+    void loadCustomFonts();
   }, [loadCustomFonts]);
 
   // 字体建议更新时加载字体
@@ -204,8 +207,8 @@ export const TypographySection = () => {
           <Label>{t`Font Family`}</Label>
           <Combobox
             options={families.sort((a, b) => {
-              const labelA = a.label?.toString() ?? "";
-              const labelB = b.label?.toString() ?? "";
+              const labelA = typeof a.label === "string" ? a.label : String(a.label);
+              const labelB = typeof b.label === "string" ? b.label : String(b.label);
               return labelA.localeCompare(labelB);
             })}
             value={typography.font.family}

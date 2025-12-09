@@ -2,6 +2,10 @@
   - 位置：`apps/client/src/pages/dashboard/resumes/_layouts/grid/_components/resume-card.tsx`
   - 语言文件：`apps/client/src/locales/zh-CN/messages.po`
   - 建议：若后续新增文案，请同步更新 zh-CN 与其他语言包，避免出现英文回退。
+- 2025-12-09 Lint 修复（resume store）
+  - 位置：`apps/client/src/stores/resume.ts`
+  - 调整：对 `debouncedUpdateResume` 调用使用 `void` 明确忽略 Promise 结果，并在删除自定义区块时将占位变量改为 `_removed` 以通过未使用变量校验。
+  - 建议：后续新增异步更新时，要么 `await` 处理返回值，要么用 `void` 标记忽略，确保 ESLint 通过。
 # 更新记录
 
 - 时间: 自动生成

@@ -45,7 +45,7 @@ export const useResumeStore = create<ResumeStore>()(
         set((state) => {
           state.resume.data = _set(state.resume.data, path, value);
           const { id, data } = state.resume;
-          debouncedUpdateResume({ id, data: JSON.parse(JSON.stringify(data)) });
+          void debouncedUpdateResume({ id, data: JSON.parse(JSON.stringify(data)) });
         });
       },
       addSection: () => {
@@ -63,7 +63,7 @@ export const useResumeStore = create<ResumeStore>()(
           state.resume.data = _set(state.resume.data, `sections.custom.${section.id}`, section);
 
           const { id, data } = state.resume;
-          debouncedUpdateResume({ id, data: JSON.parse(JSON.stringify(data)) });
+          void debouncedUpdateResume({ id, data: JSON.parse(JSON.stringify(data)) });
         });
       },
       removeSection: (sectionId: SectionKey) => {
@@ -75,11 +75,12 @@ export const useResumeStore = create<ResumeStore>()(
             removeItemInLayout(sectionId, layout);
 
             // Remove the custom section using spread syntax instead of delete
-            const { [id]: removed, ...remainingCustomSections } = state.resume.data.sections.custom;
+            const { [id]: _removed, ...remainingCustomSections } =
+              state.resume.data.sections.custom;
             state.resume.data.sections.custom = remainingCustomSections;
 
             const { id: resumeId, data } = state.resume;
-            debouncedUpdateResume({ id: resumeId, data: JSON.parse(JSON.stringify(data)) });
+            void debouncedUpdateResume({ id: resumeId, data: JSON.parse(JSON.stringify(data)) });
           });
         }
       },

@@ -47,15 +47,15 @@ export const ArtboardPage = () => {
 
     if (isGoogleFont) {
       // 检查是否在 Electron 离线环境中
-      const isElectron = 'electron' in window;
-      if (!isElectron) {
-        const fontString = `${family}:wght@100;200;300;400;500;600;700;800;900`;
-        webfontloader.load({ google: { families: [fontString] } });
-      } else {
+      const isElectron = "electron" in window;
+      if (isElectron) {
         // 离线模式下，尝试加载本地缓存的字体，或者回退到系统字体
         // 暂时不进行主动 WebFont 加载，避免请求 Google Fonts 失败报错
-        console.log(`[Offline] Skipping Google Font load for ${family}`);
+        return;
       }
+
+      const fontString = `${family}:wght@100;200;300;400;500;600;700;800;900`;
+      webfontloader.load({ google: { families: [fontString] } });
     }
   }, [metadata.typography.font.family]);
 
@@ -85,12 +85,34 @@ export const ArtboardPage = () => {
     return fontCSS;
   }, [customFonts]);
 
+  // 动态生成 CSS 变量，替代 useEffect 的行内样式设置，允许 Custom CSS 覆盖
+  const themeVariablesCSS = useMemo(() => {
+    const fontSize = metadata.typography.font.size;
+    const lineHeight = metadata.typography.lineHeight;
+    const pageMargin = metadata.page.margin;
+    const themeText = metadata.theme.text;
+    const themePrimary = metadata.theme.primary;
+    const themeBackground = metadata.theme.background;
+
+    return `
+      :root {
+        font-size: ${fontSize}px;
+        line-height: ${lineHeight};
+        --font-size: ${fontSize}px;
+        --line-height: ${lineHeight};
+        --margin: ${pageMargin}px;
+        --color-foreground: ${themeText};
+        --color-primary: ${themePrimary};
+        --color-background: ${themeBackground};
+      }
+    `;
+  }, [metadata]);
+
   // 动态字体等级映射，确保面板字号控制对 Tailwind 文本类生效
   const dynamicFontScale = useMemo(() => {
-    const base = metadata.typography.font.size;
     // 近似 Tailwind 比例：xs 0.75, sm 0.875, base 1, lg 1.125, xl 1.25, 2xl 1.5
+    // 使用 !important 确保覆盖 Tailwind 默认样式；Custom CSS 需同样使用 !important 才能覆盖此设置
     return `
-    :root { --font-size: ${base}px; }
     .text-xs { font-size: calc(var(--font-size) * 0.75) !important; }
     .text-sm { font-size: calc(var(--font-size) * 0.875) !important; }
     .text-base { font-size: var(--font-size) !important; }
@@ -114,29 +136,19 @@ export const ArtboardPage = () => {
 `;
   }, [metadata.page]);
 
-  useEffect(() => {
-    const fontSize = metadata.typography.font.size;
-    const lineHeight = metadata.typography.lineHeight;
-    const pageMargin = metadata.page.margin;
-    const themeText = metadata.theme.text;
-    const themePrimary = metadata.theme.primary;
-    const themeBackground = metadata.theme.background;
-
-    document.documentElement.style.setProperty("font-size", `${fontSize}px`);
-    document.documentElement.style.setProperty("line-height", `${lineHeight}`);
-    document.documentElement.style.setProperty("--margin", `${pageMargin}px`);
-    document.documentElement.style.setProperty("--font-size", `${fontSize}px`);
-    document.documentElement.style.setProperty("--line-height", `${lineHeight}`);
-    document.documentElement.style.setProperty("--color-foreground", themeText);
-    document.documentElement.style.setProperty("--color-primary", themePrimary);
-    document.documentElement.style.setProperty("--color-background", themeBackground);
-  }, [metadata]);
+  // 移除直接操作 documentElement.style 的副作用，避免锁死行内样式
+  // useEffect(() => {
+  //   const fontSize = metadata.typography.font.size;
+  //   ...
+  //   document.documentElement.style.setProperty("font-size", `${fontSize}px`);
+  //   ...
+  // }, [metadata]);
 
   // 确保自定义 CSS 始终位于 <head> 最后，获得最高覆盖优先级
   useEffect(() => {
     const moveCustomCssToTail = () => {
       const styleEl = document.querySelector("#custom-css");
-      if (styleEl && styleEl.parentElement) {
+      if (styleEl?.parentElement) {
         document.head.append(styleEl);
       }
     };
@@ -160,9 +172,11 @@ export const ArtboardPage = () => {
     <>
       <Helmet>
         <title>{name} | Reactive Resume</title>
-        {/* 先注入动态字体映射，再注入自定义 CSS（自定义 CSS 仍可用 !important 覆盖） */}
+        {/* 基础 CSS 变量定义，优先级最低 */}
+        <style id="theme-variables">{themeVariablesCSS}</style>
+        {/* 动态字体类定义 */}
         <style id="dynamic-font-scale">{dynamicFontScale}</style>
-        {/* 打印页面尺寸定义，供 Puppeteer 使用 preferCSSPageSize 自动分页 */}
+        {/* 打印页面尺寸定义 */}
         <style id="print-page-size">{printPageSizeCSS}</style>
         {customFontCSS && <style id="custom-font-css">{customFontCSS}</style>}
         <style id="main-font-family">

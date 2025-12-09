@@ -9,10 +9,22 @@ import { useResumeStore } from "@/client/stores/resume";
 
 import { SectionIcon } from "../shared/section-icon";
 
-const onJsonExport = () => {
+const onJsonExport = async () => {
   const { resume } = useResumeStore.getState();
   const filename = `reactive_resume-${resume.id}.json`;
   const resumeJSON = JSON.stringify(resume.data, null, 2);
+
+  // Electron Environment: Use native save dialog
+  if ('electron' in window) {
+    const result = await window.electron.downloadAndSave(
+      `data:application/json;charset=utf-8,${encodeURIComponent(resumeJSON)}`, 
+      filename
+    );
+    if (!result.canceled) {
+      // Could show a toast here
+    }
+    return;
+  }
 
   saveAs(new Blob([resumeJSON], { type: "application/json" }), filename);
 };
@@ -28,6 +40,13 @@ export const ExportSection = () => {
   const onPdfExport = async () => {
     const { resume } = useResumeStore.getState();
     const { url } = await printResume({ id: resume.id });
+
+    // Electron Environment: Download directly to file
+    if ('electron' in window) {
+      const filename = `reactive_resume-${resume.id}.pdf`;
+      await window.electron.downloadAndSave(url, filename);
+      return;
+    }
 
     openInNewTab(url);
   };

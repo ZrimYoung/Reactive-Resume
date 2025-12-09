@@ -41,15 +41,7 @@ export const TypographySection = () => {
   const hasLoadedCustomFonts = useRef(false);
 
   const setValue = useResumeStore((state) => state.setValue);
-  const typography = useResumeStore(
-    (state) =>
-      state.resume.data.metadata.typography || {
-        font: { family: "IBM Plex Serif", subset: "latin", variants: ["regular"], size: 14 },
-        lineHeight: 1.5,
-        hideIcons: false,
-        underlineLinks: true,
-      },
-  );
+  const typography = useResumeStore((state) => state.resume.data.metadata.typography);
 
   const handleFamilyChange = useCallback(
     (family: string | null) => {
@@ -116,7 +108,7 @@ export const TypographySection = () => {
       const response = await fetch("/api/fonts/user/local-user-id");
       if (response.ok) {
         const fonts = (await response.json()) as { fontFamily?: string; family?: string }[];
-        const fontFamilies = fonts.map((font) => font.fontFamily || font.family || "");
+        const fontFamilies = fonts.map((font) => font.fontFamily ?? font.family ?? "");
         setCustomFonts(fontFamilies.filter(Boolean));
       }
     } catch {
@@ -207,8 +199,8 @@ export const TypographySection = () => {
           <Label>{t`Font Family`}</Label>
           <Combobox
             options={families.sort((a, b) => {
-              const labelA = typeof a.label === "string" ? a.label : String(a.label);
-              const labelB = typeof b.label === "string" ? b.label : String(b.label);
+              const labelA = typeof a.label === "string" ? a.label : "";
+              const labelB = typeof b.label === "string" ? b.label : "";
               return labelA.localeCompare(labelB);
             })}
             value={typography.font.family}

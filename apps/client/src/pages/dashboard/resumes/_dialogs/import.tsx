@@ -74,6 +74,50 @@ export const ImportDialog = () => {
 
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
 
+  // Electron IPC Import Handler
+  useEffect(() => {
+    if (!('electron' in window)) return;
+    if (!isOpen) return;
+
+    // TODO: Add specific button for Electron import instead of overriding behavior?
+    // For now, let's just make the existing flow compatible if we click a button
+  }, [isOpen]);
+
+  const onElectronImport = async () => {
+    if (!('electron' in window)) return;
+    
+    try {
+      const result = await window.electron.openJson();
+      if (!result.canceled && result.content) {
+        // Validate the JSON content against the schema for Reactive Resume
+        // Currently only supporting Reactive Resume JSON for Electron direct import
+        const data = result.content as ResumeData;
+        
+        // Simple validation check (duck typing)
+        if (data.basics && data.sections) {
+          setValidationResult({
+            isValid: true,
+            type: ImportType["reactive-resume-json"],
+            result: data,
+          });
+          form.setValue("type", ImportType["reactive-resume-json"]);
+        } else {
+           toast({
+            variant: "error",
+            title: t`Invalid File`,
+            description: t`The selected file does not appear to be a valid Reactive Resume JSON.`,
+          });
+        }
+      }
+    } catch (error) {
+       toast({
+        variant: "error",
+        title: t`Import Failed`,
+        description: error instanceof Error ? error.message : t`Unknown error occurred`,
+      });
+    }
+  };
+
   const form = useForm<FormValues>({
     defaultValues: {
       type: ImportType["reactive-resume-json"],
@@ -247,6 +291,22 @@ export const ImportDialog = () => {
               )}
             />
 
+            {'electron' in window && (
+              <div className="flex flex-col gap-y-2">
+                 <Label>Select File (Electron)</Label>
+                 <Button type="button" variant="outline" onClick={onElectronImport}>
+                    <DownloadSimple className="mr-2" />
+                    {t`Open Local File`}
+                 </Button>
+                 {validationResult?.isValid && (
+                    <p className="text-xs text-green-600 flex items-center mt-1">
+                      <Check className="mr-1" size={12} /> {t`File loaded and validated`}
+                    </p>
+                 )}
+              </div>
+            )}
+
+            {!('electron' in window) && (
             <FormField
               name="file"
               control={form.control}
@@ -277,6 +337,7 @@ export const ImportDialog = () => {
                 </FormItem>
               )}
             />
+            )}
 
             {validationResult?.isValid === false && (
               <div className="space-y-2">

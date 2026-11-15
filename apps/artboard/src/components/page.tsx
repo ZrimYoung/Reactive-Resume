@@ -1,7 +1,8 @@
 import { useTheme } from "@reactive-resume/hooks";
-import { cn, pageSizeMap } from "@reactive-resume/utils";
+import { cn } from "@reactive-resume/utils";
 
 import { useArtboardStore } from "../store/artboard";
+import { getPageDimensions } from "../utils/resume";
 
 type Props = {
   mode?: "preview" | "builder";
@@ -17,10 +18,7 @@ export const Page = ({ mode = "preview", pageNumber, children }: Props) => {
   const page = useArtboardStore((state) => state.resume.metadata.page);
 
   // 计算页面显示尺寸（考虑自定义尺寸与横/竖方向）
-  const baseWidthMm = page.custom.enabled ? page.custom.width : pageSizeMap[page.format].width;
-  const baseHeightMm = page.custom.enabled ? page.custom.height : pageSizeMap[page.format].height;
-  const displayWidthMm = page.orientation === "landscape" ? baseHeightMm : baseWidthMm;
-  const displayHeightMm = page.orientation === "landscape" ? baseWidthMm : baseHeightMm;
+  const { width: displayWidthMm, height: displayHeightMm } = getPageDimensions(page);
 
   return (
     <div

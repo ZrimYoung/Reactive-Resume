@@ -1,54 +1,73 @@
-const { spawnSync } = require('child_process');
-const path = require('path');
+const fs = require("node:fs");
+const os = require("node:os");
+const path = require("node:path");
+const { spawnSync } = require("node:child_process");
+const { prepareBrowser } = require("../puppeteer/prepare");
 
-function run(cmd, args, opts = {}) {
-  const r = spawnSync(cmd, args, { stdio: 'inherit', ...opts });
-  if (r.status !== 0) {
-    process.exit(r.status || 1);
+const repoRoot = path.resolve(__dirname, "../..");
+
+function run(cmd, args, options = {}) {
+  const result = spawnSync(cmd, args, { cwd: repoRoot, stdio: "inherit", ...options });
+  if (result.error) throw result.error;
+  if (result.status !== 0)
+    throw new Error(`${cmd} ${args.join(" ")} failed (${result.status ?? result.signal}).`);
+}
+
+function checkBuildInputs() {
+  const expected = [
+    "electron.js",
+    "desktop-runtime.js",
+    "preload.js",
+    "loading.html",
+    "dist/apps/server/main.js",
+    "dist/apps/client/index.html",
+    "dist/apps/artboard/index.html",
+    "node_modules/.prisma/client/index.js",
+    "node_modules/.prisma/client/default.js",
+  ];
+  if (process.platform === "win32")
+    expected.push("node_modules/.prisma/client/query_engine-windows.dll.node");
+  for (const file of expected) {
+    if (!fs.existsSync(path.join(repoRoot, file)))
+      throw new Error(`Required offline build input is missing: ${file}`);
   }
 }
 
-function main() {
-  const action = process.argv[2] || 'build';
-  // 1) 准备 Puppeteer 浏览器缓存（复制或在线安装到 repo）
-  run(process.execPath, [path.join('tools', 'puppeteer', 'prepare.js')]);
-  // 2) 执行 Nx build
-  if (action === 'build') {
-    const pnpmCmd = process.platform === 'win32' ? 'cmd' : (process.env.SHELL || 'sh');
-    const pnpmArgs = process.platform === 'win32'
-      ? ['/d', '/s', '/c', 'pnpm build']
-      : ['-lc', 'pnpm build'];
-    run(pnpmCmd, pnpmArgs);
-    // 3) 复制 Prisma 生成客户端到 @prisma/client/.prisma 以避免 asar 丢失符号链接
-    try {
-      const src = path.join('node_modules', '.prisma', 'client');
-      const dest = path.join('node_modules', '@prisma', 'client', '.prisma', 'client');
-      const fs = require('fs');
-      const fsp = fs.promises;
-      function copyRecursiveSync(srcPath, destPath) {
-        const stat = fs.statSync(srcPath);
-        if (stat.isDirectory()) {
-          fs.mkdirSync(destPath, { recursive: true });
-          for (const name of fs.readdirSync(srcPath)) {
-            copyRecursiveSync(path.join(srcPath, name), path.join(destPath, name));
-          }
-        } else {
-          fs.mkdirSync(path.dirname(destPath), { recursive: true });
-          fs.copyFileSync(srcPath, destPath);
-        }
-      }
-      if (fs.existsSync(src)) {
-        copyRecursiveSync(src, dest);
-        console.log('[prepack] Copied Prisma client to', dest);
-      } else {
-        console.warn('[prepack] Prisma client not found at', src);
-      }
-    } catch (e) {
-      console.warn('[prepack] Failed to copy Prisma client into @prisma/client/.prisma:', e);
-    }
+async function prepare({ build = true, offline = false } = {}) {
+  process.chdir(repoRoot);
+  await prepareBrowser({ offline });
+  if (build) {
+    const socketDir = path.join(os.tmpdir(), "rr-nx");
+    fs.mkdirSync(socketDir, { recursive: true });
+    const env = {
+      ...process.env,
+      NX_DAEMON: "false",
+      NX_NO_CLOUD: "true",
+      NX_SOCKET_DIR: socketDir,
+    };
+    // npm_execpath is the package manager's JS entry point, avoiding Windows .cmd spawning and shell quoting.
+    if (process.env.npm_execpath)
+      run(process.execPath, [process.env.npm_execpath, "run", "build"], { env });
+    else
+      run(
+        process.platform === "win32" ? "cmd.exe" : "sh",
+        process.platform === "win32" ? ["/d", "/s", "/c", "pnpm build"] : ["-c", "pnpm build"],
+        { env },
+      );
   }
+  checkBuildInputs();
+  console.log(
+    "[prepack] Offline production assets, generated Prisma client, and browser are ready.",
+  );
 }
 
-main();
-
-
+module.exports = { checkBuildInputs, prepare };
+if (require.main === module) {
+  prepare({
+    build: process.argv[2] !== "check",
+    offline: process.argv.includes("--offline"),
+  }).catch((error) => {
+    console.error("[prepack]", error);
+    process.exitCode = 1;
+  });
+}

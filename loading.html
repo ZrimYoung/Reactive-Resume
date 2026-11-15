@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Reactive Resume</title>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background: #151719;
+        color: #f3f4f6;
+        font:
+          16px/1.6 system-ui,
+          sans-serif;
+      }
+      main {
+        max-width: 560px;
+        padding: 32px;
+      }
+      h1 {
+        font-size: 24px;
+        margin-bottom: 24px;
+      }
+      #details {
+        color: #b8bdc7;
+        overflow-wrap: anywhere;
+      }
+      button {
+        border: 1px solid #717987;
+        border-radius: 6px;
+        padding: 8px 16px;
+        background: #252a31;
+        color: inherit;
+        cursor: pointer;
+        margin-right: 12px;
+      }
+      [hidden] {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Reactive Resume</h1>
+      <p id="status" role="status">正在启动</p>
+      <p id="details">首次启动正在准备本地数据，请稍候。</p>
+      <div id="actions" hidden>
+        <button id="retry">重试</button><button id="logs">打开日志文件夹</button>
+      </div>
+    </main>
+    <script>
+      const render = (state) => {
+        document.getElementById("status").textContent = state.status;
+        document.getElementById("details").textContent = state.details;
+        document.getElementById("actions").hidden = !state.failed;
+      };
+      window.electron?.onStartupStatus(render);
+      window.electron?.startupState().then(render);
+      document.getElementById("retry").onclick = () => {
+        void window.electron.retryStartup();
+      };
+      document.getElementById("logs").onclick = () => {
+        void window.electron.openLogs();
+      };
+    </script>
+  </body>
+</html>

@@ -1,6 +1,34 @@
+- feat(i18n): 为简历卡片菜单新增项“Refresh Preview”添加中文翻译（“刷新预览”）；并在卡片点击时调用生成接口并通过 cacheKey 强制刷新图片缓存。
+  - 位置：`apps/client/src/pages/dashboard/resumes/_layouts/grid/_components/resume-card.tsx`
+  - 语言文件：`apps/client/src/locales/zh-CN/messages.po`
+  - 建议：若后续新增文案，请同步更新 zh-CN 与其他语言包，避免出现英文回退。
+- 2025-12-09 Lint 修复（resume store）
+  - 位置：`apps/client/src/stores/resume.ts`
+  - 调整：对 `debouncedUpdateResume` 调用使用 `void` 明确忽略 Promise 结果，并在删除自定义区块时将占位变量改为 `_removed` 以通过未使用变量校验。
+  - 建议：后续新增异步更新时，要么 `await` 处理返回值，要么用 `void` 标记忽略，确保 ESLint 通过。
 # 更新记录
 
 - 时间: 自动生成
+## 2025-09-14 安全依赖维护（不影响功能）
+
+- 运行 pnpm 安装、锁文件刷新与去重，保持在 semver 允许范围内更新补丁/小版本。
+- 在根 package.json 添加 pnpm.overrides（仅主版本内）以统一传递依赖安全版本：
+  - ansi-regex@5 → 5.0.1
+  - strip-ansi@6 → 6.0.1
+  - json5@2 → 2.2.3
+  - minimist@1 → 1.2.8
+  - minimatch@3 → 3.1.2
+  - word-wrap@1 → 1.2.5
+  - tough-cookie@4 → 4.1.4
+  - glob-parent@5 → 5.1.2
+  - braces@3 → 3.0.3
+  - micromatch@4 → 4.0.8
+- 全量构建通过（apps: client, artboard, server；libs: ui, utils, schema, dto, parser, hooks）。
+
+- 后续建议：
+  - 若 Dependabot 仍提示旧版传递依赖，可补充 overrides 针对具体包的受影响主版本。
+  - 定期执行：`pnpm install --lockfile-only`、`pnpm dedupe`、`pnpm -w build`。
+  - 如需最小化 overrides，后续可逐项移除并复测。
 ## 2025-09-06 本地单用户化：彻底移除账户功能
 
 - 前端

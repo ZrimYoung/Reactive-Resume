@@ -29,6 +29,16 @@ export class HealthController {
     return this.run();
   }
 
+  @Get("startup")
+  @HealthCheck()
+  async startup() {
+    const result = await this.health.check([
+      () => this.database.isHealthy(),
+      () => this.storage.isHealthy(),
+    ]);
+    return { ...result, instance: process.env.ELECTRON_INSTANCE_TOKEN };
+  }
+
   @Get("environment")
   environment() {
     if (process.env.NODE_ENV === "production") throw new NotFoundException();

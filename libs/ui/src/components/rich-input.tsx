@@ -36,14 +36,16 @@ import { Underline } from "@tiptap/extension-underline";
 import type { Editor, EditorContentProps } from "@tiptap/react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import { StarterKit } from "@tiptap/starter-kit";
-import { forwardRef, useCallback } from "react";
+import { forwardRef, useCallback, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
+import { cleanPastedHtml } from "../utils/pasted-html";
 import { Button } from "./button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "./form";
 import { Input } from "./input";
 import { Popover, PopoverContent } from "./popover";
+import { ScrollArea } from "./scroll-area";
 import { Skeleton } from "./skeleton";
 import { Toggle } from "./toggle";
 import { Tooltip } from "./tooltip";
@@ -472,9 +474,10 @@ export const RichInput = forwardRef<Editor, RichInputProps>(
         Link.extend({ inclusive: false }).configure({ openOnClick: false }),
       ],
       editorProps: {
+        transformPastedHTML: cleanPastedHtml,
         attributes: {
           class: cn(
-            "prose prose-sm prose-zinc max-h-[200px] max-w-none overflow-y-scroll dark:prose-invert focus:outline-none [&_*]:my-2",
+            "prose prose-sm prose-zinc max-w-none dark:prose-invert focus:outline-none [&_*]:my-2",
             editorClassName,
           ),
         },
@@ -483,6 +486,12 @@ export const RichInput = forwardRef<Editor, RichInputProps>(
       parseOptions: { preserveWhitespace: "full" },
       onUpdate: ({ editor }) => onChange?.(editor.getHTML()),
     });
+
+    useEffect(() => {
+      if (editor && content !== undefined && content !== editor.getHTML()) {
+        editor.commands.setContent(content, false);
+      }
+    }, [content, editor]);
 
     if (!editor) {
       return (
@@ -497,15 +506,17 @@ export const RichInput = forwardRef<Editor, RichInputProps>(
       <div>
         {!hideToolbar && <Toolbar editor={editor} />}
 
-        <EditorContent
-          editor={editor}
-          className={cn(
-            "grid min-h-[160px] w-full rounded-sm border bg-transparent px-3 py-2 text-sm placeholder:opacity-80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-50",
-            hideToolbar && "pt-2",
-            className,
-          )}
-          {...props}
-        />
+        <ScrollArea className="max-h-[200px] rounded-sm border [&_[data-radix-scroll-area-viewport]]:max-h-[200px]">
+          <EditorContent
+            editor={editor}
+            className={cn(
+              "grid min-h-[160px] w-full bg-transparent px-3 py-2 text-sm placeholder:opacity-80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-50",
+              hideToolbar && "pt-2",
+              className,
+            )}
+            {...props}
+          />
+        </ScrollArea>
 
         {footer?.(editor)}
       </div>

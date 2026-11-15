@@ -1,3 +1,9 @@
+/* Shared with the editor; these fonts are bundled and available without Internet access. */
+@import url("@fontsource/ibm-plex-sans/latin-400.css");
+@import url("@fontsource/ibm-plex-sans/latin-400-italic.css");
+@import url("@fontsource/ibm-plex-sans/latin-600.css");
+@import url("@fontsource/ibm-plex-sans/latin-600-italic.css");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

@@ -2,25 +2,22 @@ import { randomUUID } from "node:crypto";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 
-import { BadRequestException, Injectable, Logger } from "@nestjs/common";
+import { BadRequestException, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { customFontUtils, FONT_UPLOAD_CONFIG } from "@reactive-resume/utils";
+import { parse } from "opentype.js";
 
 import { StorageService } from "../storage/storage.service";
 import type { FontResponseDto, UploadFontDto } from "./dto/upload-font.dto";
 import { VariableFontParserService } from "./variable-font-parser.service";
 
-type UploadedFile = {
-  originalname: string;
-  buffer: Buffer;
-  size: number;
-};
+type UploadedFile = { originalname: string; buffer: Buffer; size: number };
+type StoredFont = Pick<FontResponseDto, keyof FontResponseDto> & { fileName: string };
 
 @Injectable()
 export class FontService {
   private readonly logger = new Logger(FontService.name);
-  // Simple in-memory storage; ideally use a database
-  private readonly userFonts = new Map<string, FontResponseDto[]>();
+  private readonly pendingReads = new Map<string, Promise<StoredFont[]>>();
 
   constructor(
     private readonly configService: ConfigService,
@@ -28,202 +25,154 @@ export class FontService {
     private readonly variableFontParser: VariableFontParserService,
   ) {}
 
+  private getUserDirectory(userId: string) {
+    if (!/^[\w-]+$/.test(userId)) throw new BadRequestException("Invalid font user");
+    const storageRoot = process.env.STORAGE_DIR ?? path.join(process.cwd(), "storage");
+    return path.resolve(storageRoot, userId, "fonts");
+  }
+
+  private currentUrl(userId: string, fileName: string) {
+    const base = this.configService.get<string>("STORAGE_URL") ?? "http://localhost:3000";
+    return new URL(`/api/storage/${userId}/fonts/${encodeURIComponent(fileName)}`, base).href;
+  }
+
+  private async storeMetadata(directory: string, font: StoredFont) {
+    await fs.mkdir(directory, { recursive: true });
+    const metadataPath = path.join(directory, `${font.fileName}.json`);
+    const temporaryPath = `${metadataPath}.${randomUUID()}.tmp`;
+    try {
+      await fs.writeFile(temporaryPath, JSON.stringify(font), "utf8");
+      await fs.rename(temporaryPath, metadataPath);
+    } finally {
+      await fs.rm(temporaryPath, { force: true });
+    }
+  }
+
   async uploadFont(
     file: UploadedFile,
     userId: string,
     dto: UploadFontDto,
   ): Promise<FontResponseDto> {
-    this.logger.log(`Uploading font: ${file.originalname}, user: ${userId}`);
-
-    // Validate file
     const validation = customFontUtils.validateFontFile(file);
-    if (!validation.valid) {
-      throw new BadRequestException(validation.error);
-    }
+    if (!validation.valid) throw new BadRequestException(validation.error);
+    if (!dto.fontFamily.trim()) throw new BadRequestException("Font family is required");
+    const directory = this.getUserDirectory(userId);
+    const fileName = `${randomUUID()}${path.extname(file.originalname).toLowerCase()}`;
+    const url = await this.storageService.uploadObject(userId, "fonts", file.buffer, fileName);
+    // Storage may normalize the filename. Keep its exact name beside the original family.
+    const storedName = decodeURIComponent(path.basename(new URL(url).pathname));
+    const font: StoredFont = {
+      id: randomUUID(),
+      fontFamily: dto.fontFamily.trim(),
+      category: dto.category ?? "custom",
+      originalName: file.originalname,
+      fileSize: file.size,
+      format: this.getFormatFromExtension(path.extname(storedName)),
+      url: this.currentUrl(userId, storedName),
+      uploadedAt: new Date().toISOString(),
+      userId,
+      variableFont: this.variableFontParser.parseFont(file.buffer, file.originalname),
+      fileName: storedName,
+    };
+    await this.storeMetadata(directory, font);
+    return font;
+  }
 
-    // Safely encode font family into filename
-    const safeFontFamily = dto.fontFamily.replace(/[^\dA-Za-z-]/g, "_");
-    const fileExtension = path.extname(file.originalname).toLowerCase();
-    const fileName = `${safeFontFamily}_${randomUUID()}${fileExtension}`;
-
-    // Determine font format
-    const format = this.getFormatFromExtension(fileExtension);
-
-    // Parse variable font info
-    const variableFontInfo = this.variableFontParser.parseFont(file.buffer, file.originalname);
-
+  private async recoverLegacyFont(
+    directory: string,
+    fileName: string,
+    userId: string,
+  ): Promise<StoredFont> {
+    const file = await fs.readFile(path.join(directory, fileName));
+    let family = path
+      .basename(fileName, path.extname(fileName))
+      .replace(/[_-]?[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i, "")
+      .replace(/_/g, " ");
     try {
-      // Upload file to storage service (returns absolute URL based on STORAGE_URL)
-      const fileUrl = await this.storageService.uploadObject(
-        userId,
-        "fonts",
-        file.buffer,
-        fileName,
-      );
-
-      // Build response
-      const fontResponse: FontResponseDto = {
-        id: randomUUID(),
-        fontFamily: dto.fontFamily,
-        category: dto.category ?? "custom",
-        originalName: file.originalname,
-        fileSize: file.size,
-        format,
-        url: fileUrl, // Absolute URL from storage service
-        uploadedAt: new Date().toISOString(),
-        userId,
-        variableFont: variableFontInfo,
-      };
-
-      // Save to in-memory storage
-      if (!this.userFonts.has(userId)) {
-        this.userFonts.set(userId, []);
-      }
-      const userFontList = this.userFonts.get(userId);
-      if (userFontList) {
-        userFontList.push(fontResponse);
-      }
-
-      this.logger.log(`Font uploaded: ${fontResponse.fontFamily}, URL: ${fileUrl}`);
-      return fontResponse;
-    } catch (error) {
-      const err = error as Error;
-      this.logger.error(`Font upload failed: ${err.message}`, err.stack);
-      throw new BadRequestException("Font file upload failed");
+      const buffer = file.buffer.slice(file.byteOffset, file.byteOffset + file.byteLength);
+      const names = parse(buffer).names;
+      family = names.fontFamily.en || Object.values(names.fontFamily)[0] || family;
+    } catch {
+      // Unsupported old uploads retain a filename fallback instead of disappearing.
     }
+    const stats = await fs.stat(path.join(directory, fileName));
+    const font: StoredFont = {
+      id: randomUUID(),
+      fontFamily: family || path.basename(fileName),
+      category: "custom",
+      originalName: fileName,
+      fileSize: file.length,
+      format: this.getFormatFromExtension(path.extname(fileName)),
+      url: this.currentUrl(userId, fileName),
+      uploadedAt: stats.birthtime.toISOString(),
+      userId,
+      variableFont: this.variableFontParser.parseFont(file, fileName),
+      fileName,
+    };
+    await this.storeMetadata(directory, font);
+    return font;
+  }
+
+  private async readStoredFonts(userId: string): Promise<StoredFont[]> {
+    const directory = this.getUserDirectory(userId);
+    await fs.mkdir(directory, { recursive: true });
+    const entries = await fs.readdir(directory);
+    const files = entries.filter((file) => this.validateFileFormat(file));
+    const fonts: StoredFont[] = [];
+    for (const fileName of files) {
+      try {
+        let font: StoredFont | undefined;
+        try {
+          const stored = JSON.parse(
+            await fs.readFile(path.join(directory, `${fileName}.json`), "utf8"),
+          ) as StoredFont;
+          if (stored.fileName === fileName && stored.fontFamily && stored.id) font = stored;
+        } catch {
+          // Old versions stored only the binary. Recover once, then persist stable metadata.
+        }
+        font ??= await this.recoverLegacyFont(directory, fileName, userId);
+        fonts.push({ ...font, userId, url: this.currentUrl(userId, fileName) });
+      } catch (error) {
+        this.logger.warn(`Unable to load font ${fileName}: ${(error as Error).message}`);
+      }
+    }
+    return fonts;
   }
 
   async getUserFonts(userId: string): Promise<FontResponseDto[]> {
-    const fonts = this.userFonts.get(userId) ?? [];
-
-    // If cache is empty, scan storage folder for uploaded fonts to build list
-    if (fonts.length === 0) {
-      try {
-        const storageRoot = path.resolve("./storage");
-        const userFontDir = path.resolve(storageRoot, userId, "fonts");
-
-        // Security check: ensure path stays within expected storage directory
-        if (!userFontDir.startsWith(storageRoot)) {
-          this.logger.warn(`Potential path traversal detected: ${userId}`);
-          return [];
-        }
-
-        // Ensure directory exists; create if missing
-        try {
-          await fs.access(userFontDir);
-        } catch {
-          this.logger.debug(`Font directory missing, creating: ${userFontDir}`);
-          await fs.mkdir(userFontDir, { recursive: true });
-        }
-
-        const files = await fs.readdir(userFontDir);
-        this.logger.debug(`Found ${files.length} files in ${userFontDir}`);
-
-        const fonts = await Promise.all(
-          files
-            .filter((file) => {
-              const ext = path.extname(file).toLowerCase();
-              return [".ttf", ".otf", ".woff", ".woff2"].includes(ext);
-            })
-            .map(async (file): Promise<FontResponseDto | null> => {
-              const ext = path.extname(file);
-              const format = this.getFormatFromExtension(ext);
-              const filePath = path.join(userFontDir, file);
-              const storageBaseUrl =
-                this.configService.get<string>("STORAGE_URL") ?? "http://localhost:3000";
-              const absoluteUrl = `${storageBaseUrl}/api/storage/${userId}/fonts/${file}`;
-
-              // Get file info
-              let fileSize = 0;
-              try {
-                const stats = await fs.stat(filePath);
-                fileSize = stats.size;
-              } catch {
-                // Ignore stat errors
-              }
-
-              // Parse font family from filename
-              const [fontFamily, _uuid] = file.split("_");
-              if (!fontFamily) return null; // Skip non-conforming filenames
-
-              return {
-                id: randomUUID(),
-                fontFamily: fontFamily.replace(/_/g, " "),
-                category: "custom",
-                originalName: file,
-                fileSize,
-                format,
-                url: absoluteUrl,
-                uploadedAt: new Date().toISOString(),
-                userId,
-              };
-            }),
-        );
-
-        // Filter out failed parses
-        const validFonts = fonts.filter((font): font is FontResponseDto => font !== null);
-
-        // Cache results
-        this.userFonts.set(userId, validFonts);
-        this.logger.log(`Recovered ${validFonts.length} font files from disk scan`);
-      } catch (error) {
-        const err = error as Error;
-        this.logger.error(`Failed to scan font directory: ${err.message}`);
-        return [];
-      }
+    // Return recovered metadata immediately and rebuild URLs for this launch's port.
+    let pending = this.pendingReads.get(userId);
+    if (!pending) {
+      pending = this.readStoredFonts(userId).finally(() => {
+        this.pendingReads.delete(userId);
+      });
+      this.pendingReads.set(userId, pending);
     }
-
-    this.logger.debug(`Returning ${fonts.length} fonts for user ${userId}`);
-
-    // Fallback: if cache has historical relative URLs, prepend STORAGE_URL as fallback
-    const storageBaseUrl = this.configService.get<string>("STORAGE_URL") ?? "http://localhost:3000";
-
-    return fonts.map((font) => {
-      const finalizedUrl = font.url.startsWith("http") ? font.url : `${storageBaseUrl}${font.url}`;
-
-      return {
-        id: font.id,
-        fontFamily: font.fontFamily,
-        category: font.category,
-        originalName: font.originalName,
-        fileSize: font.fileSize,
-        format: font.format,
-        url: finalizedUrl,
-        uploadedAt: font.uploadedAt,
-        userId: font.userId,
-        variableFont: font.variableFont,
-      } as FontResponseDto;
-    });
+    return pending;
   }
 
   async deleteFont(fontId: string, userId: string): Promise<void> {
-    this.logger.log(`Delete font: ${fontId}, user: ${userId}`);
-
-    try {
-      // Should delete DB record and file; logging only for now
-      this.logger.log(`Font deleted: ${fontId}`);
-      await Promise.resolve();
-    } catch (error) {
-      const err = error as Error;
-      this.logger.error(`Failed to delete font: ${err.message}`);
-      throw new BadRequestException("Failed to delete font");
-    }
+    const fonts = await this.readStoredFonts(userId);
+    const font = fonts.find((item) => item.id === fontId);
+    if (!font) throw new NotFoundException("Font not found");
+    const directory = this.getUserDirectory(userId);
+    await fs.rm(path.join(directory, font.fileName), { force: true });
+    await fs.rm(path.join(directory, `${font.fileName}.json`), { force: true });
   }
 
   private getFormatFromExtension(ext: string): string {
-    const formatMap: Record<string, string> = {
+    const formats: Record<string, string> = {
       ".ttf": "truetype",
       ".otf": "opentype",
       ".woff": "woff",
       ".woff2": "woff2",
     };
-    return formatMap[ext] || "truetype";
+    return formats[ext.toLowerCase()] ?? "truetype";
   }
 
   validateFileSize(fileSize: number): boolean {
     return fileSize <= FONT_UPLOAD_CONFIG.maxFileSize;
   }
-
   validateFileFormat(fileName: string): boolean {
     const ext = path.extname(fileName).toLowerCase().slice(1);
     return (FONT_UPLOAD_CONFIG.allowedFormats as readonly string[]).includes(ext);

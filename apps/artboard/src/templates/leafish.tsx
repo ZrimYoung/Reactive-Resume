@@ -79,10 +79,15 @@ const Header = () => {
           )}
           <Link url={basics.url} />
           {basics.customFields.map((item) => (
-            <div key={item.id} className="flex items-center gap-x-1.5">
+            <div key={item.id} className="flex min-w-0 max-w-full items-center gap-x-1.5">
               <i className={cn(`ph ph-bold ph-${item.icon}`, "text-primary")} />
               {isUrl(item.value) ? (
-                <a href={item.value} target="_blank" rel="noreferrer noopener nofollow">
+                <a
+                  href={item.value}
+                  target="_blank"
+                  rel="noreferrer noopener nofollow"
+                  className="min-w-0 [overflow-wrap:anywhere]"
+                >
                   {item.name || item.value}
                 </a>
               ) : (
@@ -138,13 +143,13 @@ const Link = ({ url, icon, iconOnRight, label, className }: LinkProps) => {
   if (!isUrl(url.href)) return null;
 
   return (
-    <div className="flex items-center gap-x-1.5">
+    <div className="flex min-w-0 max-w-full items-center gap-x-1.5">
       {!iconOnRight && (icon ?? <i className="ph ph-bold ph-link text-primary" />)}
       <a
         href={url.href}
         target="_blank"
         rel="noreferrer noopener nofollow"
-        className={cn("inline-block", className)}
+        className={cn("min-w-0 [overflow-wrap:anywhere]", className)}
       >
         {label ?? (url.label || url.href)}
       </a>
@@ -193,7 +198,7 @@ const Section = <T,>({
   summaryKey,
   keywordsKey,
 }: SectionProps<T>) => {
-  if (!section.visible || section.items.length === 0) return null;
+  if (!section.visible || !section.items.some((item) => item.visible)) return null;
 
   return (
     <section id={section.id} className="grid">

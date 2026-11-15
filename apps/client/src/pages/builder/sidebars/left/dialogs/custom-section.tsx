@@ -1,10 +1,8 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { t } from "@lingui/macro";
-import { X } from "@phosphor-icons/react";
 import type { CustomSection } from "@reactive-resume/schema";
 import { customSectionSchema, defaultCustomSection } from "@reactive-resume/schema";
 import {
-  Badge,
   BadgeInput,
   FormControl,
   FormDescription,
@@ -15,7 +13,6 @@ import {
   Input,
   RichInput,
 } from "@reactive-resume/ui";
-import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
@@ -23,6 +20,7 @@ import type { z } from "zod";
 import { useDialog } from "@/client/stores/dialog";
 
 import { SectionDialog } from "../sections/shared/section-dialog";
+import { SortableKeywords } from "../sections/shared/sortable-keywords";
 import { URLInput } from "../sections/shared/url-input";
 
 const formSchema = customSectionSchema;
@@ -156,29 +154,7 @@ export const CustomSectionDialog = () => {
                 <FormMessage />
               </FormItem>
 
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-3">
-                <AnimatePresence>
-                  {field.value.map((item, index) => (
-                    <motion.div
-                      key={item}
-                      layout
-                      initial={{ opacity: 0, y: -50 }}
-                      animate={{ opacity: 1, y: 0, transition: { delay: index * 0.1 } }}
-                      exit={{ opacity: 0, x: -50 }}
-                    >
-                      <Badge
-                        className="cursor-pointer"
-                        onClick={() => {
-                          field.onChange(field.value.filter((v) => item !== v));
-                        }}
-                      >
-                        <span className="mr-1">{item}</span>
-                        <X size={12} weight="bold" />
-                      </Badge>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              </div>
+              <SortableKeywords keywords={field.value} onChange={field.onChange} />
             </div>
           )}
         />

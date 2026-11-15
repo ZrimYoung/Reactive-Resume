@@ -4,12 +4,16 @@ import { Button, Tooltip } from "@reactive-resume/ui";
 import { cn } from "@reactive-resume/utils";
 import { Link } from "react-router";
 
+import { flushResumeSaves, useResumeSaveState } from "@/client/services/resume/update";
 import { useBuilderStore } from "@/client/stores/builder";
 import { useResumeStore } from "@/client/stores/resume";
 
 export const BuilderHeader = () => {
   const title = useResumeStore((state) => state.resume.title);
   const locked = useResumeStore((state) => state.resume.locked);
+  const resumeId = useResumeStore((state) => state.resume.id);
+  const save = useResumeSaveState(resumeId);
+  const saveLabel = save.status === "saved" ? t`Saved` : t`Saving…`;
 
   const toggle = useBuilderStore((state) => state.toggle);
   const isDragging = useBuilderStore(
@@ -52,6 +56,22 @@ export const BuilderHeader = () => {
           <span className="mr-2 text-xs opacity-40">{"/"}</span>
 
           <h1 className="font-medium">{title}</h1>
+
+          <div aria-live="polite" className="ml-2 text-xs">
+            {save.status === "error" ? (
+              <Button size="sm" variant="ghost" onClick={() => void flushResumeSaves(resumeId)}>
+                {t`Not saved. Retry`}
+              </Button>
+            ) : (
+              saveLabel
+            )}
+            {save.draftUnavailable && save.status !== "saved" && (
+              <span
+                role="alert"
+                className="block text-red-600 dark:text-red-400"
+              >{t`Recovery draft unavailable. Keep this window open.`}</span>
+            )}
+          </div>
 
           {locked && (
             <Tooltip content={t`This resume is locked, please unlock to make further changes.`}>

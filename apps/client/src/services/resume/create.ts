@@ -5,6 +5,8 @@ import type { AxiosResponse } from "axios";
 import { axios } from "@/client/libs/axios";
 import { queryClient } from "@/client/libs/query-client";
 
+import { previewResume } from "./preview";
+
 export const createResume = async (data: CreateResumeDto) => {
   const response = await axios.post<ResumeDto, AxiosResponse<ResumeDto>, CreateResumeDto>(
     "/resume",
@@ -38,6 +40,13 @@ export const useCreateResume = () => {
         if (!cache) return [normalized];
         return [...cache, normalized];
       });
+
+      // 创建成功后异步触发一次预览生成（不阻塞 UI）
+      try {
+        void previewResume({ id: normalized.id });
+      } catch {
+        // 忽略生成失败，列表将回退到模板图
+      }
     },
   });
 

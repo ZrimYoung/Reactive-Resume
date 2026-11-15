@@ -5,13 +5,15 @@ import _axios from "axios";
 
 import { toast } from "../hooks/use-toast";
 import { translateError } from "../services/errors/translate-error";
+import { normalizeLocalAssetUrls } from "./local-assets";
 
 export const axios = _axios.create({ baseURL: "/api" });
 
 // Intercept responses to transform ISO dates to JS date objects
 axios.interceptors.response.use(
   (response) => {
-    const transformedResponse = deepSearchAndParseDates(response.data, ["createdAt", "updatedAt"]);
+    const currentAssets = normalizeLocalAssetUrls(response.data, window.location.origin);
+    const transformedResponse = deepSearchAndParseDates(currentAssets, ["createdAt", "updatedAt"]);
     return { ...response, data: transformedResponse };
   },
   (error) => {

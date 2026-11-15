@@ -59,10 +59,13 @@ async function bootstrap() {
   // Port
   const port = configService.get<number>("PORT") ?? 3000;
 
-  await app.listen(port);
+  await app.listen(port, process.env.ELECTRON_USER_DATA_DIR ? "127.0.0.1" : "0.0.0.0");
 
   Logger.log(`Server is up and running on port ${port}`, "Bootstrap");
 }
 
 // eslint-disable-next-line unicorn/prefer-top-level-await
-void bootstrap();
+void bootstrap().catch((error: unknown) => {
+  Logger.error(error, "Bootstrap");
+  process.exitCode = 1;
+});

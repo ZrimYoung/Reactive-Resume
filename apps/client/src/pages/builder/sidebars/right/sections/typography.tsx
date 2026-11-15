@@ -6,9 +6,10 @@ import type { ComboboxOption } from "@reactive-resume/ui";
 import { Button, Combobox, Label, Slider, Switch } from "@reactive-resume/ui";
 import { cn, fonts } from "@reactive-resume/utils";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import webfontloader from "webfontloader";
 
 import { FontUploadDialog } from "@/client/components/font-upload-dialog";
+import { OfflineFontPreparation } from "@/client/components/offline-font-preparation";
+import { useBuilderStore } from "@/client/stores/builder";
 import { useResumeStore } from "@/client/stores/resume";
 
 import { SectionIcon } from "../shared/section-icon";
@@ -41,21 +42,14 @@ export const TypographySection = () => {
   const hasLoadedCustomFonts = useRef(false);
 
   const setValue = useResumeStore((state) => state.setValue);
-  const typography = useResumeStore(
-    (state) =>
-      state.resume.data.metadata.typography || {
-        font: { family: "IBM Plex Serif", subset: "latin", variants: ["regular"], size: 14 },
-        lineHeight: 1.5,
-        hideIcons: false,
-        underlineLinks: true,
-      },
-  );
+  const typography = useResumeStore((state) => state.resume.data.metadata.typography);
 
   const handleFamilyChange = useCallback(
     (family: string | null) => {
       if (!family) return;
 
-      const isGoogleFont = fonts.some((font) => font.family === family);
+      const isGoogleFont =
+        !customFonts.includes(family) && fonts.some((font) => font.family === family);
       const currentFont = typography.font;
 
       if (isGoogleFont) {
@@ -82,7 +76,7 @@ export const TypographySection = () => {
         });
       }
     },
-    [setValue, typography.font],
+    [customFonts, setValue, typography.font],
   );
 
   const families: ComboboxOption[] = useMemo(() => {
@@ -115,12 +109,12 @@ export const TypographySection = () => {
     try {
       const response = await fetch("/api/fonts/user/local-user-id");
       if (response.ok) {
-        const fonts = await response.json();
-        const fontFamilies = fonts.map((font: any) => font.fontFamily || font.family);
-        setCustomFonts(fontFamilies);
+        const fonts = (await response.json()) as { fontFamily?: string; family?: string }[];
+        const fontFamilies = fonts.map((font) => font.fontFamily ?? font.family ?? "");
+        setCustomFonts(fontFamilies.filter(Boolean));
       }
-    } catch (error) {
-      console.warn("加载自定义字体失败:", error);
+    } catch {
+      // 忽略加载错误
     } finally {
       setIsLoadingFonts(false);
     }
@@ -128,18 +122,6 @@ export const TypographySection = () => {
 
   // 稳定的字体建议列表
   const fontSuggestions = getfontSuggestions(customFonts);
-
-  const loadFontSuggestions = useCallback(() => {
-    for (const font of fontSuggestions) {
-      if (localFonts.includes(font) || customFonts.includes(font)) continue;
-
-      webfontloader.load({
-        events: false,
-        classes: false,
-        google: { families: [font], text: font },
-      });
-    }
-  }, [fontSuggestions]);
 
   const handleUploadSuccess = useCallback(
     (fontFamily: string) => {
@@ -152,19 +134,17 @@ export const TypographySection = () => {
       });
 
       handleFamilyChange(fontFamily);
+      useBuilderStore
+        .getState()
+        .frame.ref?.contentWindow?.postMessage({ type: "REFETCH_FONTS" }, window.location.origin);
     },
     [handleFamilyChange],
   );
 
   // 只在组件首次加载时执行
   useEffect(() => {
-    loadCustomFonts();
+    void loadCustomFonts();
   }, [loadCustomFonts]);
-
-  // 字体建议更新时加载字体
-  useEffect(() => {
-    loadFontSuggestions();
-  }, [loadFontSuggestions]);
 
   useEffect(() => {
     const family = typography.font.family;
@@ -186,8 +166,10 @@ export const TypographySection = () => {
   }, [typography.font.family]);
 
   const isGoogleFont = useMemo(
-    () => fonts.some((font) => font.family === typography.font.family),
-    [typography.font.family],
+    () =>
+      !customFonts.includes(typography.font.family) &&
+      fonts.some((font) => font.family === typography.font.family),
+    [customFonts, typography.font.family],
   );
 
   return (
@@ -204,8 +186,8 @@ export const TypographySection = () => {
           <Label>{t`Font Family`}</Label>
           <Combobox
             options={families.sort((a, b) => {
-              const labelA = a.label?.toString() ?? "";
-              const labelB = b.label?.toString() ?? "";
+              const labelA = typeof a.label === "string" ? a.label : "";
+              const labelB = typeof b.label === "string" ? b.label : "";
               return labelA.localeCompare(labelB);
             })}
             value={typography.font.family}
@@ -246,6 +228,15 @@ export const TypographySection = () => {
               </Button>
             ))}
         </div>
+
+        {isGoogleFont && (
+          <OfflineFontPreparation
+            key={`${typography.font.family}:${typography.font.variants.join(",")}:${typography.font.subset}`}
+            family={typography.font.family}
+            variants={typography.font.variants}
+            subset={typography.font.subset}
+          />
+        )}
 
         {isGoogleFont && (
           <div className="grid grid-cols-2 gap-x-4">

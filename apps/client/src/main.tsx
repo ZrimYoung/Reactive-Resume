@@ -1,3 +1,6 @@
+import "@phosphor-icons/web/regular";
+import "@phosphor-icons/web/bold";
+import "@phosphor-icons/web/fill";
 import { StrictMode } from "react";
 import * as ReactDOM from "react-dom/client";
 import { RouterProvider } from "react-router";

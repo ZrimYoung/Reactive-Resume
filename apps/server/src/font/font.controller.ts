@@ -19,7 +19,10 @@ export class FontController {
 
   @Post("upload")
   @UseInterceptors(FileInterceptor("font"))
-  async uploadFont(@UploadedFile() file: Express.Multer.File, @Body() dto: UploadFontDto) {
+  async uploadFont(
+    @UploadedFile() file: Express.Multer.File | undefined,
+    @Body() dto: UploadFontDto,
+  ) {
     if (!file) {
       throw new Error("没有上传文件");
     }
@@ -51,7 +54,8 @@ export class FontController {
   }
 
   @Delete(":fontId")
-  deleteFont(@Param("fontId") fontId: string) {
+  async deleteFont(@Param("fontId") fontId: string) {
+    await this.fontService.deleteFont(fontId, "local-user-id");
     return {
       success: true,
       message: "字体删除成功",

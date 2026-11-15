@@ -1,107 +1,113 @@
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
-const { spawnSync } = require('child_process');
+const fs = require("node:fs");
+const os = require("node:os");
+const path = require("node:path");
+const puppeteer = require("puppeteer");
+const browsers = require(
+  require.resolve("@puppeteer/browsers", {
+    paths: [path.dirname(require.resolve("puppeteer"))],
+  }),
+);
 
-function ensureDir(p) {
-  try { fs.mkdirSync(p, { recursive: true }); } catch {}
+const repoCache = path.resolve(__dirname, "cache");
+
+function browserDetails(cacheDir) {
+  const platform = browsers.detectBrowserPlatform();
+  if (!platform)
+    throw new Error(`Unsupported browser platform: ${process.platform}/${process.arch}`);
+  const buildId =
+    puppeteer.default.configuration.chrome?.version || puppeteer.PUPPETEER_REVISIONS.chrome;
+  const executablePath = browsers.computeExecutablePath({
+    cacheDir,
+    browser: browsers.Browser.CHROME,
+    platform,
+    buildId,
+  });
+  const installationDir = new browsers.Cache(cacheDir).installationDir(
+    browsers.Browser.CHROME,
+    platform,
+    buildId,
+  );
+  return { platform, buildId, executablePath, installationDir };
 }
 
-function exists(p) {
-  try { return fs.existsSync(p); } catch { return false; }
+function checkBrowserFiles(details) {
+  if (!fs.existsSync(details.executablePath)) return false;
+  if (process.platform === "win32") {
+    const browserDir = path.dirname(details.executablePath);
+    for (const file of ["chrome.dll", "icudtl.dat", "resources.pak", "locales/en-US.pak"]) {
+      if (!fs.existsSync(path.join(browserDir, file))) return false;
+    }
+  }
+  return true;
 }
 
-function cp(src, dest) {
-  if (fs.cp) {
-    fs.cpSync(src, dest, { recursive: true });
-  } else {
-    // Node <16 fallback
-    const stat = fs.statSync(src);
-    if (stat.isDirectory()) {
-      ensureDir(dest);
-      for (const name of fs.readdirSync(src)) cp(path.join(src, name), path.join(dest, name));
+async function prepareBrowser({ offline = false, verify = true } = {}) {
+  const details = browserDetails(repoCache);
+  fs.mkdirSync(repoCache, { recursive: true });
+
+  if (!checkBrowserFiles(details)) {
+    const userCaches = [
+      process.env.PUPPETEER_CACHE_DIR,
+      puppeteer.default.configuration.cacheDirectory,
+      path.join(os.homedir(), ".cache", "puppeteer"),
+    ].filter((cacheDir) => cacheDir && path.resolve(cacheDir) !== repoCache);
+    const source = userCaches.map(browserDetails).find(checkBrowserFiles);
+    if (source) {
+      fs.mkdirSync(path.dirname(details.installationDir), { recursive: true });
+      fs.cpSync(source.installationDir, details.installationDir, {
+        recursive: true,
+        dereference: true,
+      });
+      console.log("[puppeteer:prepare] Copied the matching bundled Chrome:", details.buildId);
+    } else if (!offline) {
+      await browsers.install({
+        browser: browsers.Browser.CHROME,
+        buildId: details.buildId,
+        platform: details.platform,
+        cacheDir: repoCache,
+      });
     } else {
-      ensureDir(path.dirname(dest));
-      fs.copyFileSync(src, dest);
-    }
-  }
-}
-
-function findChromeExecutable(candidates) {
-  const match = process.platform === 'win32' ? /chrome\.exe$/i : /chrome(?:-?headless)?$/;
-  for (const root of candidates) {
-    if (!root || !exists(root)) continue;
-    const stack = [root];
-    while (stack.length) {
-      const dir = stack.pop();
-      const items = fs.readdirSync(dir, { withFileTypes: true });
-      for (const it of items) {
-        const p = path.join(dir, it.name);
-        if (it.isDirectory()) stack.push(p);
-        else if (it.isFile() && match.test(it.name)) return p;
-      }
-    }
-  }
-  return undefined;
-}
-
-function tryInstallTo(targetCache) {
-  const env = { ...process.env, PUPPETEER_CACHE_DIR: targetCache };
-  const commands = [
-    { cmd: process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm', args: ['exec', 'puppeteer', 'install', 'chrome'] },
-    { cmd: process.platform === 'win32' ? 'npx.cmd' : 'npx', args: ['-y', 'puppeteer', 'install', 'chrome'] },
-  ];
-  for (const { cmd, args } of commands) {
-    const r = spawnSync(cmd, args, { stdio: 'inherit', env });
-    if (r.status === 0) return true;
-  }
-  return false;
-}
-
-function main() {
-  const repoCache = path.resolve(__dirname, 'cache');
-  ensureDir(repoCache);
-
-  // 1) 已经准备好则跳过
-  const ready = findChromeExecutable([repoCache]);
-  if (ready) {
-    console.log('[puppeteer:prepare] 已存在缓存：', ready);
-    return;
-  }
-
-  // 2) 从用户缓存复制到仓库
-  const userCacheCandidates = [
-    process.env.PUPPETEER_CACHE_DIR,
-    path.join(os.homedir(), '.cache', 'puppeteer'),
-    process.platform === 'win32' ? path.join(process.env.LOCALAPPDATA || '', 'puppeteer') : undefined,
-  ].filter(Boolean);
-
-  const chromeExec = findChromeExecutable(userCacheCandidates);
-  if (chromeExec) {
-    console.log('[puppeteer:prepare] 发现本机 Chrome：', chromeExec);
-    // 复制 "chrome" 目录（包含各平台子目录）
-    // 寻找直到目录名为 'chrome' 的上层目录
-    let dir = path.dirname(chromeExec);
-    while (dir && path.basename(dir).toLowerCase() !== 'chrome') dir = path.dirname(dir);
-    const chromeRoot = dir && path.basename(dir).toLowerCase() === 'chrome' ? dir : path.join(path.dirname(path.dirname(chromeExec)), 'chrome');
-    if (exists(chromeRoot)) {
-      const dest = path.join(repoCache, 'chrome');
-      console.log('[puppeteer:prepare] 正在复制到：', dest);
-      cp(chromeRoot, dest);
-      console.log('[puppeteer:prepare] 复制完成');
-      return;
+      throw new Error(
+        `Matching Chrome ${details.buildId} is missing. Run pnpm puppeteer:download while online before packaging.`,
+      );
     }
   }
 
-  // 3) 本机未找到，则尝试直接安装到仓库缓存
-  console.log('[puppeteer:prepare] 未找到本机 Chrome，尝试在线安装...');
-  const ok = tryInstallTo(repoCache);
-  if (!ok) {
-    console.error('[puppeteer:prepare] 安装失败');
-    process.exit(1);
+  if (!checkBrowserFiles(details))
+    throw new Error("Bundled Chrome is incomplete; packaging cannot continue.");
+  if (verify) {
+    let browser;
+    try {
+      browser = await puppeteer.launch({
+        executablePath: details.executablePath,
+        headless: true,
+        args: ["--no-sandbox"],
+      });
+      const page = await browser.newPage();
+      await page.setContent("<!doctype html><p>Offline PDF runtime check</p>");
+      const pdf = await page.pdf({ format: "A4" });
+      if (Buffer.from(pdf).subarray(0, 5).toString() !== "%PDF-")
+        throw new Error("Chrome PDF check returned invalid data.");
+    } finally {
+      if (browser) await browser.close();
+    }
   }
+
+  const manifest = {
+    browser: "chrome",
+    buildId: details.buildId,
+    platform: details.platform,
+    executablePath: path.relative(repoCache, details.executablePath).split(path.sep).join("/"),
+  };
+  fs.writeFileSync(path.join(repoCache, "browser.json"), `${JSON.stringify(manifest, null, 2)}\n`);
+  console.log("[puppeteer:prepare] Offline browser verified:", manifest.executablePath);
+  return manifest;
 }
 
-main();
-
-
+module.exports = { browserDetails, checkBrowserFiles, prepareBrowser };
+if (require.main === module) {
+  prepareBrowser({ offline: process.argv.includes("--offline") }).catch((error) => {
+    console.error("[puppeteer:prepare]", error);
+    process.exitCode = 1;
+  });
+}

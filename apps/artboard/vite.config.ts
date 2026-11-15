@@ -12,9 +12,6 @@ export default defineConfig({
   build: {
     sourcemap: true,
     emptyOutDir: true,
-    rollupOptions: {
-      external: ["fs", "path", "url", "source-map-js"],
-    },
   },
 
   define: {
@@ -22,6 +19,7 @@ export default defineConfig({
   },
 
   server: {
+    proxy: { "/api": "http://localhost:3000" },
     host: true,
     port: 6173,
     fs: { allow: [searchForWorkspaceRoot(process.cwd())] },

@@ -62,10 +62,15 @@ const Header = () => {
         {isUrl(basics.url.href) && <Link url={basics.url} />}
         {basics.customFields.map((item) => (
           <Fragment key={item.id}>
-            <div className="flex items-center gap-x-1.5">
+            <div className="flex min-w-0 max-w-full items-center gap-x-1.5">
               <i className={cn(`ph ph-bold ph-${item.icon}`)} />
               {isUrl(item.value) ? (
-                <a href={item.value} target="_blank" rel="noreferrer noopener nofollow">
+                <a
+                  href={item.value}
+                  target="_blank"
+                  rel="noreferrer noopener nofollow"
+                  className="min-w-0 [overflow-wrap:anywhere]"
+                >
                   {item.name || item.value}
                 </a>
               ) : (
@@ -125,7 +130,7 @@ const Link = ({ url, icon, iconOnRight, label, className }: LinkProps) => {
   if (!isUrl(url.href)) return null;
 
   return (
-    <div className="flex items-center gap-x-1.5">
+    <div className="flex min-w-0 max-w-full items-center gap-x-1.5">
       {!iconOnRight &&
         (icon ?? (
           <i className="ph ph-bold ph-link text-primary group-[.sidebar]:text-background" />
@@ -134,7 +139,7 @@ const Link = ({ url, icon, iconOnRight, label, className }: LinkProps) => {
         href={url.href}
         target="_blank"
         rel="noreferrer noopener nofollow"
-        className={cn("inline-block", className)}
+        className={cn("min-w-0 [overflow-wrap:anywhere]", className)}
       >
         {label ?? (url.label || url.href)}
       </a>
@@ -186,10 +191,10 @@ const Section = <T,>({
   summaryKey,
   keywordsKey,
 }: SectionProps<T>) => {
-  if (!section.visible || section.items.length === 0) return null;
+  if (!section.visible || !section.items.some((item) => item.visible)) return null;
 
   return (
-    <section id={section.id} className="grid">
+    <section id={section.id} className="my-custom px-custom grid">
       <h4 className="mb-2 border-b border-primary text-base font-bold">{section.name}</h4>
 
       <div
@@ -533,6 +538,9 @@ const mapSectionToComponent = (section: SectionKey) => {
     case "education": {
       return <Education />;
     }
+    case "summary": {
+      return <Summary />;
+    }
     case "awards": {
       return <Awards />;
     }
@@ -585,10 +593,7 @@ export const Gengar = ({ columns, isFirstPage = false }: TemplateProps) => {
       >
         {isFirstPage && <Header />}
 
-        <div
-          className="p-custom flex-1 space-y-4"
-          style={{ backgroundColor: hexToRgb(primaryColor, 0.2) }}
-        >
+        <div className="flex-1" style={{ backgroundColor: hexToRgb(primaryColor, 0.2) }}>
           {sidebar.map((section) => (
             <Fragment key={section}>{mapSectionToComponent(section)}</Fragment>
           ))}
@@ -596,13 +601,9 @@ export const Gengar = ({ columns, isFirstPage = false }: TemplateProps) => {
       </div>
 
       <div className={cn("main group", sidebar.length > 0 ? "col-span-2" : "col-span-3")}>
-        {isFirstPage && <Summary />}
-
-        <div className="p-custom space-y-4">
-          {main.map((section) => (
-            <Fragment key={section}>{mapSectionToComponent(section)}</Fragment>
-          ))}
-        </div>
+        {main.map((section) => (
+          <Fragment key={section}>{mapSectionToComponent(section)}</Fragment>
+        ))}
       </div>
     </div>
   );

@@ -1,3 +1,4 @@
+import type { SectionKey } from "@reactive-resume/schema";
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 
@@ -21,6 +22,7 @@ type Panel = {
 };
 
 type BuilderState = {
+  collapsedSections: Partial<Record<SectionKey, boolean>>;
   frame: {
     ref: HTMLIFrameElement | null;
     setRef: (ref: HTMLIFrameElement | null) => void;
@@ -36,11 +38,30 @@ type BuilderState = {
 };
 
 type BuilderActions = {
+  setSectionCollapsed: (id: SectionKey, collapsed: boolean) => void;
+  toggleSectionCollapsed: (id: SectionKey) => void;
+  setAllSectionsCollapsed: (ids: SectionKey[], collapsed: boolean) => void;
   toggle: (side: "left" | "right") => void;
 };
 
 export const useBuilderStore = create<BuilderState & BuilderActions>()(
   immer((set) => ({
+    collapsedSections: {},
+    setSectionCollapsed: (id, collapsed) => {
+      set((state) => {
+        state.collapsedSections[id] = collapsed;
+      });
+    },
+    toggleSectionCollapsed: (id) => {
+      set((state) => {
+        state.collapsedSections[id] = !state.collapsedSections[id];
+      });
+    },
+    setAllSectionsCollapsed: (ids, collapsed) => {
+      set((state) => {
+        for (const id of ids) state.collapsedSections[id] = collapsed;
+      });
+    },
     frame: {
       ref: null,
       setRef: (ref) => {

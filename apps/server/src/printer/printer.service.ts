@@ -2,21 +2,25 @@ import { HttpService } from "@nestjs/axios";
 import { Injectable, InternalServerErrorException, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { ResumeDto } from "@reactive-resume/dto";
-import { defaultResumeData, type ResumeData } from "@reactive-resume/schema";
-import { ErrorMessage, pageSizeMap } from "@reactive-resume/utils";
+import type { ResumeData } from "@reactive-resume/schema";
+import { ErrorMessage } from "@reactive-resume/utils";
 import retry from "async-retry";
 import { PDFDocument } from "pdf-lib";
-import { Browser, launch } from "puppeteer";
+import type { Browser, BrowserContext, Page } from "puppeteer";
+import { launch } from "puppeteer";
 
 import { Config } from "../config/schema";
 import { FontService } from "../font/font.service";
 import { StorageService } from "../storage/storage.service";
+import { getPrintDimensions, preparePrintData } from "./print-data";
 
 @Injectable()
 export class PrinterService {
   private readonly logger = new Logger(PrinterService.name);
 
   private browser: Browser | null = null;
+  private browserLaunch: Promise<Browser> | null = null;
+  private shuttingDown = false;
 
   constructor(
     private readonly configService: ConfigService<Config>,
@@ -25,14 +29,25 @@ export class PrinterService {
     private readonly fontService: FontService,
   ) {}
 
-  private async getBrowser() {
+  private async getBrowser(): Promise<Browser> {
+    if (this.shuttingDown) throw new Error("The printer is shutting down");
+    if (this.browser?.connected) return this.browser;
+    if (!this.browserLaunch) {
+      this.browserLaunch = this.launchBrowser().finally(() => {
+        this.browserLaunch = null;
+      });
+    }
+    return this.browserLaunch;
+  }
+
+  private async launchBrowser(): Promise<Browser> {
     try {
       // If browser instance doesn't exist or is disconnected, create a new one
       if (!this.browser?.connected) {
         this.logger.log("Starting local Puppeteer browser instance...");
 
         const chromePath =
-          process.env.CHROME_PATH ?? process.env.PUPPETEER_EXECUTABLE_PATH ?? undefined;
+          process.env.PUPPETEER_EXECUTABLE_PATH ?? process.env.CHROME_PATH ?? undefined;
         const launchOptions: Parameters<typeof launch>[0] = {
           headless: true,
           args: [
@@ -56,7 +71,11 @@ export class PrinterService {
           (launchOptions as { executablePath?: string }).executablePath = chromePath;
         }
 
-        this.browser = await launch(launchOptions);
+        this.browser = await launch({ ...launchOptions, timeout: 30_000 });
+        const browser = this.browser;
+        browser.once("disconnected", () => {
+          if (this.browser === browser) this.browser = null;
+        });
 
         this.logger.log("Puppeteer browser instance started");
       }
@@ -77,13 +96,53 @@ export class PrinterService {
     return version;
   }
 
-  // Warm up the browser to reduce initial print timeouts
-  async onModuleInit() {
+  // Start Chrome only when printing. A missing browser must not prevent the app opening.
+
+  private async waitForArtboard(page: Page) {
+    await page.waitForSelector('[data-page="1"]', { timeout: 30_000 });
+    await page.waitForFunction(() => document.documentElement.dataset.artboardReady === "true", {
+      timeout: 30_000,
+    });
+  }
+
+  private async prepareResources(page: Page) {
+    await page.waitForFunction(
+      () => {
+        const state = document.documentElement.dataset.resumeFonts;
+        return Boolean(state && state !== "loading");
+      },
+      { timeout: 20_000 },
+    );
+    const fontState = await page.evaluate(() => document.documentElement.dataset.resumeFonts);
+    if (fontState !== "ready") {
+      this.logger.warn(`Using fallback fonts for export: ${fontState}`);
+    }
     try {
-      await this.getBrowser();
-      this.logger.log("Puppeteer warmup completed");
+      await page.waitForFunction(
+        () =>
+          document.fonts.status === "loaded" &&
+          // The server's DOM-only tsconfig does not provide iterable HTMLCollection types.
+          // eslint-disable-next-line unicorn/prefer-spread
+          Array.from(document.images).every((image) => image.complete),
+        { timeout: 10_000 },
+      );
     } catch {
-      // Warmup failure shouldn't block startup; subsequent calls will retry
+      this.logger.warn("Some optional images or fonts did not finish loading before export");
+    }
+    await page.evaluate(() => {
+      document.documentElement.style.overflow = "visible";
+      document.body.style.overflow = "visible";
+      document.documentElement.style.height = "auto";
+      document.body.style.height = "auto";
+    });
+  }
+
+  private async closeContext(context?: BrowserContext) {
+    if (!context) return;
+    try {
+      await context.close();
+    } catch (error) {
+      this.logger.warn(`Unable to close print context: ${(error as Error).message}`);
     }
   }
 
@@ -125,9 +184,11 @@ export class PrinterService {
   }
 
   async generateResume(resume: ResumeDto) {
+    let context: BrowserContext | undefined;
     try {
       const browser = await this.getBrowser();
-      const page = await browser.newPage();
+      context = await browser.createBrowserContext();
+      const page = await context.newPage();
       // First navigation can be slow on cold start; increase default timeouts
       page.setDefaultNavigationTimeout(120_000);
       page.setDefaultTimeout(120_000);
@@ -140,54 +201,7 @@ export class PrinterService {
       // Set the data of the resume to be printed in the browser's session storage
       const numberPages = resume.data.metadata?.layout?.length || 1;
 
-      // 1) Explicit object merge: align with Artboard Providers (arrays overwrite)
-      const input = resume.data as ResumeData;
-      const resumeDataForPrint: ResumeData = {
-        basics: {
-          ...defaultResumeData.basics,
-          ...input.basics,
-          picture: {
-            ...defaultResumeData.basics.picture,
-            ...input.basics.picture,
-          },
-        },
-        sections: {
-          ...defaultResumeData.sections,
-          ...input.sections,
-        },
-        metadata: {
-          ...defaultResumeData.metadata,
-          ...input.metadata,
-          layout:
-            input.metadata.layout.length > 0
-              ? input.metadata.layout
-              : defaultResumeData.metadata.layout,
-          page: {
-            ...defaultResumeData.metadata.page,
-            ...input.metadata.page,
-            options: {
-              ...defaultResumeData.metadata.page.options,
-              ...input.metadata.page.options,
-            },
-          },
-          theme: {
-            ...defaultResumeData.metadata.theme,
-            ...input.metadata.theme,
-          },
-          css: {
-            value: input.metadata.css.value || "",
-            visible: input.metadata.css.visible,
-          },
-          typography: {
-            ...defaultResumeData.metadata.typography,
-            ...input.metadata.typography,
-            font: {
-              ...defaultResumeData.metadata.typography.font,
-              ...input.metadata.typography.font,
-            },
-          },
-        },
-      } as ResumeData;
+      const resumeDataForPrint = preparePrintData(resume.data as ResumeData, publicUrl);
 
       this.logger.debug(`PDF - CSS visible: ${resumeDataForPrint.metadata.css.visible}`);
       this.logger.debug(`PDF - CSS length: ${resumeDataForPrint.metadata.css.value.length}`);
@@ -202,146 +216,59 @@ export class PrinterService {
         waitUntil: "domcontentloaded",
         timeout: 120_000,
       });
+      await this.waitForArtboard(page);
       // Use print media for consistent PDF rendering
       await page.emulateMediaType("print");
 
-      // Wait for all fonts and images to load to match Artboard visuals
-      await page.evaluate(async () => {
-        // 1) Wait for fonts
-        await (document as Document & { fonts: { ready: Promise<void> } }).fonts.ready;
-
-        // 2) Wait for all images (including avatars and custom images)
-        // eslint-disable-next-line unicorn/prefer-spread
-        const images: HTMLImageElement[] = Array.from(document.images);
-        await Promise.all(
-          images.map((img) =>
-            img.complete
-              ? Promise.resolve()
-              : new Promise<void>((resolve) => {
-                  const done = () => {
-                    resolve();
-                  };
-                  img.addEventListener("load", done, { once: true });
-                  img.addEventListener("error", done, { once: true });
-                }),
-          ),
-        );
-
-        // 3) Remove body overflow clipping in preview styles to avoid PDF cut-off
-        document.documentElement.style.overflow = "visible";
-        document.body.style.overflow = "visible";
-        document.documentElement.style.height = "auto";
-        document.body.style.height = "auto";
-
-        // 4) Small buffer to ensure script-driven icons/styles finish rendering
-        await new Promise((resolve) => setTimeout(resolve, 300));
-      });
+      await this.prepareResources(page);
 
       // Fallback styles moved to frontend (artboard); avoid injecting overriding styles here
 
       const pagesBuffer: Buffer[] = [];
 
+      const dimensions = getPrintDimensions(resumeDataForPrint.metadata.page);
       const processPage = async (index: number) => {
         const pageElement = await page.$(`[data-page="${index}"]`);
         if (!pageElement) throw new Error(`[data-page="${index}"] not found`);
 
         // Isolate current page: show only target page to avoid resource/layout loss
         // Use a style tag with id and remove it later to keep CSS order
-        await page.evaluate((i) => {
-          const style = document.createElement("style");
-          style.id = "puppeteer-page-isolation";
-          style.textContent = `
+        await page.evaluate(
+          ({ index: i, width, height }) => {
+            const style = document.createElement("style");
+            style.id = "puppeteer-page-isolation";
+            style.textContent = `
             [data-page] { display: none !important; }
-            [data-page="${i}"] { display: block !important; }
+            [data-page="${i}"] {
+              display: block !important;
+              width: ${width}mm !important;
+              min-height: ${height}mm !important;
+              height: auto !important;
+              overflow: visible !important;
+            }
           `;
-          document.head.append(style);
+            document.head.append(style);
 
-          // Move custom CSS (if any) to the end to ensure it stays last in head
-          const custom = document.querySelector("#custom-css");
-          if (custom) document.head.append(custom);
-        }, index);
+            // Move custom CSS (if any) to the end to ensure it stays last in head
+            const custom = document.querySelector("#custom-css");
+            if (custom) document.head.append(custom);
+          },
+          { index, ...dimensions },
+        );
 
-        // Wait briefly to ensure styles take effect; also wait for fonts and images
-        await page.evaluate(async () => {
-          await (document as Document & { fonts: { ready: Promise<void> } }).fonts.ready;
-          // eslint-disable-next-line unicorn/prefer-spread
-          const images: HTMLImageElement[] = Array.from(document.images);
-          await Promise.all(
-            images.map((img) => {
-              if (img.complete) {
-                return Promise.resolve();
-              }
-              return new Promise<void>((resolve) => {
-                const done = () => {
+        await page.evaluate(
+          () =>
+            new Promise<void>((resolve) =>
+              requestAnimationFrame(() =>
+                requestAnimationFrame(() => {
                   resolve();
-                };
-                img.addEventListener("load", done, { once: true });
-                img.addEventListener("error", done, { once: true });
-              });
-            }),
-          );
-          await new Promise((r) => setTimeout(r, 100));
-        });
+                }),
+              ),
+            ),
+        );
 
-        // Calculate if scaling is needed to fit content in one page (only when overflow)
-        const contentHeightPx = await page.evaluate((i) => {
-          const el = document.querySelector(`[data-page="${i}"]`);
-          if (!el) return 0;
-          // Use scrollHeight to get full content height
-          return (el as HTMLElement).scrollHeight || 0;
-        }, index);
-
-        const orientation = resumeDataForPrint.metadata.page.orientation;
-        const format = resumeDataForPrint.metadata.page.format;
-        const mmHeightBase = resumeDataForPrint.metadata.page.custom.enabled
-          ? resumeDataForPrint.metadata.page.custom.height
-          : pageSizeMap[format].height;
-        const targetMmHeight =
-          orientation === "landscape" ? pageSizeMap[format].width : mmHeightBase;
-        const MM_TO_PX = 3.78; // Approximate conversion same as frontend
-        const targetPxHeight = targetMmHeight * MM_TO_PX;
-        const fitScaleRaw =
-          targetPxHeight > 0 && contentHeightPx > 0 ? targetPxHeight / contentHeightPx : 1;
-        // Clamp scale range; only shrink when content overflows (<=1)
-        const fitScale = Math.max(0.5, Math.min(1, fitScaleRaw));
-
-        // If needed, wrap page content and scale via CSS to fit into a single page
-        if (fitScale < 1) {
-          await page.evaluate(
-            (i, scale, targetPxHeight) => {
-              const pageEl = document.querySelector(`[data-page="${i}"]`);
-              if (!pageEl) return;
-
-              // Wrap once
-              const pageElHtml: HTMLElement = pageEl as HTMLElement;
-              let wrapper = pageElHtml.querySelector<HTMLElement>(":scope > .__fit_wrapper__");
-              if (!wrapper) {
-                wrapper = document.createElement("div");
-                wrapper.className = "__fit_wrapper__";
-                // Move existing children into wrapper
-                while (pageEl.firstChild) wrapper.append(pageEl.firstChild as Node);
-                pageElHtml.append(wrapper);
-              }
-
-              // Limit printable height; use absolute positioning + transform scale
-              pageElHtml.style.position = "relative";
-              pageElHtml.style.height = `${targetPxHeight}px`;
-              pageElHtml.style.overflow = "hidden";
-
-              wrapper.style.position = "absolute";
-              wrapper.style.top = "0";
-              wrapper.style.left = "0";
-              wrapper.style.width = "100%";
-              wrapper.style.transformOrigin = "top left";
-              wrapper.style.transform = `scale(${scale})`;
-            },
-            index,
-            fitScale,
-            targetPxHeight,
-          );
-        }
-
-        // Let the browser paginate using @page; content is now within page height
+        // Preserve overflowing content: Chrome may produce multiple physical pages for one layout page.
+        // Cropping a scaled wrapper here silently discarded long resumes.
         const uint8array = await page.pdf({
           printBackground: true,
           preferCSSPageSize: true,
@@ -380,11 +307,8 @@ export class PrinterService {
         resume.userId,
         "resumes",
         buffer,
-        resume.title,
+        resume.id,
       );
-
-      // Close the page but keep browser instance for reuse
-      await page.close();
 
       return resumeUrl;
     } catch (error) {
@@ -394,13 +318,17 @@ export class PrinterService {
         ErrorMessage.ResumePrinterError,
         (error as Error).message,
       );
+    } finally {
+      await this.closeContext(context);
     }
   }
 
   async generatePreview(resume: ResumeDto) {
+    let context: BrowserContext | undefined;
     try {
       const browser = await this.getBrowser();
-      const page = await browser.newPage();
+      context = await browser.createBrowserContext();
+      const page = await context.newPage();
       // First navigation can be slow on cold start; increase default timeouts
       page.setDefaultNavigationTimeout(120_000);
       page.setDefaultTimeout(120_000);
@@ -410,91 +338,26 @@ export class PrinterService {
       // No host.docker.internal conversion needed in local mode
       const url = publicUrl;
 
-      // Align with frontend data merge; normalize CSS fields (arrays overwrite)
-      const input = resume.data as ResumeData;
-      const resumeDataForPrint: ResumeData = {
-        basics: {
-          ...defaultResumeData.basics,
-          ...input.basics,
-          picture: {
-            ...defaultResumeData.basics.picture,
-            ...input.basics.picture,
-          },
-        },
-        sections: {
-          ...defaultResumeData.sections,
-          ...input.sections,
-        },
-        metadata: {
-          ...defaultResumeData.metadata,
-          ...input.metadata,
-          layout:
-            input.metadata.layout.length > 0
-              ? input.metadata.layout
-              : defaultResumeData.metadata.layout,
-          page: {
-            ...defaultResumeData.metadata.page,
-            ...input.metadata.page,
-            options: {
-              ...defaultResumeData.metadata.page.options,
-              ...input.metadata.page.options,
-            },
-          },
-          theme: {
-            ...defaultResumeData.metadata.theme,
-            ...input.metadata.theme,
-          },
-          css: {
-            value: input.metadata.css.value || "",
-            visible: input.metadata.css.visible,
-          },
-          typography: {
-            ...defaultResumeData.metadata.typography,
-            ...input.metadata.typography,
-            font: {
-              ...defaultResumeData.metadata.typography.font,
-              ...input.metadata.typography.font,
-            },
-          },
-        },
-      } as ResumeData;
+      const resumeDataForPrint = preparePrintData(resume.data as ResumeData, publicUrl);
 
       // Set the data of the resume to be printed in the browser's session storage
       await page.evaluateOnNewDocument((data) => {
         window.localStorage.setItem("resume", JSON.stringify(data));
       }, resumeDataForPrint);
 
-      await page.setViewport({ width: 794, height: 1123 });
+      const dimensions = getPrintDimensions(resumeDataForPrint.metadata.page);
+      await page.setViewport({
+        width: Math.ceil((dimensions.width * 96) / 25.4),
+        height: Math.ceil((dimensions.height * 96) / 25.4),
+      });
 
       await page.goto(`${url}/artboard/preview`, {
         waitUntil: "domcontentloaded",
         timeout: 120_000,
       });
+      await this.waitForArtboard(page);
 
-      // Wait for fonts and images; remove body overflow clipping
-      await page.evaluate(async () => {
-        await (document as Document & { fonts: { ready: Promise<void> } }).fonts.ready;
-        // eslint-disable-next-line unicorn/prefer-spread
-        const images: HTMLImageElement[] = Array.from(document.images);
-        await Promise.all(
-          images.map((img) =>
-            img.complete
-              ? Promise.resolve()
-              : new Promise<void>((resolve) => {
-                  const done = () => {
-                    resolve();
-                  };
-                  img.addEventListener("load", done, { once: true });
-                  img.addEventListener("error", done, { once: true });
-                }),
-          ),
-        );
-        document.documentElement.style.overflow = "visible";
-        document.body.style.overflow = "visible";
-        document.documentElement.style.height = "auto";
-        document.body.style.height = "auto";
-        await new Promise((resolve) => setTimeout(resolve, 300));
-      });
+      await this.prepareResources(page);
 
       // Save the JPEG to storage and return the URL
       // Store the URL in cache for future requests, under the previously generated hash digest
@@ -509,9 +372,6 @@ export class PrinterService {
         resume.id,
       );
 
-      // Close the page but keep browser instance for reuse
-      await page.close();
-
       return previewUrl;
     } catch (error) {
       this.logger.error("Error generating preview:", error);
@@ -520,11 +380,21 @@ export class PrinterService {
         ErrorMessage.ResumePrinterError,
         (error as Error).message,
       );
+    } finally {
+      await this.closeContext(context);
     }
   }
 
   // Cleanup resources
   async onModuleDestroy() {
+    this.shuttingDown = true;
+    if (this.browserLaunch) {
+      try {
+        await this.browserLaunch;
+      } catch {
+        this.browser = null;
+      }
+    }
     if (this.browser) {
       await this.browser.close();
       this.logger.log("Puppeteer browser instance closed");

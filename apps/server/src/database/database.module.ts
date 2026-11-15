@@ -1,4 +1,4 @@
-import { Logger, Module } from "@nestjs/common";
+import { Injectable, Logger, Module, OnModuleInit } from "@nestjs/common";
 import {
   loggingMiddleware,
   PrismaModule,
@@ -6,14 +6,25 @@ import {
   providePrismaClientExceptionFilter,
 } from "nestjs-prisma";
 
+import { initializeLocalDatabase } from "./local-database";
+
+@Injectable()
+class LocalDatabaseInitializer implements OnModuleInit {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async onModuleInit() {
+    await initializeLocalDatabase(this.prisma);
+  }
+}
+
 @Module({
   imports: [
     PrismaModule.forRootAsync({
       isGlobal: true,
       useFactory: () => ({
-        prismaOptions: { 
+        prismaOptions: {
           // 优先使用外部注入的 DATABASE_URL（Electron 主进程在生产态设置），否则回退到相对路径
-          datasourceUrl: process.env.DATABASE_URL ?? "file:./local-resume.db"
+          datasourceUrl: process.env.DATABASE_URL ?? "file:./local-resume.db",
         },
         middlewares: [
           loggingMiddleware({
@@ -26,6 +37,6 @@ import {
       }),
     }),
   ],
-  providers: [providePrismaClientExceptionFilter()],
+  providers: [providePrismaClientExceptionFilter(), LocalDatabaseInitializer],
 })
 export class DatabaseModule {}

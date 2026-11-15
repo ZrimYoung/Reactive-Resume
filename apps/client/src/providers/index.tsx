@@ -7,6 +7,7 @@ import { helmetContext } from "../constants/helmet";
 import { queryClient } from "../libs/query-client";
 import { DialogProvider } from "./dialog";
 import { LocaleProvider } from "./locale";
+import { ResumeSaveProvider } from "./resume-saves";
 import { ThemeProvider } from "./theme";
 import { Toaster } from "./toaster";
 
@@ -17,7 +18,9 @@ export const Providers = () => (
         <ThemeProvider>
           <TooltipProvider>
             <DialogProvider>
-              <Outlet />
+              <ResumeSaveProvider>
+                <Outlet />
+              </ResumeSaveProvider>
 
               <Toaster />
             </DialogProvider>

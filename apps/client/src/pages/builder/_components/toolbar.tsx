@@ -18,7 +18,8 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { printResume, updateResume } from "@/client/services/resume";
+import { printResume } from "@/client/services/resume";
+import { flushResumeSaves } from "@/client/services/resume/update";
 import { useBuilderStore } from "@/client/stores/builder";
 import { useResumeStore, useTemporalResumeStore } from "@/client/stores/resume";
 
@@ -35,8 +36,7 @@ export const BuilderToolbar = () => {
   const redo = useTemporalResumeStore((state) => state.redo);
   const frameRef = useBuilderStore((state) => state.frame.ref);
 
-  const resume = useResumeStore((state) => state.resume);
-  const pageOptions = useResumeStore((state) => state.resume.data?.metadata?.page?.options);
+  const pageOptions = useResumeStore((state) => state.resume.data.metadata.page.options);
 
   const [isPrinting, setPrinting] = useState(false);
 
@@ -44,13 +44,21 @@ export const BuilderToolbar = () => {
     try {
       setPrinting(true);
 
-      const { id, data } = resume;
-      await updateResume({ id, data });
+      const { id } = useResumeStore.getState().resume;
+      if (!(await flushResumeSaves(id))) {
+        toast.error(t`Save failed. Please retry before downloading a PDF.`);
+        return;
+      }
 
       const { url } = await printResume({ id });
 
-      openInNewTab(url);
-    } catch (error) {
+      const desktop = Reflect.get(window, "electron") as Window["electron"] | undefined;
+      if (desktop?.downloadAndSave) {
+        await desktop.downloadAndSave(url, `reactive_resume-${id}.pdf`);
+      } else {
+        openInNewTab(url);
+      }
+    } catch {
       toast.error(t`An error occurred while printing. Please try again.`);
     } finally {
       setPrinting(false);

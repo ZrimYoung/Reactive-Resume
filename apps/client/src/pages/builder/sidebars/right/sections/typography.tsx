@@ -6,9 +6,10 @@ import type { ComboboxOption } from "@reactive-resume/ui";
 import { Button, Combobox, Label, Slider, Switch } from "@reactive-resume/ui";
 import { cn, fonts } from "@reactive-resume/utils";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import webfontloader from "webfontloader";
 
 import { FontUploadDialog } from "@/client/components/font-upload-dialog";
+import { OfflineFontPreparation } from "@/client/components/offline-font-preparation";
+import { useBuilderStore } from "@/client/stores/builder";
 import { useResumeStore } from "@/client/stores/resume";
 
 import { SectionIcon } from "../shared/section-icon";
@@ -47,7 +48,8 @@ export const TypographySection = () => {
     (family: string | null) => {
       if (!family) return;
 
-      const isGoogleFont = fonts.some((font) => font.family === family);
+      const isGoogleFont =
+        !customFonts.includes(family) && fonts.some((font) => font.family === family);
       const currentFont = typography.font;
 
       if (isGoogleFont) {
@@ -74,7 +76,7 @@ export const TypographySection = () => {
         });
       }
     },
-    [setValue, typography.font],
+    [customFonts, setValue, typography.font],
   );
 
   const families: ComboboxOption[] = useMemo(() => {
@@ -121,21 +123,6 @@ export const TypographySection = () => {
   // 稳定的字体建议列表
   const fontSuggestions = getfontSuggestions(customFonts);
 
-  const loadFontSuggestions = useCallback(() => {
-    // Electron 环境下跳过 Google Fonts 加载
-    if ("electron" in window) return;
-
-    for (const font of fontSuggestions) {
-      if (localFonts.includes(font) || customFonts.includes(font)) continue;
-
-      webfontloader.load({
-        events: false,
-        classes: false,
-        google: { families: [font], text: font },
-      });
-    }
-  }, [fontSuggestions, customFonts]);
-
   const handleUploadSuccess = useCallback(
     (fontFamily: string) => {
       // 直接更新本地状态，避免重新请求API
@@ -147,6 +134,9 @@ export const TypographySection = () => {
       });
 
       handleFamilyChange(fontFamily);
+      useBuilderStore
+        .getState()
+        .frame.ref?.contentWindow?.postMessage({ type: "REFETCH_FONTS" }, window.location.origin);
     },
     [handleFamilyChange],
   );
@@ -155,11 +145,6 @@ export const TypographySection = () => {
   useEffect(() => {
     void loadCustomFonts();
   }, [loadCustomFonts]);
-
-  // 字体建议更新时加载字体
-  useEffect(() => {
-    loadFontSuggestions();
-  }, [loadFontSuggestions]);
 
   useEffect(() => {
     const family = typography.font.family;
@@ -181,8 +166,10 @@ export const TypographySection = () => {
   }, [typography.font.family]);
 
   const isGoogleFont = useMemo(
-    () => fonts.some((font) => font.family === typography.font.family),
-    [typography.font.family],
+    () =>
+      !customFonts.includes(typography.font.family) &&
+      fonts.some((font) => font.family === typography.font.family),
+    [customFonts, typography.font.family],
   );
 
   return (
@@ -241,6 +228,15 @@ export const TypographySection = () => {
               </Button>
             ))}
         </div>
+
+        {isGoogleFont && (
+          <OfflineFontPreparation
+            key={`${typography.font.family}:${typography.font.variants.join(",")}:${typography.font.subset}`}
+            family={typography.font.family}
+            variants={typography.font.variants}
+            subset={typography.font.subset}
+          />
+        )}
 
         {isGoogleFont && (
           <div className="grid grid-cols-2 gap-x-4">

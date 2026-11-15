@@ -5,6 +5,7 @@ export * from "./namespaces/date";
 export * from "./namespaces/error";
 export * from "./namespaces/fonts";
 export * from "./namespaces/language";
+export * from "./namespaces/markdown";
 export * from "./namespaces/number";
 export * from "./namespaces/object";
 export * from "./namespaces/page";

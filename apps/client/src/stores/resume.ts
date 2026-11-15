@@ -13,9 +13,11 @@ import { immer } from "zustand/middleware/immer";
 import { useStoreWithEqualityFn } from "zustand/traditional";
 
 import { debouncedUpdateResume } from "../services/resume";
+import type { ResumeDraft } from "../services/resume/save-queue";
 
 type ResumeStore = {
   resume: ResumeDto;
+  recoveryDraft: ResumeDraft | null;
 
   // Actions
   setValue: (path: string, value: unknown) => void;
@@ -41,11 +43,10 @@ export const useResumeStore = create<ResumeStore>()(
   temporal(
     immer((set) => ({
       resume: defaultResume,
+      recoveryDraft: null,
       setValue: (path, value) => {
         set((state) => {
           state.resume.data = _set(state.resume.data, path, value);
-          const { id, data } = state.resume;
-          void debouncedUpdateResume({ id, data: JSON.parse(JSON.stringify(data)) });
         });
       },
       addSection: () => {
@@ -61,9 +62,6 @@ export const useResumeStore = create<ResumeStore>()(
           const lastPageIndex = layout.length - 1;
           layout[lastPageIndex][0].push(`custom.${section.id}`);
           state.resume.data = _set(state.resume.data, `sections.custom.${section.id}`, section);
-
-          const { id, data } = state.resume;
-          void debouncedUpdateResume({ id, data: JSON.parse(JSON.stringify(data)) });
         });
       },
       removeSection: (sectionId: SectionKey) => {
@@ -78,9 +76,6 @@ export const useResumeStore = create<ResumeStore>()(
             const { [id]: _removed, ...remainingCustomSections } =
               state.resume.data.sections.custom;
             state.resume.data.sections.custom = remainingCustomSections;
-
-            const { id: resumeId, data } = state.resume;
-            void debouncedUpdateResume({ id: resumeId, data: JSON.parse(JSON.stringify(data)) });
           });
         }
       },
@@ -92,6 +87,34 @@ export const useResumeStore = create<ResumeStore>()(
     },
   ),
 );
+
+let loadingResume = false;
+
+export const loadResumeState = (resume: ResumeDto, recoveryDraft: ResumeDraft | null = null) => {
+  loadingResume = true;
+  try {
+    useResumeStore.setState({ resume, recoveryDraft });
+    useResumeStore.temporal.getState().clear();
+  } finally {
+    loadingResume = false;
+  }
+};
+
+// Includes undo and redo, which replace data without going through setValue.
+useResumeStore.subscribe((state, previous) => {
+  if (
+    loadingResume ||
+    state.resume.id === "temp" ||
+    state.resume.id !== previous.resume.id ||
+    state.resume.data === previous.resume.data
+  )
+    return;
+  debouncedUpdateResume({
+    id: state.resume.id,
+    data: state.resume.data,
+    updatedAt: state.resume.updatedAt,
+  });
+});
 
 export const useTemporalResumeStore = <T>(
   selector: (state: TemporalState<Pick<ResumeStore, "resume">>) => T,

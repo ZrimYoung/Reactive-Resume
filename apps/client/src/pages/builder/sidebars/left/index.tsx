@@ -12,6 +12,7 @@ import type {
   Project,
   Publication,
   Reference,
+  SectionKey,
   Skill,
   Volunteer,
 } from "@reactive-resume/schema";
@@ -20,7 +21,7 @@ import { Fragment, useRef } from "react";
 
 import { UserAvatar } from "@/client/components/user-avatar";
 import { UserOptions } from "@/client/components/user-options";
-// import { useBuilderStore } from "@/client/stores/builder";
+import { useBuilderStore } from "@/client/stores/builder";
 import { useResumeStore } from "@/client/stores/resume";
 
 import { BasicsSection } from "./sections/basics";
@@ -30,14 +31,26 @@ import { SummarySection } from "./sections/summary";
 
 export const LeftSidebar = () => {
   const containterRef = useRef<HTMLDivElement | null>(null);
-  // const toggleLeftCollapsed = useBuilderStore((state) => state.panel.left.toggleCollapsed);
+  const setSectionCollapsed = useBuilderStore((state) => state.setSectionCollapsed);
+  const setAllSectionsCollapsed = useBuilderStore((state) => state.setAllSectionsCollapsed);
 
   const addSection = useResumeStore((state) => state.addSection);
   const customSections = useResumeStore((state) => state.resume.data.sections.custom);
 
   const scrollIntoView = (selector: string) => {
+    if (selector.startsWith("#")) setSectionCollapsed(selector.slice(1) as SectionKey, false);
     const section = containterRef.current?.querySelector(selector);
     section?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const setAllCollapsed = (collapsed: boolean) => {
+    const sections = useResumeStore.getState().resume.data.sections;
+    const ids = [
+      "basics",
+      ...Object.keys(sections).filter((key) => key !== "custom"),
+      ...Object.keys(sections.custom).map((id) => `custom.${id}`),
+    ] as SectionKey[];
+    setAllSectionsCollapsed(ids, collapsed);
   };
 
   return (
@@ -158,6 +171,26 @@ export const LeftSidebar = () => {
 
       <ScrollArea orientation="vertical" className="h-screen flex-1 pb-16 lg:pb-0">
         <div ref={containterRef} className="grid gap-y-10 p-6 @container/left">
+          <div className="-mb-4 flex flex-wrap items-center gap-2">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                setAllCollapsed(false);
+              }}
+            >
+              {t`Expand all sections`}
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                setAllCollapsed(true);
+              }}
+            >
+              {t`Collapse all sections`}
+            </Button>
+          </div>
           <BasicsSection />
           <Separator />
           <SummarySection />

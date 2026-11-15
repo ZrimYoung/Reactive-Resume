@@ -22,10 +22,11 @@ import { cn } from "@reactive-resume/utils";
 import { AnimatePresence, motion } from "framer-motion";
 import get from "lodash.get";
 
+import { useBuilderStore } from "@/client/stores/builder";
 import { useDialog } from "@/client/stores/dialog";
 import { useResumeStore } from "@/client/stores/resume";
 
-import { SectionIcon } from "./section-icon";
+import { SectionHeading } from "./section-heading";
 import { SectionListItem } from "./section-list-item";
 import { SectionOptions } from "./section-options";
 
@@ -37,6 +38,7 @@ type Props<T extends SectionItem> = {
 
 export const SectionBase = <T extends SectionItem>({ id, title, description }: Props<T>) => {
   const { open } = useDialog(id);
+  const collapsed = useBuilderStore((state) => state.collapsedSections[id] ?? false);
 
   const setValue = useResumeStore((state) => state.setValue);
   const section = useResumeStore((state) =>
@@ -96,85 +98,84 @@ export const SectionBase = <T extends SectionItem>({ id, title, description }: P
       exit={{ opacity: 0 }}
       className="grid gap-y-6"
     >
-      <header className="flex items-center justify-between">
-        <div className="flex items-center gap-x-4">
-          <SectionIcon id={id} size={18} />
-          <h2 className="line-clamp-1 text-2xl font-bold lg:text-3xl">{section.name}</h2>
-        </div>
+      <SectionHeading id={id} name={section.name}>
+        <SectionOptions id={id} />
+      </SectionHeading>
 
-        <div className="flex items-center gap-x-2">
-          <SectionOptions id={id} />
-        </div>
-      </header>
+      <div
+        id={`section-content-${id}`}
+        hidden={collapsed}
+        className={cn("space-y-6", collapsed && "hidden")}
+      >
+        <main className={cn("grid transition-opacity", !section.visible && "opacity-50")}>
+          {section.items.length === 0 && (
+            <Button
+              variant="outline"
+              className="gap-x-2 border-dashed py-6 leading-relaxed hover:bg-secondary-accent"
+              onClick={onCreate}
+            >
+              <Plus size={14} />
+              <span className="font-medium">
+                {t({
+                  message: "Add a new item",
+                  context: "For example, add a new work experience, or add a new profile.",
+                })}
+              </span>
+            </Button>
+          )}
 
-      <main className={cn("grid transition-opacity", !section.visible && "opacity-50")}>
-        {section.items.length === 0 && (
-          <Button
-            variant="outline"
-            className="gap-x-2 border-dashed py-6 leading-relaxed hover:bg-secondary-accent"
-            onClick={onCreate}
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            modifiers={[restrictToParentElement]}
+            onDragEnd={onDragEnd}
           >
-            <Plus size={14} />
-            <span className="font-medium">
-              {t({
-                message: "Add a new item",
-                context: "For example, add a new work experience, or add a new profile.",
-              })}
-            </span>
-          </Button>
+            <SortableContext items={section.items} strategy={verticalListSortingStrategy}>
+              <AnimatePresence>
+                {section.items.map((item, index) => (
+                  <SectionListItem
+                    key={item.id}
+                    id={item.id}
+                    visible={item.visible}
+                    title={title(item as T)}
+                    description={description?.(item as T)}
+                    onUpdate={() => {
+                      onUpdate(item as T);
+                    }}
+                    onDelete={() => {
+                      onDelete(item as T);
+                    }}
+                    onDuplicate={() => {
+                      onDuplicate(item as T);
+                    }}
+                    onToggleVisibility={() => {
+                      onToggleVisibility(index);
+                    }}
+                  />
+                ))}
+              </AnimatePresence>
+            </SortableContext>
+          </DndContext>
+        </main>
+
+        {section.items.length > 0 && (
+          <footer className="flex items-center justify-end">
+            <Button
+              variant="outline"
+              className="ml-auto gap-x-2 text-xs lg:text-sm"
+              onClick={onCreate}
+            >
+              <Plus />
+              <span>
+                {t({
+                  message: "Add a new item",
+                  context: "For example, add a new work experience, or add a new profile.",
+                })}
+              </span>
+            </Button>
+          </footer>
         )}
-
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          modifiers={[restrictToParentElement]}
-          onDragEnd={onDragEnd}
-        >
-          <SortableContext items={section.items} strategy={verticalListSortingStrategy}>
-            <AnimatePresence>
-              {section.items.map((item, index) => (
-                <SectionListItem
-                  key={item.id}
-                  id={item.id}
-                  visible={item.visible}
-                  title={title(item as T)}
-                  description={description?.(item as T)}
-                  onUpdate={() => {
-                    onUpdate(item as T);
-                  }}
-                  onDelete={() => {
-                    onDelete(item as T);
-                  }}
-                  onDuplicate={() => {
-                    onDuplicate(item as T);
-                  }}
-                  onToggleVisibility={() => {
-                    onToggleVisibility(index);
-                  }}
-                />
-              ))}
-            </AnimatePresence>
-          </SortableContext>
-        </DndContext>
-      </main>
-
-      {section.items.length > 0 && (
-        <footer className="flex items-center justify-end">
-          <Button
-            variant="outline"
-            className="ml-auto gap-x-2 text-xs lg:text-sm"
-            onClick={onCreate}
-          >
-            <Plus />
-            <span>
-              {t({
-                message: "Add a new item",
-                context: "For example, add a new work experience, or add a new profile.",
-              })}
-            </span>
-          </Button>
-        </footer>
-      )}
+      </div>
     </motion.section>
   );
 };

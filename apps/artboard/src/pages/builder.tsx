@@ -1,36 +1,61 @@
 import type { SectionKey } from "@reactive-resume/schema";
 import type { Template } from "@reactive-resume/utils";
-import { pageSizeMap } from "@reactive-resume/utils";
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactZoomPanPinchRef } from "react-zoom-pan-pinch";
 import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
 
 import { MM_TO_PX, Page } from "../components/page";
 import { useArtboardStore } from "../store/artboard";
 import { getTemplate } from "../templates";
+import { getPageDimensions } from "../utils/resume";
 
 export const BuilderLayout = () => {
   const [wheelPanning, setWheelPanning] = useState(true);
 
   const transformRef = useRef<ReactZoomPanPinchRef>(null);
 
-  const layout = useArtboardStore((state) => state.resume.metadata?.layout || [[[], []]]);
-  const format = useArtboardStore((state) => state.resume.metadata?.page?.format || "a4");
-  const template = useArtboardStore((state) => state.resume.metadata?.template || "rhyhorn");
+  const layout = useArtboardStore((state) => state.resume.metadata.layout);
+  const page = useArtboardStore((state) => state.resume.metadata.page);
+  const dimensions = getPageDimensions(page);
+  const contentWidth =
+    layout.length * dimensions.width * MM_TO_PX + Math.max(0, layout.length - 1) * 48;
+  const contentHeight = dimensions.height * MM_TO_PX;
+
+  const fitView = useCallback(() => {
+    const scale = Math.max(
+      0.1,
+      Math.min(
+        1,
+        (window.innerWidth - 48) / contentWidth,
+        (window.innerHeight - 64) / contentHeight,
+      ),
+    );
+    transformRef.current?.centerView(scale, 0);
+  }, [contentWidth, contentHeight]);
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(fitView);
+    window.addEventListener("resize", fitView);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("resize", fitView);
+    };
+  }, [fitView]);
+  const template = useArtboardStore((state) => state.resume.metadata.template || "rhyhorn");
 
   const Template = useMemo(() => getTemplate(template as Template), [template]);
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
-      if (event.origin !== window.location.origin) return;
+      if (event.origin !== window.location.origin || event.source !== window.parent || !event.data)
+        return;
 
       if (event.data.type === "ZOOM_IN") transformRef.current?.zoomIn(0.2);
       if (event.data.type === "ZOOM_OUT") transformRef.current?.zoomOut(0.2);
-      if (event.data.type === "CENTER_VIEW") transformRef.current?.centerView();
+      if (event.data.type === "CENTER_VIEW") fitView();
       if (event.data.type === "RESET_VIEW") {
-        transformRef.current?.resetTransform(0);
-        setTimeout(() => transformRef.current?.centerView(1.0, 0), 10);
+        fitView();
       }
       if (event.data.type === "TOGGLE_PAN_MODE") {
         setWheelPanning(event.data.panMode);
@@ -42,24 +67,24 @@ export const BuilderLayout = () => {
     return () => {
       window.removeEventListener("message", handleMessage);
     };
-  }, [transformRef]);
+  }, [fitView]);
 
   return (
     <TransformWrapper
       ref={transformRef}
-      centerOnInit
       maxScale={2}
-      minScale={0.4}
-      initialScale={1.0}
+      minScale={0.1}
+      initialScale={1}
       limitToBounds={false}
       wheel={{ wheelDisabled: wheelPanning }}
       panning={{ wheelPanning: wheelPanning }}
+      onInit={fitView}
     >
       <TransformComponent
         wrapperClass="!w-screen !h-screen"
-        contentClass="grid items-start justify-center space-x-12 pointer-events-none"
+        contentClass="grid items-start justify-center gap-12 pointer-events-none"
         contentStyle={{
-          width: `${layout.length * (pageSizeMap[format].width * MM_TO_PX + 42)}px`,
+          width: `${contentWidth}px`,
           gridTemplateColumns: `repeat(${layout.length}, 1fr)`,
         }}
       >

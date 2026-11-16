@@ -1,14 +1,17 @@
 import { t } from "@lingui/macro";
-import { HouseSimple, Lock, SidebarSimple } from "@phosphor-icons/react";
+import { ClockCounterClockwise, HouseSimple, Lock, SidebarSimple } from "@phosphor-icons/react";
 import { Button, Tooltip } from "@reactive-resume/ui";
 import { cn } from "@reactive-resume/utils";
+import { useState } from "react";
 import { Link } from "react-router";
 
+import { ResumeHistoryDialog } from "@/client/pages/dashboard/resumes/_components/history-dialog";
 import { flushResumeSaves, useResumeSaveState } from "@/client/services/resume/update";
 import { useBuilderStore } from "@/client/stores/builder";
 import { useResumeStore } from "@/client/stores/resume";
 
 export const BuilderHeader = () => {
+  const [historyOpen, setHistoryOpen] = useState(false);
   const title = useResumeStore((state) => state.resume.title);
   const locked = useResumeStore((state) => state.resume.locked);
   const resumeId = useResumeStore((state) => state.resume.id);
@@ -88,6 +91,17 @@ export const BuilderHeader = () => {
               <Lock size={14} className="ml-2 opacity-75" />
             </Tooltip>
           )}
+          <Button
+            size="sm"
+            variant="ghost"
+            aria-label={t`Version history`}
+            onClick={() => {
+              setHistoryOpen(true);
+            }}
+          >
+            <ClockCounterClockwise size={16} />
+            <span className="ml-1 hidden sm:inline">{t`History`}</span>
+          </Button>
         </div>
 
         <Button
@@ -101,6 +115,13 @@ export const BuilderHeader = () => {
           <SidebarSimple className="-scale-x-100" />
         </Button>
       </div>
+      <ResumeHistoryDialog
+        key={resumeId}
+        resumeId={resumeId}
+        title={title}
+        open={historyOpen}
+        onOpenChange={setHistoryOpen}
+      />
     </div>
   );
 };

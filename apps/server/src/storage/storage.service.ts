@@ -18,10 +18,16 @@ type DocumentUploadType = "resumes";
 type FontUploadType = "fonts";
 export type UploadType = ImageUploadType | DocumentUploadType | FontUploadType;
 
+function storageDirectory() {
+  const configured = process.env.STORAGE_DIR;
+  if (configured) return configured;
+  return path.join(process.cwd(), "storage");
+}
+
 @Injectable()
 export class StorageService implements OnModuleInit {
   private readonly logger = new Logger(StorageService.name);
-  private readonly storageRoot = process.env.STORAGE_DIR || path.join(process.cwd(), "storage");
+  private readonly storageRoot = storageDirectory();
 
   constructor(private readonly configService: ConfigService) {}
 
@@ -56,7 +62,7 @@ export class StorageService implements OnModuleInit {
   ): Promise<string> {
     let extension: string;
     let normalizedFilename: string;
-    
+
     if (type === "resumes") {
       extension = "pdf";
       normalizedFilename = slugify(filename);
@@ -69,13 +75,15 @@ export class StorageService implements OnModuleInit {
       if (!normalizedFilename) normalizedFilename = createId();
     } else {
       extension = "jpg";
-      normalizedFilename = slugify(path.basename(filename, path.extname(filename)));
+      // Photos referenced by older snapshots must never be overwritten by a later same-named upload.
+      normalizedFilename =
+        type === "pictures" ? createId() : slugify(path.basename(filename, path.extname(filename)));
       if (!normalizedFilename) normalizedFilename = createId();
     }
 
     const filepath = this.getSafePath(userId, type, `${normalizedFilename}.${extension}`);
     const userDir = path.dirname(filepath);
-    
+
     // 构建完整的URL
     const storageUrl = this.configService.get<string>("STORAGE_URL") ?? "http://localhost:3000";
     const url = `${storageUrl}/api/storage/${userId}/${type}/${normalizedFilename}.${extension}`;
@@ -100,6 +108,25 @@ export class StorageService implements OnModuleInit {
       this.logger.error("File upload failed", error);
       throw new InternalServerErrorException("File upload failed");
     }
+  }
+
+  /** Only immutable/current ID-named PDF artifacts belong exclusively to this resume. */
+  async deleteResumeArtifacts(userId: string, id: string): Promise<void> {
+    const directory = this.getSafePath(userId, "resumes");
+    let files: string[];
+    try {
+      files = await fs.readdir(directory);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") return;
+      throw error;
+    }
+    const prefix = `${id}-`;
+    const owned = files.filter(
+      (name) =>
+        name === `${id}.pdf` ||
+        (name.startsWith(prefix) && /^[\da-f]{64}\.pdf$/i.test(name.slice(prefix.length))),
+    );
+    await Promise.all(owned.map((name) => this.deleteObject(userId, "resumes", name.slice(0, -4))));
   }
 
   async deleteObject(userId: string, type: UploadType, filename: string): Promise<void> {
@@ -151,13 +178,13 @@ export class StorageService implements OnModuleInit {
     } else {
       extension = "jpg";
     }
-    
+
     // 检查文件名是否已经包含扩展名
     let finalFilename = filename;
     if (extension && !filename.endsWith(`.${extension}`)) {
       finalFilename = `${filename}.${extension}`;
     }
-    
+
     const filepath = this.getSafePath(userId, type, finalFilename);
 
     try {

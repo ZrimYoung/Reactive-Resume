@@ -25,11 +25,29 @@ model Resume {
   slug      String
   data      String   @default("{}")
   locked    Boolean  @default(false)
+  tags      String   @default("[]")
+  template  String   @default("onyx")
+  trashedAt DateTime?
+  editedAt  DateTime?
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  versions  ResumeVersion[]
 
   @@unique([userId, id])
   @@unique([userId, slug])
+  @@index([userId, trashedAt, editedAt])
+}
+
+model ResumeVersion {
+  id        String   @id @default(cuid())
+  resumeId  String
+  resume    Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  data      String
+  kind      String
+  name      String?
+  createdAt DateTime @default(now())
+
+  @@index([resumeId, createdAt])
 }

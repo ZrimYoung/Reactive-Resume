@@ -12,6 +12,7 @@ export * from "./namespaces/page";
 export * from "./namespaces/promise";
 export * from "./namespaces/resume-copy";
 export * from "./namespaces/resume-date";
+export * from "./namespaces/resume-checks";
 export * from "./namespaces/string";
 export * from "./namespaces/style";
 export * from "./namespaces/template";

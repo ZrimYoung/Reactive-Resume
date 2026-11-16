@@ -13,6 +13,7 @@ import {
   MAX_CANVAS_SCALE,
   MIN_CANVAS_SCALE,
 } from "../utils/canvas-interactions";
+import { observeResumePages } from "../utils/page-metrics";
 import { getPageDimensions } from "../utils/resume";
 
 export const BuilderLayout = () => {
@@ -21,6 +22,7 @@ export const BuilderLayout = () => {
   const transformRef = useRef<ReactZoomPanPinchRef>(null);
 
   const layout = useArtboardStore((state) => state.resume.metadata.layout);
+  const measuredResume = useArtboardStore((state) => state.resume);
   const page = useArtboardStore((state) => state.resume.metadata.page);
   const dimensions = getPageDimensions(page);
   const contentWidth =
@@ -52,6 +54,29 @@ export const BuilderLayout = () => {
   const Template = useMemo(() => getTemplate(template as Template), [template]);
 
   useEffect(() => bindCanvasInteractions(() => transformRef.current), []);
+
+  useEffect(
+    () =>
+      observeResumePages({
+        getResume: () => useArtboardStore.getState().resume,
+        getPlan: () => {
+          const data = useArtboardStore.getState().resume;
+          const size = getPageDimensions(data.metadata.page);
+          return {
+            widthPx: size.width * MM_TO_PX,
+            heightPx: size.height * MM_TO_PX,
+            lineHeightPx: data.metadata.typography.font.size * data.metadata.typography.lineHeight,
+          };
+        },
+        publish: (snapshotKey, metrics) => {
+          window.parent.postMessage(
+            { type: "RESUME_PAGE_METRICS", snapshotKey, metrics },
+            window.location.origin,
+          );
+        },
+      }),
+    [measuredResume],
+  );
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {

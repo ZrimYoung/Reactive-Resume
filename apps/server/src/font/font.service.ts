@@ -2,9 +2,16 @@ import { randomUUID } from "node:crypto";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 
-import { BadRequestException, Injectable, Logger, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+  Optional,
+} from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { customFontUtils, FONT_UPLOAD_CONFIG } from "@reactive-resume/utils";
+import { PrismaService } from "nestjs-prisma";
 import { parse } from "opentype.js";
 
 import { StorageService } from "../storage/storage.service";
@@ -23,6 +30,7 @@ export class FontService {
     private readonly configService: ConfigService,
     private readonly storageService: StorageService,
     private readonly variableFontParser: VariableFontParserService,
+    @Optional() private readonly prisma?: PrismaService,
   ) {}
 
   private getUserDirectory(userId: string) {
@@ -155,6 +163,21 @@ export class FontService {
     const fonts = await this.readStoredFonts(userId);
     const font = fonts.find((item) => item.id === fontId);
     if (!font) throw new NotFoundException("Font not found");
+    if (this.prisma) {
+      const references = {
+        OR: [font.fileName, JSON.stringify(font.fontFamily)].map((value) => ({
+          data: { contains: value },
+        })),
+      };
+      const [resumes, versions] = await this.prisma.$transaction([
+        this.prisma.resume.count({ where: { userId, ...references } }),
+        this.prisma.resumeVersion.count({ where: { resume: { userId }, ...references } }),
+      ]);
+      if (resumes > 0 || versions > 0)
+        throw new BadRequestException(
+          "This font is used by a resume, a document in Trash, or a saved version. Remove those references before deleting the font.",
+        );
+    }
     const directory = this.getUserDirectory(userId);
     await fs.rm(path.join(directory, font.fileName), { force: true });
     await fs.rm(path.join(directory, `${font.fileName}.json`), { force: true });

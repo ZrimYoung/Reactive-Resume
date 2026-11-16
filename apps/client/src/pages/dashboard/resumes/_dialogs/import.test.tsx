@@ -12,7 +12,12 @@ import { useDialogStore } from "@/client/stores/dialog";
 
 import { ImportDialog } from "./import";
 
-const { importResume, toast } = vi.hoisted(() => ({ importResume: vi.fn(), toast: vi.fn() }));
+const { importResume, toast, extractPdf } = vi.hoisted(() => ({
+  importResume: vi.fn(),
+  toast: vi.fn(),
+  extractPdf: vi.fn(),
+}));
+vi.mock("@/client/libs/pdf", () => ({ extractPdf }));
 vi.mock("@/client/services/resume/import", () => ({
   useImportResume: () => ({ importResume, loading: false }),
 }));
@@ -47,6 +52,7 @@ beforeAll(() => {
 });
 beforeEach(async () => {
   vi.clearAllMocks();
+  extractPdf.mockReset();
   importResume.mockResolvedValue(null);
   Reflect.deleteProperty(window, "electron");
   useDialogStore.setState({ dialog: null });
@@ -103,6 +109,58 @@ async function format(value: string) {
 }
 
 describe("import validation ownership", () => {
+  it("shows a review without writing before explicit confirmation", async () => {
+    vi.spyOn(ReactiveResumeParser.prototype, "readFile").mockResolvedValue(resume("Preview only"));
+    await choose();
+    await click("Validate");
+    expect(document.querySelector('[data-testid="import-review"]')?.textContent).toContain(
+      "Preview only",
+    );
+    expect(importResume).not.toHaveBeenCalled();
+    await click("Import");
+    expect(importResume).toHaveBeenCalledTimes(1);
+  });
+
+  it("reviews local PDF text before creating a new resume", async () => {
+    extractPdf.mockResolvedValue({
+      pages: [
+        {
+          pageNumber: 1,
+          width: 600,
+          height: 800,
+          lines: [{ text: "测试简历", x: 20, y: 20, width: 80, height: 12 }],
+        },
+      ],
+      pageCount: 1,
+      text: "测试简历",
+      warnings: [],
+    });
+    await format("pdf");
+    await choose(new File(["%PDF-fixture"], "local.pdf", { type: "application/pdf" }));
+    await click("Validate");
+    expect(document.querySelector('[data-testid="import-review"]')?.textContent).toContain(
+      "测试简历",
+    );
+    expect(importResume).not.toHaveBeenCalled();
+    await click("Import");
+    expect(importResume.mock.calls[0][0].data.basics.name).toBe("测试简历");
+  });
+
+  it("cancels an obsolete PDF parse when a new file is chosen", async () => {
+    const pending = deferred<unknown>();
+    extractPdf.mockReturnValueOnce(pending.promise);
+    await format("pdf");
+    await choose(new File(["A"], "a.pdf"));
+    await click("Validate");
+    const signal = extractPdf.mock.calls[0][1].signal as AbortSignal;
+    await choose(new File(["B"], "b.pdf"));
+    expect(signal.aborted).toBe(true);
+    await act(async () => {
+      pending.resolve({ pages: [], text: "", pageCount: 1, warnings: [] });
+    });
+    expect(button("Import")).toBeUndefined();
+    expect(toast).not.toHaveBeenCalled();
+  });
   it("imports only the current file when validations complete out of order", async () => {
     const first = deferred<NativeData>();
     const latest = deferred<NativeData>();

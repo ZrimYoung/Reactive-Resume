@@ -120,6 +120,7 @@ export const ResumeDialog = () => {
         title: values.title,
         slug: values.slug,
         data: payload.item.data,
+        ...(payload.item.tags?.length ? { tags: payload.item.tags } : {}),
         autoNumber:
           values.title === copyIdentity.current?.title && values.slug === copyIdentity.current.slug,
       });
@@ -128,7 +129,7 @@ export const ResumeDialog = () => {
     if (isDelete) {
       if (!payload.item?.id) return;
 
-      await deleteResume({ id: payload.item.id });
+      await deleteResume({ id: payload.item.id, expectedUpdatedAt: payload.item.updatedAt });
     }
 
     close();
@@ -172,16 +173,16 @@ export const ResumeDialog = () => {
           <Form {...form}>
             <form>
               <AlertDialogHeader>
-                <AlertDialogTitle>{t`Are you sure you want to delete your resume?`}</AlertDialogTitle>
+                <AlertDialogTitle>{t`Move this resume to Trash?`}</AlertDialogTitle>
                 <AlertDialogDescription>
-                  {t`This action cannot be undone. This will permanently delete your resume and cannot be recovered.`}
+                  {t`The resume will be hidden from your library. You can restore it from Trash.`}
                 </AlertDialogDescription>
               </AlertDialogHeader>
 
               <AlertDialogFooter>
                 <AlertDialogCancel>{t`Cancel`}</AlertDialogCancel>
                 <AlertDialogAction variant="error" onClick={form.handleSubmit(onSubmit)}>
-                  {t`Delete`}
+                  {t`Move to Trash`}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </form>

@@ -139,4 +139,32 @@ describe("SQLite resume revisions", () => {
       await test.close();
     }
   });
+
+  it("changes the content clock only for different data and follows the acknowledged revision when the system clock moves backwards", async () => {
+    const test = await fixture();
+    try {
+      const future = new Date("2099-01-01T00:00:00Z");
+      const before = await test.first.resume.update({
+        where: { id: test.original.id },
+        data: { updatedAt: future, editedAt: future },
+      });
+      const same = await writeResumeRevision(test.first, {
+        id: before.id,
+        userId: before.userId,
+        expectedUpdatedAt: before.updatedAt,
+        data: { data: before.data, title: "Renamed" },
+      });
+      expect(same.editedAt).toEqual(future);
+      const changed = await writeResumeRevision(test.first, {
+        id: before.id,
+        userId: before.userId,
+        expectedUpdatedAt: same.updatedAt,
+        data: { data: '{"text":"Changed"}' },
+      });
+      expect(changed.editedAt).toEqual(changed.updatedAt);
+      expect(changed.updatedAt.getTime()).toBeGreaterThan(future.getTime());
+    } finally {
+      await test.close();
+    }
+  });
 });

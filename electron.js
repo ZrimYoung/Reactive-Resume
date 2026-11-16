@@ -207,6 +207,25 @@ ipcMain.handle("open-json", async (event) => {
   if (canceled || !filePaths[0]) return { canceled: true };
   return { canceled: false, content: JSON.parse(await fs.promises.readFile(filePaths[0], "utf8")) };
 });
+ipcMain.handle("open-pdf", async (event) => {
+  if (!isMainRenderer(event)) throw new Error("Unknown application window");
+  const { canceled, filePaths } = await dialog.showOpenDialog(
+    BrowserWindow.fromWebContents(event.sender),
+    { filters: [{ name: "PDF Resume", extensions: ["pdf"] }], properties: ["openFile"] },
+  );
+  if (canceled || !filePaths[0]) return { canceled: true };
+  const file = await fs.promises.open(filePaths[0], "r");
+  try {
+    const stat = await file.stat();
+    if (!stat.isFile() || stat.size > 20 * 1024 * 1024) throw new Error("PDF 文件不能超过 20 MB。");
+    const bytes = await file.readFile();
+    if (!bytes.subarray(0, 1024).includes(Buffer.from("%PDF-")))
+      throw new Error("所选文件不是有效的 PDF。");
+    return { canceled: false, name: path.basename(filePaths[0]), bytes: Array.from(bytes) };
+  } finally {
+    await file.close();
+  }
+});
 const ownsInstance = app.requestSingleInstanceLock();
 if (!ownsInstance) app.quit();
 else {

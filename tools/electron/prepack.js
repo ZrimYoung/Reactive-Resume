@@ -22,6 +22,10 @@ function checkBuildInputs() {
     "dist/apps/server/main.js",
     "dist/apps/client/index.html",
     "dist/apps/artboard/index.html",
+    "dist/apps/client/pdfjs/LICENSE",
+    "dist/apps/client/pdfjs/cmaps/UniGB-UCS2-H.bcmap",
+    "dist/apps/client/pdfjs/standard_fonts/FoxitFixed.pfb",
+    "dist/apps/client/pdfjs/wasm/openjpeg.wasm",
     "node_modules/.prisma/client/index.js",
     "node_modules/.prisma/client/default.js",
   ];
@@ -31,6 +35,12 @@ function checkBuildInputs() {
     if (!fs.existsSync(path.join(repoRoot, file)))
       throw new Error(`Required offline build input is missing: ${file}`);
   }
+  if (
+    !fs
+      .readdirSync(path.join(repoRoot, "dist/apps/client/assets"))
+      .some((name) => /^pdf\.worker\.min-.*\.mjs$/.test(name))
+  )
+    throw new Error("The local PDF reader worker is missing from the client build.");
 }
 
 async function prepare({ build = true, offline = false } = {}) {

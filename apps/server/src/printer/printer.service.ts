@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 import { HttpService } from "@nestjs/axios";
 import { Injectable, InternalServerErrorException, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
@@ -299,15 +301,15 @@ export class PrinterService {
         for (const p of copiedPages) pdf.addPage(p);
       }
 
-      // Save the PDF to storage and return the URL; cache under generated hash
+      // Bind the returned URL to these exact bytes, including concurrent exports of the same resume.
       const buffer = Buffer.from(await pdf.save());
+      const contentHash = createHash("sha256").update(buffer).digest("hex");
 
-      // This step will also save the resume URL in cache
       const resumeUrl = await this.storageService.uploadObject(
         resume.userId,
         "resumes",
         buffer,
-        resume.id,
+        `${resume.id}-${contentHash}`,
       );
 
       return resumeUrl;

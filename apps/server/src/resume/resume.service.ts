@@ -4,6 +4,7 @@ import {
   Injectable,
   InternalServerErrorException,
   Logger,
+  NotFoundException,
 } from "@nestjs/common";
 import { CreateResumeDto, ImportResumeDto, ResumeDto, UpdateResumeDto } from "@reactive-resume/dto";
 import {
@@ -21,6 +22,10 @@ import { PrinterService } from "@/server/printer/printer.service";
 
 import { StorageService } from "../storage/storage.service";
 import { createNumberedCopy } from "./numbered-copy";
+import { ResumeArchive } from "./resume-archive";
+import { checkpoint, normalizeTags } from "./resume-history";
+import { libraryQuery, listLibrary } from "./resume-library";
+import { decodeResume } from "./resume-record";
 import { writeResumeRevision } from "./resume-revision";
 
 @Injectable()
@@ -57,6 +62,8 @@ export class ResumeService {
         data: JSON.stringify(data),
         userId,
         title: createResumeDto.title,
+        editedAt: new Date(),
+        template: data.metadata.template,
         slug:
           createResumeDto.slug ??
           (this.generateUnicodeSlug(createResumeDto.title) ||
@@ -64,10 +71,7 @@ export class ResumeService {
       },
     });
 
-    return {
-      ...resume,
-      data: typeof resume.data === "string" ? (JSON.parse(resume.data) as ResumeData) : resume.data,
-    };
+    return decodeResume(resume);
   }
 
   async import(userId: string, importResumeDto: ImportResumeDto) {
@@ -115,7 +119,10 @@ export class ResumeService {
         {
           userId,
           data: processedData,
+          tags: JSON.stringify(normalizeTags(importResumeDto.tags ?? [])),
           title: importResumeDto.title ?? randomTitle,
+          editedAt: new Date(),
+          template: validatedData.metadata.template,
           slug:
             importResumeDto.slug ??
             (this.generateUnicodeSlug(importResumeDto.title ?? randomTitle) ||
@@ -124,10 +131,7 @@ export class ResumeService {
         importResumeDto.autoNumber,
       );
 
-      return {
-        ...resume,
-        data: typeof resume.data === "string" ? JSON.parse(resume.data) : resume.data,
-      };
+      return decodeResume(resume);
     } catch (error) {
       const err = error as Error;
       this.logger.error(
@@ -140,25 +144,17 @@ export class ResumeService {
 
   async findAll(userId: string) {
     const resumes = await this.prisma.resume.findMany({
-      where: { userId },
+      where: { userId, trashedAt: null },
       orderBy: { updatedAt: "desc" },
     });
 
-    return resumes.map((resume) => ({
-      ...resume,
-      data: typeof resume.data === "string" ? JSON.parse(resume.data) : resume.data,
-    }));
+    return resumes.map((resume) => decodeResume(resume));
   }
 
   async findOne(id: string, userId?: string) {
-    const resume = await (userId
-      ? this.prisma.resume.findUniqueOrThrow({ where: { userId_id: { userId, id } } })
-      : this.prisma.resume.findUniqueOrThrow({ where: { id } }));
-
-    return {
-      ...resume,
-      data: typeof resume.data === "string" ? JSON.parse(resume.data) : resume.data,
-    };
+    const resume = await this.prisma.resume.findFirst({ where: { id, userId, trashedAt: null } });
+    if (!resume) throw new NotFoundException("Resume does not exist or is in Trash");
+    return decodeResume(resume);
   }
 
   async update(userId: string, id: string, updateResumeDto: UpdateResumeDto) {
@@ -237,6 +233,7 @@ export class ResumeService {
         updateResumeDto.locked !== undefined &&
         updateResumeDto.title === undefined &&
         updateResumeDto.slug === undefined &&
+        updateResumeDto.tags === undefined &&
         updateResumeDto.data === undefined;
       const updatedResume = await writeResumeRevision(this.prisma, {
         id,
@@ -247,17 +244,23 @@ export class ResumeService {
           title: updateResumeDto.title,
           slug: updateResumeDto.slug,
           locked: updateResumeDto.locked,
+          ...(updateResumeDto.tags !== undefined && {
+            tags: JSON.stringify(normalizeTags(updateResumeDto.tags)),
+          }),
+          ...(processedData && {
+            template:
+              (JSON.parse(processedData) as { metadata?: { template?: string } }).metadata
+                ?.template ?? "onyx",
+            editedAt: new Date(),
+          }),
           ...(processedData && { data: processedData }),
+        },
+        afterWrite: async (tx, before, updated) => {
+          if (before.data !== updated.data) await checkpoint(tx, id, before.data, "auto");
         },
       });
 
-      return {
-        ...updatedResume,
-        data:
-          typeof updatedResume.data === "string"
-            ? JSON.parse(updatedResume.data)
-            : updatedResume.data,
-      };
+      return decodeResume(updatedResume);
     } catch (error) {
       const err = error as Error & { code?: string };
       this.logger.error(
@@ -281,25 +284,54 @@ export class ResumeService {
     return this.update(userId, id, { locked: set, expectedUpdatedAt });
   }
 
-  async remove(userId: string, id: string) {
-    // 先获取记录以确定实际的 PDF 文件名（打印时使用 slugify(title) 作为文件名）
-    const { title, slug } = await this.prisma.resume.findUniqueOrThrow({
-      where: { userId_id: { userId, id } },
-      select: { title: true, slug: true },
+  remove(userId: string, id: string, expectedUpdatedAt?: Date) {
+    return new ResumeArchive(this.prisma).trash(userId, id, expectedUpdatedAt);
+  }
+  restore(userId: string, id: string, expectedUpdatedAt?: Date) {
+    return new ResumeArchive(this.prisma).restore(userId, id, expectedUpdatedAt);
+  }
+  async permanent(userId: string, id: string, expectedUpdatedAt?: Date) {
+    const result = await new ResumeArchive(this.prisma).permanent(userId, id, expectedUpdatedAt);
+    // Preview IDs are unique; title-named PDFs, pictures and fonts may be shared by other versions.
+    await this.storageService.deleteObject(userId, "previews", id).catch(() => {
+      this.logger.warn("Could not remove the deleted resume preview");
     });
-
-    const titleSlug = this.generateUnicodeSlug(title);
-    const candidates = [...new Set([titleSlug, slug, id].filter(Boolean))] as string[];
-
-    await Promise.all([
-      // 预览文件名固定为 id
-      this.storageService.deleteObject(userId, "previews", id),
-      // PDF 可能历史上用过不同命名：slugify(title) / slug / id，全部尝试删除；
-      // StorageService.deleteObject 已忽略不存在文件（force: true）
-      ...candidates.map((name) => this.storageService.deleteObject(userId, "resumes", name)),
-    ]);
-
-    return this.prisma.resume.delete({ where: { userId_id: { userId, id } } });
+    await this.storageService.deleteResumeArtifacts(userId, id).catch(() => {
+      this.logger.warn("Could not remove the deleted resume PDF artifacts");
+    });
+    return result;
+  }
+  async emptyTrash(userId: string, confirm: boolean) {
+    const result = await new ResumeArchive(this.prisma).empty(userId, confirm);
+    await Promise.all(
+      result.ids.map(async (id) => {
+        await this.storageService.deleteObject(userId, "previews", id).catch(() => {
+          this.logger.warn("Could not remove a trashed resume preview");
+        });
+        await this.storageService.deleteResumeArtifacts(userId, id).catch(() => {
+          this.logger.warn("Could not remove a trashed resume PDF artifact");
+        });
+      }),
+    );
+    return { deleted: result.deleted };
+  }
+  library(userId: string, query: Record<string, unknown>, trashed = false) {
+    return listLibrary(this.prisma, userId, libraryQuery(query, trashed));
+  }
+  versions(userId: string, id: string) {
+    return new ResumeArchive(this.prisma).versions(userId, id);
+  }
+  version(userId: string, id: string, versionId: string) {
+    return new ResumeArchive(this.prisma).version(userId, id, versionId);
+  }
+  namedVersion(userId: string, id: string, name: string, expectedUpdatedAt?: Date) {
+    return new ResumeArchive(this.prisma).named(userId, id, name, expectedUpdatedAt);
+  }
+  deleteVersion(userId: string, id: string, versionId: string) {
+    return new ResumeArchive(this.prisma).deleteVersion(userId, id, versionId);
+  }
+  restoreVersion(userId: string, id: string, versionId: string, expectedUpdatedAt?: Date) {
+    return new ResumeArchive(this.prisma).restoreVersion(userId, id, versionId, expectedUpdatedAt);
   }
 
   async printResume(resume: ResumeDto) {

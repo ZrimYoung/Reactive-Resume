@@ -1,14 +1,18 @@
+import { createHash } from "node:crypto";
+
 import {
   BadRequestException,
   Body,
   Controller,
   Delete,
   Get,
+  HttpException,
   InternalServerErrorException,
   Logger,
   Param,
   Patch,
   Post,
+  Query,
 } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
 import {
@@ -69,6 +73,21 @@ export class ResumeController {
     return this.resumeService.findAll(LOCAL_USER_ID);
   }
 
+  @Get("library")
+  library(@Query() query: Record<string, unknown>) {
+    return this.resumeService.library(LOCAL_USER_ID, query);
+  }
+
+  @Get("trash")
+  trash(@Query() query: Record<string, unknown>) {
+    return this.resumeService.library(LOCAL_USER_ID, query, true);
+  }
+
+  @Delete("trash")
+  emptyTrash(@Body() body: { confirm?: boolean } = {}) {
+    return this.resumeService.emptyTrash(LOCAL_USER_ID, body.confirm === true);
+  }
+
   @Get(":id")
   findOne(@Param("id") id: string) {
     return this.resumeService.findOne(id, LOCAL_USER_ID);
@@ -113,13 +132,61 @@ export class ResumeController {
   }
 
   @Patch(":id/lock")
-  lock(@Param("id") id: string, @Body() body: { set?: boolean; expectedUpdatedAt?: Date }) {
+  lock(@Param("id") id: string, @Body() body: { set?: boolean; expectedUpdatedAt?: Date } = {}) {
     return this.resumeService.lock(LOCAL_USER_ID, id, body.set ?? true, body.expectedUpdatedAt);
   }
 
   @Delete(":id")
-  remove(@Param("id") id: string) {
-    return this.resumeService.remove(LOCAL_USER_ID, id);
+  remove(@Param("id") id: string, @Body() body: { expectedUpdatedAt?: Date } = {}) {
+    return this.resumeService.remove(LOCAL_USER_ID, id, body.expectedUpdatedAt);
+  }
+
+  @Post(":id/trash")
+  moveToTrash(@Param("id") id: string, @Body() body: { expectedUpdatedAt?: Date } = {}) {
+    return this.resumeService.remove(LOCAL_USER_ID, id, body.expectedUpdatedAt);
+  }
+
+  @Post(":id/restore")
+  restore(@Param("id") id: string, @Body() body: { expectedUpdatedAt?: Date } = {}) {
+    return this.resumeService.restore(LOCAL_USER_ID, id, body.expectedUpdatedAt);
+  }
+
+  @Delete(":id/permanent")
+  permanent(@Param("id") id: string, @Body() body: { expectedUpdatedAt?: Date } = {}) {
+    return this.resumeService.permanent(LOCAL_USER_ID, id, body.expectedUpdatedAt);
+  }
+
+  @Get(":id/versions")
+  versions(@Param("id") id: string) {
+    return this.resumeService.versions(LOCAL_USER_ID, id);
+  }
+
+  @Post(":id/versions")
+  namedVersion(
+    @Param("id") id: string,
+    @Body() body: { name?: unknown; expectedUpdatedAt?: Date } = {},
+  ) {
+    if (typeof body.name !== "string") throw new BadRequestException("A version name is required");
+    return this.resumeService.namedVersion(LOCAL_USER_ID, id, body.name, body.expectedUpdatedAt);
+  }
+
+  @Get(":id/versions/:versionId")
+  version(@Param("id") id: string, @Param("versionId") versionId: string) {
+    return this.resumeService.version(LOCAL_USER_ID, id, versionId);
+  }
+
+  @Delete(":id/versions/:versionId")
+  deleteVersion(@Param("id") id: string, @Param("versionId") versionId: string) {
+    return this.resumeService.deleteVersion(LOCAL_USER_ID, id, versionId);
+  }
+
+  @Post(":id/versions/:versionId/restore")
+  restoreVersion(
+    @Param("id") id: string,
+    @Param("versionId") versionId: string,
+    @Body() body: { expectedUpdatedAt?: Date } = {},
+  ) {
+    return this.resumeService.restoreVersion(LOCAL_USER_ID, id, versionId, body.expectedUpdatedAt);
   }
 
   @Get("print/:id")
@@ -131,10 +198,13 @@ export class ResumeController {
         data: typeof resume.data === "string" ? JSON.parse(resume.data) : resume.data,
       } as ResumeDto;
       const url = await this.resumeService.printResume(resumeWithParsedData);
-
-      return { url };
+      const dataHash = createHash("sha256")
+        .update(JSON.stringify(resumeWithParsedData.data))
+        .digest("hex");
+      return { url, dataHash };
     } catch (error) {
       Logger.error(error);
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(error);
     }
   }
@@ -152,6 +222,7 @@ export class ResumeController {
       return { url };
     } catch (error) {
       Logger.error(error);
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(error);
     }
   }

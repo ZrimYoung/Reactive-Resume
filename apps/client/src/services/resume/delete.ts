@@ -5,10 +5,12 @@ import type { AxiosResponse } from "axios";
 import { axios } from "@/client/libs/axios";
 import { queryClient } from "@/client/libs/query-client";
 
-export const deleteResume = async (data: DeleteResumeDto) => {
-  const response = await axios.delete<ResumeDto, AxiosResponse<ResumeDto>, DeleteResumeDto>(
-    `/resume/${data.id}`,
-  );
+export const deleteResume = async (data: DeleteResumeDto & { expectedUpdatedAt: Date }) => {
+  const response = await axios.delete<
+    ResumeDto,
+    AxiosResponse<ResumeDto>,
+    { expectedUpdatedAt: Date }
+  >(`/resume/${data.id}`, { data: { expectedUpdatedAt: data.expectedUpdatedAt } });
 
   return response.data;
 };
@@ -21,12 +23,13 @@ export const useDeleteResume = () => {
   } = useMutation({
     mutationFn: deleteResume,
     onSuccess: (data) => {
-      queryClient.removeQueries({ queryKey: ["resume", data.id] });
+      queryClient.removeQueries({ queryKey: ["resume", { id: data.id }] });
 
       queryClient.setQueryData<ResumeDto[]>(["resumes"], (cache) => {
         if (!cache) return [];
         return cache.filter((resume) => resume.id !== data.id);
       });
+      void queryClient.invalidateQueries({ queryKey: ["resumes"] });
     },
   });
 

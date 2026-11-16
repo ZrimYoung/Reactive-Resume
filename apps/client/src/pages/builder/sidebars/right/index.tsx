@@ -1,11 +1,11 @@
 import { t } from "@lingui/macro";
-import { SidebarSimple } from "@phosphor-icons/react";
+import { ListChecks } from "@phosphor-icons/react";
 import { Button, ScrollArea, Separator } from "@reactive-resume/ui";
 import { useRef } from "react";
 
 import { Copyright } from "@/client/components/copyright";
 import { ThemeSwitch } from "@/client/components/theme-switch";
-import { useBuilderStore } from "@/client/stores/builder";
+import { ResumeCheckPanel } from "@/client/features/resume-checks/check-panel";
 
 import { CssSection } from "./sections/css";
 import { ExportSection } from "./sections/export";
@@ -20,7 +20,6 @@ import { SectionIcon } from "./shared/section-icon";
 
 export const RightSidebar = () => {
   const containterRef = useRef<HTMLDivElement | null>(null);
-  const toggleRightCollapsed = useBuilderStore((state) => state.panel.right.toggleCollapsed);
 
   const scrollIntoView = (selector: string) => {
     const section = containterRef.current?.querySelector(selector);
@@ -45,6 +44,8 @@ export const RightSidebar = () => {
           <Separator />
           <ExportSection />
           <Separator />
+          <ResumeCheckPanel />
+          <Separator />
           <NotesSection />
           <Separator />
           <InformationSection />
@@ -57,6 +58,17 @@ export const RightSidebar = () => {
         <div />
 
         <div className="flex flex-col items-center justify-center gap-y-2">
+          <Button
+            size="icon"
+            variant="ghost"
+            aria-label={t`Review resume`}
+            title={t`Review resume`}
+            onClick={() => {
+              scrollIntoView("#resume-checks");
+            }}
+          >
+            <ListChecks size={14} />
+          </Button>
           <SectionIcon
             id="template"
             name={t`Template`}

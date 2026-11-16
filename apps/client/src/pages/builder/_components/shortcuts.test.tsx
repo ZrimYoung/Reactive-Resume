@@ -3,7 +3,7 @@
 import { i18n } from "@lingui/core";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useBuilderStore } from "@/client/stores/builder";
 import { useDialogStore } from "@/client/stores/dialog";
@@ -71,7 +71,12 @@ describe("builder shortcut help", () => {
     expect(dialog()?.textContent).toContain("Zoom around the pointer on the canvas");
     await pressHelp();
     expect(dialog()).toBeNull();
-    expect(document.activeElement).toBe(trigger);
+    // Radix dispatches its unmount autofocus event in setTimeout(0), after the dialog leaves the DOM.
+    await act(async () => {
+      await vi.waitFor(() => {
+        expect(document.activeElement).toBe(trigger);
+      });
+    });
     await act(async () => {
       trigger.click();
     });

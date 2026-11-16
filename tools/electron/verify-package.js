@@ -24,6 +24,14 @@ function verifyPackage(context) {
     serverEntry,
     path.join(resources, "app.asar.unpacked", "dist", "apps", "client", "index.html"),
     path.join(resources, "app.asar.unpacked", "dist", "apps", "artboard", "index.html"),
+    ...[
+      "LICENSE",
+      "cmaps/UniGB-UCS2-H.bcmap",
+      "standard_fonts/FoxitFixed.pfb",
+      "wasm/openjpeg.wasm",
+    ].map((file) =>
+      path.join(resources, "app.asar.unpacked", "dist", "apps", "client", "pdfjs", file),
+    ),
     path.join(resources, ".prisma", "client", "index.js"),
     path.join(resources, "puppeteer", "browser.json"),
   ];
@@ -32,6 +40,9 @@ function verifyPackage(context) {
   for (const file of required) {
     if (!fs.existsSync(file)) throw new Error(`Packaged offline runtime is missing: ${file}`);
   }
+  const assets = path.join(resources, "app.asar.unpacked", "dist", "apps", "client", "assets");
+  if (!fs.readdirSync(assets).some((name) => /^pdf\.worker\.min-.*\.mjs$/.test(name)))
+    throw new Error("The packaged local PDF reader worker is missing.");
   for (const privatePath of ["storage", "prisma/local-resume.db"]) {
     if (fs.existsSync(path.join(resources, privatePath)))
       throw new Error(`A private data path was included in the package: ${privatePath}`);

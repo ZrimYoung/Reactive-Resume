@@ -18,6 +18,7 @@ interface Window {
     ) => Promise<{ canceled: boolean; filePath?: string }>;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Existing IPC accepts both parsed and serialized JSON.
     openJson: () => Promise<{ canceled: boolean; content?: any }>;
+    openPdf: () => Promise<{ canceled: boolean; name?: string; bytes?: number[] }>;
     writeResumeDraft: (draft: import("./services/resume/save-queue").ResumeDraft) => {
       ok: boolean;
       error?: string;

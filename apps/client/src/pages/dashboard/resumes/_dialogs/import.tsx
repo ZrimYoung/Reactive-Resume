@@ -1,7 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { t } from "@lingui/macro";
 import { Check, DownloadSimple } from "@phosphor-icons/react";
-import type { JsonResume, LinkedIn, ReactiveResumeV3 } from "@reactive-resume/parser";
 import {
   JsonResumeParser,
   LinkedInParser,
@@ -39,6 +38,8 @@ import { useForm } from "react-hook-form";
 import { z, ZodError } from "zod";
 
 import { useToast } from "@/client/hooks/use-toast";
+import type { ExtractedPdf } from "@/client/libs/pdf";
+import { convertPdfImport } from "@/client/libs/pdf/import";
 import { useImportResume } from "@/client/services/resume/import";
 import { useDialog } from "@/client/stores/dialog";
 
@@ -47,6 +48,7 @@ enum ImportType {
   "reactive-resume-v3-json" = "reactive-resume-v3-json",
   "json-resume-json" = "json-resume-json",
   "linkedin-data-export-zip" = "linkedin-data-export-zip",
+  "pdf" = "pdf",
 }
 
 const formSchema = z.object({
@@ -55,6 +57,25 @@ const formSchema = z.object({
 });
 
 type FormValues = z.infer<typeof formSchema>;
+
+const reviewSections = (data: ResumeData) => {
+  const { custom, ...sections } = data.sections;
+  return [...Object.values(sections), ...Object.values(custom)];
+};
+
+const previewSection = (section: ReturnType<typeof reviewSections>[number]) => {
+  if ("content" in section) return section.content;
+  return section.items
+    .map((item) =>
+      Object.entries(item)
+        .filter(([key, value]) => !["id", "visible"].includes(key) && value !== "")
+        .map(([, value]) =>
+          value && typeof value === "object" ? Object.values(value).join(" ") : String(value),
+        )
+        .join(" · "),
+    )
+    .join("\n");
+};
 
 type ValidationResult =
   | {
@@ -66,7 +87,9 @@ type ValidationResult =
       type: ImportType;
       file: File;
       generation: number;
-      result: ResumeData | ReactiveResumeV3 | LinkedIn | JsonResume;
+      result: ResumeData;
+      warnings?: string[];
+      sourceText?: string;
     };
 
 export const ImportDialog = () => {
@@ -76,11 +99,14 @@ export const ImportDialog = () => {
 
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
   const generation = useRef(0);
+  const pdfTask = useRef<AbortController>();
+  const submitting = useRef(false);
   const mounted = useRef(false);
   const open = useRef(isOpen);
   open.current = isOpen;
   const invalidateValidation = useCallback(() => {
     generation.current++;
+    pdfTask.current?.abort();
     setValidationResult(null);
   }, []);
 
@@ -101,6 +127,18 @@ export const ImportDialog = () => {
       form.getValues("type") === type &&
       form.getValues("file") === file;
     try {
+      if (type === ImportType.pdf) {
+        const result = await window.electron.openPdf();
+        if (!current() || result.canceled || !result.bytes) return;
+        form.setValue(
+          "file",
+          new File([new Uint8Array(result.bytes)], result.name ?? "resume.pdf", {
+            type: "application/pdf",
+          }),
+        );
+        await onValidate();
+        return;
+      }
       const result = await window.electron.openJson();
       if (!current()) return;
       if (!result.canceled && result.content) {
@@ -135,6 +173,7 @@ export const ImportDialog = () => {
     return () => {
       mounted.current = false;
       generation.current++;
+      pdfTask.current?.abort();
     };
   }, []);
 
@@ -160,10 +199,12 @@ export const ImportDialog = () => {
   const accept = useMemo(() => {
     if (filetype.includes("json")) return ".json";
     if (filetype.includes("zip")) return ".zip";
+    if (filetype === ImportType.pdf) return ".pdf";
     return "";
   }, [filetype]);
 
   const onValidate = async () => {
+    pdfTask.current?.abort();
     const request = ++generation.current;
     const { file: selectedFile, type: selectedType } = form.getValues();
     const current = () =>
@@ -182,7 +223,13 @@ export const ImportDialog = () => {
         const result = parser.validate(data);
 
         if (current())
-          setValidationResult({ isValid: true, type, file, generation: request, result });
+          setValidationResult({
+            isValid: true,
+            type,
+            file,
+            generation: request,
+            result: parser.convert(result),
+          });
       }
 
       if (type === ImportType["reactive-resume-v3-json"]) {
@@ -191,7 +238,13 @@ export const ImportDialog = () => {
         const result = parser.validate(data);
 
         if (current())
-          setValidationResult({ isValid: true, type, file, generation: request, result });
+          setValidationResult({
+            isValid: true,
+            type,
+            file,
+            generation: request,
+            result: parser.convert(result),
+          });
       }
 
       if (type === ImportType["json-resume-json"]) {
@@ -200,7 +253,13 @@ export const ImportDialog = () => {
         const result = parser.validate(data);
 
         if (current())
-          setValidationResult({ isValid: true, type, file, generation: request, result });
+          setValidationResult({
+            isValid: true,
+            type,
+            file,
+            generation: request,
+            result: parser.convert(result),
+          });
       }
 
       if (type === ImportType["linkedin-data-export-zip"]) {
@@ -209,7 +268,31 @@ export const ImportDialog = () => {
         const result = await parser.validate(data);
 
         if (current())
-          setValidationResult({ isValid: true, type, file, generation: request, result });
+          setValidationResult({
+            isValid: true,
+            type,
+            file,
+            generation: request,
+            result: parser.convert(result),
+          });
+      }
+      if (type === ImportType.pdf) {
+        const controller = new AbortController();
+        pdfTask.current = controller;
+        const { extractPdf } = await import("@/client/libs/pdf");
+        if (!current()) return;
+        const extracted: ExtractedPdf = await extractPdf(file, { signal: controller.signal });
+        const converted = convertPdfImport(extracted);
+        if (current())
+          setValidationResult({
+            isValid: true,
+            type,
+            file,
+            generation: request,
+            result: converted.data,
+            warnings: converted.warnings,
+            sourceText: converted.text,
+          });
       }
     } catch (error) {
       if (!current()) return;
@@ -226,6 +309,7 @@ export const ImportDialog = () => {
   };
 
   const onImport = async () => {
+    if (submitting.current) return;
     try {
       const { file, type } = formSchema.parse(form.getValues());
       if (
@@ -237,38 +321,13 @@ export const ImportDialog = () => {
       )
         return;
       const request = generation.current;
+      submitting.current = true;
       const current = () =>
         open.current &&
         generation.current === request &&
         form.getValues("file") === file &&
         form.getValues("type") === type;
-      if (type === ImportType["reactive-resume-json"]) {
-        const parser = new ReactiveResumeParser();
-        const data = parser.convert(validationResult.result as ResumeData);
-
-        await importResume({ data });
-      }
-
-      if (type === ImportType["reactive-resume-v3-json"]) {
-        const parser = new ReactiveResumeV3Parser();
-        const data = parser.convert(validationResult.result as ReactiveResumeV3);
-
-        await importResume({ data });
-      }
-
-      if (type === ImportType["json-resume-json"]) {
-        const parser = new JsonResumeParser();
-        const data = parser.convert(validationResult.result as JsonResume);
-
-        await importResume({ data });
-      }
-
-      if (type === ImportType["linkedin-data-export-zip"]) {
-        const parser = new LinkedInParser();
-        const data = parser.convert(validationResult.result as LinkedIn);
-
-        await importResume({ data });
-      }
+      await importResume({ data: validationResult.result });
 
       if (current()) onClose();
     } catch (error: unknown) {
@@ -277,6 +336,8 @@ export const ImportDialog = () => {
         title: t`Oops, the server returned an error.`,
         description: error instanceof Error ? error.message : undefined,
       });
+    } finally {
+      submitting.current = false;
     }
   };
 
@@ -287,7 +348,7 @@ export const ImportDialog = () => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
         <Form {...form}>
           <form className="space-y-4">
             <DialogHeader>
@@ -328,6 +389,7 @@ export const ImportDialog = () => {
                         <SelectItem value="linkedin-data-export-zip">
                           LinkedIn Data Export (.zip)
                         </SelectItem>
+                        <SelectItem value="pdf">{t`PDF with readable text (.pdf)`}</SelectItem>
                       </SelectContent>
                     </Select>
                   </FormControl>
@@ -336,9 +398,9 @@ export const ImportDialog = () => {
               )}
             />
 
-            {"electron" in window && filetype.includes("json") && (
+            {"electron" in window && (filetype.includes("json") || filetype === ImportType.pdf) && (
               <div className="flex flex-col gap-y-2">
-                <Label>{t`Local JSON file`}</Label>
+                <Label>{t`Local file`}</Label>
                 <Button type="button" variant="outline" onClick={onElectronImport}>
                   <DownloadSimple className="mr-2" />
                   {t`Open Local File`}
@@ -391,6 +453,63 @@ export const ImportDialog = () => {
                     {JSON.stringify(JSON.parse(validationResult.errors), null, 4)}
                   </div>
                 </ScrollArea>
+              </div>
+            )}
+
+            {validationResult?.isValid && (
+              <div className="space-y-3 rounded border p-3" data-testid="import-review">
+                <h3 className="font-semibold">{t`Review before importing`}</h3>
+                <p className="text-xs opacity-70">{t`This creates a new resume. Review the parsed content below; you can correct it in the editor after importing.`}</p>
+                <p className="break-words font-medium">
+                  {validationResult.result.basics.name || t`Unnamed resume`}
+                </p>
+                <p className="break-words text-sm">
+                  {[
+                    validationResult.result.basics.headline,
+                    validationResult.result.basics.email,
+                    validationResult.result.basics.phone,
+                    validationResult.result.basics.location,
+                    validationResult.result.basics.url.href,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </p>
+                {validationResult.warnings?.map((warning) => (
+                  <p key={warning} className="text-xs text-warning">
+                    {warning}
+                  </p>
+                ))}
+                <div className="max-h-64 space-y-2 overflow-y-auto text-sm">
+                  {reviewSections(validationResult.result).map((section) => {
+                    const content = previewSection(section);
+                    if (!content) return null;
+                    return (
+                      <details key={section.id}>
+                        <summary className="cursor-pointer font-medium">
+                          {section.name}
+                          {section.visible ? "" : ` (${t`Hidden`})`}
+                        </summary>
+                        <pre className="whitespace-pre-wrap break-words font-sans text-xs">
+                          {String(content)
+                            .replace(/<[^>]*>/gu, " ")
+                            .replace(/&lt;/gu, "<")
+                            .replace(/&gt;/gu, ">")
+                            .replace(/&quot;/gu, '"')
+                            .replace(/&#39;/gu, "'")
+                            .replace(/&amp;/gu, "&")}
+                        </pre>
+                      </details>
+                    );
+                  })}
+                  {validationResult.sourceText && (
+                    <details>
+                      <summary className="cursor-pointer">{t`Extracted PDF text`}</summary>
+                      <pre className="whitespace-pre-wrap break-words font-sans text-xs">
+                        {validationResult.sourceText}
+                      </pre>
+                    </details>
+                  )}
+                </div>
               </div>
             )}
 

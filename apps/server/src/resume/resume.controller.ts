@@ -113,8 +113,8 @@ export class ResumeController {
   }
 
   @Patch(":id/lock")
-  lock(@Param("id") id: string, @Body("set") set = true) {
-    return this.resumeService.lock(LOCAL_USER_ID, id, set);
+  lock(@Param("id") id: string, @Body() body: { set?: boolean; expectedUpdatedAt?: Date }) {
+    return this.resumeService.lock(LOCAL_USER_ID, id, body.set ?? true, body.expectedUpdatedAt);
   }
 
   @Delete(":id")

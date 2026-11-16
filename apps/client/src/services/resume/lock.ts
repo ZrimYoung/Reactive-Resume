@@ -1,28 +1,28 @@
 import type { ResumeDto } from "@reactive-resume/dto";
 import { useMutation } from "@tanstack/react-query";
 
-import { axios } from "@/client/libs/axios";
 import { queryClient } from "@/client/libs/query-client";
+
+import { updateResume } from "./update";
 
 type LockResumeArgs = {
   id: string;
   set: boolean;
+  updatedAt: Date;
 };
 
-export const lockResume = async ({ id, set }: LockResumeArgs) => {
-  const response = await axios.patch(`/resume/${id}/lock`, { set });
-
-  queryClient.setQueryData<ResumeDto>(["resume", { id: response.data.id }], response.data);
+export const lockResume = async ({ id, set, updatedAt }: LockResumeArgs) => {
+  const response = await updateResume({ id, locked: set, updatedAt });
 
   queryClient.setQueryData<ResumeDto[]>(["resumes"], (cache) => {
-    if (!cache) return [response.data];
+    if (!cache) return [response];
     return cache.map((resume) => {
-      if (resume.id === response.data.id) return response.data;
+      if (resume.id === response.id) return response;
       return resume;
     });
   });
 
-  return response.data;
+  return response;
 };
 
 export const useLockResume = () => {

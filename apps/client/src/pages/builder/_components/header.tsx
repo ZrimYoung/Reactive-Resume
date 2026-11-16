@@ -58,13 +58,23 @@ export const BuilderHeader = () => {
           <h1 className="font-medium">{title}</h1>
 
           <div aria-live="polite" className="ml-2 text-xs">
-            {save.status === "error" ? (
+            {save.status === "conflict" && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  useResumeStore.setState({ reviewSaveConflict: true });
+                }}
+              >
+                {t`Save conflict. Review`}
+              </Button>
+            )}
+            {save.status === "error" && (
               <Button size="sm" variant="ghost" onClick={() => void flushResumeSaves(resumeId)}>
                 {t`Not saved. Retry`}
               </Button>
-            ) : (
-              saveLabel
             )}
+            {save.status !== "conflict" && save.status !== "error" && saveLabel}
             {save.draftUnavailable && save.status !== "saved" && (
               <span
                 role="alert"

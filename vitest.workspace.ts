@@ -2,6 +2,11 @@ import { defineWorkspace } from "vitest/config";
 
 export default defineWorkspace([
   {
+    extends: "./libs/parser/vite.config.ts",
+    root: "./libs/parser",
+    test: { name: "parser" },
+  },
+  {
     extends: "./apps/server/vite.config.ts",
     root: "./apps/server",
     test: { name: "server" },

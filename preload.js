@@ -17,6 +17,7 @@ contextBridge.exposeInMainWorld("electron", {
   },
   writeResumeDraft: (draft) => ipcRenderer.sendSync("resume-draft:write", draft),
   readResumeDraft: (id) => ipcRenderer.invoke("resume-draft:read", id),
+  listResumeDrafts: (id) => ipcRenderer.invoke("resume-draft:list", id),
   removeResumeDraft: (id, token) => ipcRenderer.invoke("resume-draft:remove", id, token),
   onBeforeClose: (handler) => {
     const listener = async (_event, requestId) => {

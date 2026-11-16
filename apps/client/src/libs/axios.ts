@@ -1,6 +1,7 @@
 import { t } from "@lingui/macro";
 import type { ErrorMessage } from "@reactive-resume/utils";
 import { deepSearchAndParseDates } from "@reactive-resume/utils";
+import type { AxiosError } from "axios";
 import _axios from "axios";
 
 import { toast } from "../hooks/use-toast";
@@ -16,9 +17,10 @@ axios.interceptors.response.use(
     const transformedResponse = deepSearchAndParseDates(currentAssets, ["createdAt", "updatedAt"]);
     return { ...response, data: transformedResponse };
   },
-  (error) => {
-    const message = error.response?.data.message as ErrorMessage;
-    const description = translateError(message);
+  (error: unknown) => {
+    const failure = error as AxiosError<{ message?: ErrorMessage }>;
+    const message = failure.response?.data.message;
+    const description = message ? translateError(message) : undefined;
 
     if (description) {
       toast({
@@ -28,6 +30,11 @@ axios.interceptors.response.use(
       });
     }
 
+    // Callers need the status and response body to distinguish a version conflict from a retryable outage.
+    if (error instanceof Error) {
+      if (message) error.message = message;
+      return Promise.reject(error);
+    }
     return Promise.reject(new Error(message));
   },
 );

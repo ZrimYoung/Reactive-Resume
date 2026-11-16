@@ -18,15 +18,12 @@ msgstr ""
 "X-Crowdin-File: /[AmruthPillai.Reactive-Resume] v4/apps/client/src/locales/en-US/messages.po\n"
 "X-Crowdin-File-ID: 450\n"
 
-#: apps/client/src/pages/builder/_components/recovery.tsx:46
-#~ msgid "{0} (Recovered)"
-#~ msgstr "{0} (Recovered)"
-
-#: apps/client/src/pages/builder/_components/recovery.tsx:47
+#: apps/client/src/pages/builder/_components/recovery.tsx:51
+#: apps/client/src/pages/builder/_components/recovery.tsx:145
 msgid "{title} (Recovered)"
 msgstr "{title} (Recovered)"
 
-#: apps/client/src/pages/builder/sidebars/left/sections/shared/section-options.tsx:142
+#: apps/client/src/pages/builder/sidebars/left/sections/shared/section-options.tsx:173
 msgid "{value, plural, one {Column} other {Columns}}"
 msgstr "{value, plural, one {Column} other {Columns}}"
 
@@ -46,7 +43,7 @@ msgstr "<0>The community has spent a lot of time writing the documentation for R
 msgid "A passion project by <0>Amruth Pillai</0>"
 msgstr "A passion project by <0>Amruth Pillai</0>"
 
-#: apps/client/src/providers/resume-saves.tsx:88
+#: apps/client/src/providers/resume-saves.tsx:82
 msgid "A recovery draft is saved on this device. Retry saving, or leave and recover it later."
 msgstr "A recovery draft is saved on this device. Retry saving, or leave and recover it later."
 
@@ -54,7 +51,7 @@ msgstr "A recovery draft is saved on this device. Retry saving, or leave and rec
 msgid "A resume with this slug already exists, please pick a different unique identifier."
 msgstr "A resume with this slug already exists, please pick a different unique identifier."
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:283
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:291
 msgid "A unique identifier used in links or file names. Supports non-Latin characters and will not change automatically once edited or locked."
 msgstr "A unique identifier used in links or file names. Supports non-Latin characters and will not change automatically once edited or locked."
 
@@ -67,13 +64,9 @@ msgid "A4"
 msgstr "A4"
 
 #. Helper text to let the user know what filetypes are accepted. {accept} can be .pdf or .json.
-#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:330
+#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:306
 msgid "Accepts only {accept} files"
 msgstr "Accepts only {accept} files"
-
-#: apps/client/src/pages/dashboard/settings/_sections/account.tsx:74
-#~ msgid "Account"
-#~ msgstr "Account"
 
 #: apps/client/src/pages/builder/sidebars/left/sections/custom/section.tsx:175
 msgid "Add a custom field"
@@ -85,7 +78,7 @@ msgctxt "For example, add a new work experience, or add a new profile."
 msgid "Add a new item"
 msgstr "Add a new item"
 
-#: apps/client/src/pages/builder/sidebars/left/sections/shared/section-options.tsx:91
+#: apps/client/src/pages/builder/sidebars/left/sections/shared/section-options.tsx:116
 msgid "Add a new item"
 msgstr "Add a new item"
 
@@ -98,11 +91,11 @@ msgstr "Add a new section"
 msgid "Add New Page"
 msgstr "Add New Page"
 
-#: apps/client/src/pages/builder/_components/toolbar.tsx:57
+#: apps/client/src/pages/builder/_components/toolbar.tsx:62
 msgid "An error occurred while printing. Please try again."
 msgstr "An error occurred while printing. Please try again."
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:188
+#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:166
 msgid "An error occurred while validating the file."
 msgstr "An error occurred while validating the file."
 
@@ -122,15 +115,15 @@ msgstr "Apply Custom CSS"
 msgid "Are you sure you want to delete this item?"
 msgstr "Are you sure you want to delete this item?"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:175
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:183
 msgid "Are you sure you want to delete your resume?"
 msgstr "Are you sure you want to delete your resume?"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/lock.tsx:38
+#: apps/client/src/pages/dashboard/resumes/_dialogs/lock.tsx:42
 msgid "Are you sure you want to lock this resume?"
 msgstr "Are you sure you want to lock this resume?"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/lock.tsx:39
+#: apps/client/src/pages/dashboard/resumes/_dialogs/lock.tsx:43
 msgid "Are you sure you want to unlock this resume?"
 msgstr "Are you sure you want to unlock this resume?"
 
@@ -142,6 +135,10 @@ msgstr "Area of Study"
 #: apps/client/src/pages/builder/sidebars/left/sections/picture/options.tsx:79
 msgid "Aspect Ratio"
 msgstr "Aspect Ratio"
+
+#: apps/client/src/pages/builder/_components/recovery.tsx:88
+msgid "Automatic saving is paused to keep both versions. Save your local changes as a separate copy, then load the saved version. You can also download your local changes."
+msgstr "Automatic saving is paused to keep both versions. Save your local changes as a separate copy, then load the saved version. You can also download your local changes."
 
 #: apps/client/src/pages/builder/sidebars/left/dialogs/awards.tsx:51
 msgid "Awarder"
@@ -182,26 +179,30 @@ msgstr "By the community, for the community."
 
 #: apps/client/src/components/font-upload-dialog.tsx:292
 #: apps/client/src/pages/builder/sidebars/left/sections/shared/section-dialog.tsx:135
-#: apps/client/src/pages/dashboard/resumes/_dialogs/lock.tsx:49
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:182
+#: apps/client/src/pages/dashboard/resumes/_dialogs/lock.tsx:53
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:190
 msgid "Cancel"
 msgstr "Cancel"
 
-#: apps/client/src/pages/builder/_components/toolbar.tsx:129
+#: apps/client/src/pages/builder/_components/toolbar.tsx:134
 msgid "Center Artboard"
 msgstr "Center Artboard"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:212
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:220
 msgid "Changed your mind about the name? Give it a new one."
 msgstr "Changed your mind about the name? Give it a new one."
 
-#: apps/client/src/services/resume/update.tsx:73
+#: apps/client/src/services/resume/update.tsx:93
 msgid "Changes saved successfully."
 msgstr "Changes saved successfully."
 
 #: apps/client/src/components/offline-font-preparation.tsx:68
 msgid "Checking offline font…"
 msgstr "Checking offline font…"
+
+#: apps/client/src/pages/builder/_components/recovery.tsx:186
+msgid "Choose a recovery draft"
+msgstr "Choose a recovery draft"
 
 #: apps/client/src/pages/builder/sidebars/left/sections/picture/options.tsx:144
 msgid "Circle"
@@ -211,15 +212,19 @@ msgstr "Circle"
 msgid "Click to choose or drag and drop a font file here"
 msgstr "Click to choose or drag and drop a font file here"
 
+#: apps/client/src/pages/builder/_components/shortcuts.tsx:135
+msgid "Close this dialog"
+msgstr "Close this dialog"
+
 #: apps/client/src/pages/builder/sidebars/left/index.tsx:191
 msgid "Collapse all sections"
 msgstr "Collapse all sections"
 
-#: apps/client/src/pages/builder/layout.tsx:109
+#: apps/client/src/pages/builder/layout.tsx:111
 msgid "Collapse Left Sidebar"
 msgstr "Collapse Left Sidebar"
 
-#: apps/client/src/pages/builder/layout.tsx:122
+#: apps/client/src/pages/builder/layout.tsx:124
 msgid "Collapse Right Sidebar"
 msgstr "Collapse Right Sidebar"
 
@@ -227,7 +232,7 @@ msgstr "Collapse Right Sidebar"
 msgid "Collapse section"
 msgstr "Collapse section"
 
-#: apps/client/src/pages/builder/sidebars/left/sections/shared/section-options.tsx:136
+#: apps/client/src/pages/builder/sidebars/left/sections/shared/section-options.tsx:167
 msgid "Columns"
 msgstr "Columns"
 
@@ -239,8 +244,12 @@ msgstr "Company"
 msgid "Copy"
 msgstr "Copy"
 
+#: apps/client/src/pages/builder/sidebars/left/sections/picture/section.tsx:72
+msgid "Couldn't upload the picture. Please try again."
+msgstr "Couldn't upload the picture. Please try again."
+
 #: apps/client/src/pages/builder/sidebars/left/sections/shared/section-dialog.tsx:179
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:297
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:305
 msgid "Create"
 msgstr "Create"
 
@@ -248,15 +257,19 @@ msgstr "Create"
 msgid "Create a new item"
 msgstr "Create a new item"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:204
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:212
 #: apps/client/src/pages/dashboard/resumes/_layouts/grid/_components/create-card.tsx:28
 #: apps/client/src/pages/dashboard/resumes/_layouts/list/_components/create-item.tsx:18
 msgid "Create a new resume"
 msgstr "Create a new resume"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:312
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:320
 msgid "Create Sample Resume"
 msgstr "Create Sample Resume"
+
+#: apps/client/src/pages/builder/_components/shortcuts.tsx:125
+msgid "Ctrl/Cmd + mouse wheel"
+msgstr "Ctrl/Cmd + mouse wheel"
 
 #: apps/client/src/pages/builder/sidebars/right/index.tsx:90
 #: apps/client/src/pages/builder/sidebars/right/sections/css.tsx:27
@@ -264,7 +277,7 @@ msgstr "Create Sample Resume"
 msgid "Custom CSS"
 msgstr "Custom CSS"
 
-#: apps/client/src/stores/resume.ts:56
+#: apps/client/src/stores/resume.ts:60
 msgid "Custom Section"
 msgstr "Custom Section"
 
@@ -295,7 +308,7 @@ msgid "Date or Date Range"
 msgstr "Date or Date Range"
 
 #: apps/client/src/pages/builder/sidebars/left/sections/shared/section-dialog.tsx:137
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:184
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:192
 #: apps/client/src/pages/dashboard/resumes/_layouts/grid/_components/resume-card.tsx:149
 #: apps/client/src/pages/dashboard/resumes/_layouts/list/_components/resume-item.tsx:127
 #: apps/client/src/pages/dashboard/resumes/_layouts/list/_components/resume-item.tsx:172
@@ -310,12 +323,12 @@ msgstr "Delete"
 msgid "Description"
 msgstr "Description"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:363
+#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:338
 #: apps/client/src/pages/dashboard/settings/_sections/profile.tsx:135
 msgid "Discard"
 msgstr "Discard"
 
-#: apps/client/src/pages/builder/_components/recovery.tsx:91
+#: apps/client/src/pages/builder/_components/recovery.tsx:206
 msgid "Discard draft"
 msgstr "Discard draft"
 
@@ -335,32 +348,41 @@ msgstr "Don't see your language? <0>Help translate the app.</0>"
 msgid "Donate to Reactive Resume"
 msgstr "Donate to Reactive Resume"
 
-#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:161
+#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:199
 msgid "Download a JSON snapshot of your resume. This file can be used to import your resume in the future, or can even be shared with others to collaborate."
 msgstr "Download a JSON snapshot of your resume. This file can be used to import your resume in the future, or can even be shared with others to collaborate."
 
-#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:212
+#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:250
 msgid "Download a PDF of your resume. This file can be used to print your resume, send it to recruiters, or upload on job portals."
 msgstr "Download a PDF of your resume. This file can be used to print your resume, send it to recruiters, or upload on job portals."
 
-#: apps/client/src/pages/builder/_components/recovery.tsx:96
+#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:281
+msgid "Download an editable document offline. Layout is simplified and photos are excluded."
+msgstr "Download an editable document offline. Layout is simplified and photos are excluded."
+
+#: apps/client/src/pages/builder/_components/recovery.tsx:103
+#: apps/client/src/pages/builder/_components/recovery.tsx:211
 msgid "Download draft"
 msgstr "Download draft"
 
-#: apps/client/src/pages/builder/_components/toolbar.tsx:163
+#: apps/client/src/pages/builder/_components/toolbar.tsx:168
 msgid "Download PDF"
 msgstr "Download PDF"
 
-#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:186
+#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:224
 msgid "Download the visible resume content as Markdown, preserving section order, links and lists."
 msgstr "Download the visible resume content as Markdown, preserving section order, links and lists."
+
+#: apps/client/src/pages/builder/_components/recovery.tsx:199
+msgid "Draft"
+msgstr "Draft"
 
 #: apps/client/src/pages/builder/sidebars/left/sections/shared/sortable-keywords.tsx:127
 msgid "Drag keywords to reorder, or focus a drag handle and use Alt + arrow keys."
 msgstr "Drag keywords to reorder, or focus a drag handle and use Alt + arrow keys."
 
 #: apps/client/src/pages/builder/sidebars/left/sections/shared/section-dialog.tsx:181
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:299
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:307
 #: apps/client/src/pages/dashboard/resumes/_layouts/grid/_components/resume-card.tsx:129
 #: apps/client/src/pages/dashboard/resumes/_layouts/list/_components/resume-item.tsx:95
 #: apps/client/src/pages/dashboard/resumes/_layouts/list/_components/resume-item.tsx:156
@@ -371,7 +393,7 @@ msgstr "Duplicate"
 msgid "Duplicate an existing item"
 msgstr "Duplicate an existing item"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:206
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:214
 msgid "Duplicate an existing resume"
 msgstr "Duplicate an existing resume"
 
@@ -403,19 +425,23 @@ msgstr "Enter Phosphor Icon"
 msgid "Error {statusCode}"
 msgstr "Error {statusCode}"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:344
+#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:319
 msgid "Errors"
 msgstr "Errors"
+
+#: apps/client/src/pages/builder/_components/shortcuts.tsx:133
+msgid "Esc"
+msgstr "Esc"
 
 #: apps/client/src/pages/builder/sidebars/left/index.tsx:182
 msgid "Expand all sections"
 msgstr "Expand all sections"
 
-#: apps/client/src/pages/builder/layout.tsx:109
+#: apps/client/src/pages/builder/layout.tsx:111
 msgid "Expand Left Sidebar"
 msgstr "Expand Left Sidebar"
 
-#: apps/client/src/pages/builder/layout.tsx:122
+#: apps/client/src/pages/builder/layout.tsx:124
 msgid "Expand Right Sidebar"
 msgstr "Expand Right Sidebar"
 
@@ -424,28 +450,28 @@ msgid "Expand section"
 msgstr "Expand section"
 
 #: apps/client/src/pages/builder/sidebars/right/index.tsx:104
-#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:135
-#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:136
+#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:173
+#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:174
 msgid "Export"
 msgstr "Export"
 
-#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:62
+#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:84
 msgid "Export again from the resume you want to download."
 msgstr "Export again from the resume you want to download."
 
-#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:111
+#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:149
 msgid "Export failed."
 msgstr "Export failed."
 
-#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:77
+#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:99
 msgid "Exporting a local backup."
 msgstr "Exporting a local backup."
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:315
+#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:290
 msgid "File"
 msgstr "File"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:303
+#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:279
 msgid "File loaded and validated"
 msgstr "File loaded and validated"
 
@@ -453,7 +479,7 @@ msgstr "File loaded and validated"
 msgid "File validation failed"
 msgstr "File validation failed"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:265
+#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:241
 msgid "Filetype"
 msgstr "Filetype"
 
@@ -506,11 +532,11 @@ msgstr "Found a bug, or have a new feature idea?"
 msgid "Full Name"
 msgstr "Full Name"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:228
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:236
 msgid "Generate a random title for your resume"
 msgstr "Generate a random title for your resume"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:213
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:221
 msgid "Give your old resume a new name."
 msgstr "Give your old resume a new name."
 
@@ -534,10 +560,6 @@ msgstr "Headline"
 msgid "Height (mm)"
 msgstr "Height (mm)"
 
-#: apps/client/src/pages/dashboard/settings/_sections/account.tsx:76
-#~ msgid "Here, you can update your account information such as your name and username."
-#~ msgstr "Here, you can update your account information such as your name and username."
-
 #: apps/client/src/pages/dashboard/settings/_sections/profile.tsx:61
 msgid "Here, you can update your profile to customize and personalize your experience."
 msgstr "Here, you can update your profile to customize and personalize your experience."
@@ -548,7 +570,7 @@ msgstr "Here, you can update your profile to customize and personalize your expe
 msgid "Hidden"
 msgstr "Hidden"
 
-#: apps/client/src/pages/builder/sidebars/left/sections/shared/section-options.tsx:106
+#: apps/client/src/pages/builder/sidebars/left/sections/shared/section-options.tsx:137
 msgid "Hide"
 msgstr "Hide"
 
@@ -565,27 +587,23 @@ msgstr "Horizontal"
 msgid "Icon"
 msgstr "Icon"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:370
+#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:345
 msgid "Import"
 msgstr "Import"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:252
+#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:228
 #: apps/client/src/pages/dashboard/resumes/_layouts/grid/_components/import-card.tsx:28
 #: apps/client/src/pages/dashboard/resumes/_layouts/list/_components/import-item.tsx:17
 msgid "Import an existing resume"
 msgstr "Import an existing resume"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:115
+#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:93
 msgid "Import Failed"
 msgstr "Import Failed"
 
 #: apps/client/src/pages/dashboard/settings/_sections/danger.tsx:10
 msgid "In local mode, account data is stored locally on your device. To reset your data, you can delete the local database file."
 msgstr "In local mode, account data is stored locally on your device. To reset your data, you can delete the local database file."
-
-#: apps/client/src/pages/dashboard/settings/_sections/security.tsx:9
-#~ msgid "In local mode, authentication and security features are not needed."
-#~ msgstr "In local mode, authentication and security features are not needed."
 
 #: apps/client/src/pages/builder/sidebars/right/index.tsx:118
 msgid "Information"
@@ -595,10 +613,6 @@ msgstr "Information"
 msgid "Institution"
 msgstr "Institution"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:107
-msgid "Invalid File"
-msgstr "Invalid File"
-
 #: apps/client/src/pages/builder/sidebars/left/dialogs/certifications.tsx:51
 msgid "Issuer"
 msgstr "Issuer"
@@ -607,9 +621,22 @@ msgstr "Issuer"
 msgid "It looks like the resume you're looking for doesn't exist."
 msgstr "It looks like the resume you're looking for doesn't exist."
 
-#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:159
+#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:197
 msgid "JSON"
 msgstr "JSON"
+
+#: apps/client/src/pages/builder/_components/recovery.tsx:104
+msgid "Keep a copy and reload"
+msgstr "Keep a copy and reload"
+
+#: apps/client/src/pages/builder/_components/recovery.tsx:98
+msgid "Keep editing locally"
+msgstr "Keep editing locally"
+
+#: apps/client/src/pages/builder/_components/shortcuts.tsx:102
+#: apps/client/src/pages/builder/_components/shortcuts.tsx:116
+msgid "Keyboard shortcuts"
+msgstr "Keyboard shortcuts"
 
 #: apps/client/src/pages/builder/sidebars/left/dialogs/custom-section.tsx:147
 #: apps/client/src/pages/builder/sidebars/left/dialogs/interests.tsx:61
@@ -643,7 +670,7 @@ msgstr "Last updated {lastUpdated}"
 msgid "Layout"
 msgstr "Layout"
 
-#: apps/client/src/providers/resume-saves.tsx:98
+#: apps/client/src/providers/resume-saves.tsx:102
 msgid "Leave with recovery draft"
 msgstr "Leave with recovery draft"
 
@@ -677,13 +704,13 @@ msgstr "LinkedIn, JSON Resume, etc."
 msgid "List"
 msgstr "List"
 
+#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:272
+msgid "Local JSON file"
+msgstr "Local JSON file"
+
 #: apps/client/src/pages/dashboard/settings/_sections/danger.tsx:27
 msgid "Local Mode - Manual Reset Required"
 msgstr "Local Mode - Manual Reset Required"
-
-#: apps/client/src/pages/dashboard/settings/_sections/security.tsx:14
-#~ msgid "Local Mode Information"
-#~ msgstr "Local Mode Information"
 
 #: apps/client/src/pages/builder/sidebars/left/dialogs/custom-section.tsx:98
 #: apps/client/src/pages/builder/sidebars/left/dialogs/experience.tsx:84
@@ -692,19 +719,19 @@ msgstr "Local Mode - Manual Reset Required"
 msgid "Location"
 msgstr "Location"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/lock.tsx:51
+#: apps/client/src/pages/dashboard/resumes/_dialogs/lock.tsx:55
 #: apps/client/src/pages/dashboard/resumes/_layouts/grid/_components/resume-card.tsx:143
 #: apps/client/src/pages/dashboard/resumes/_layouts/list/_components/resume-item.tsx:115
 #: apps/client/src/pages/dashboard/resumes/_layouts/list/_components/resume-item.tsx:166
 msgid "Lock"
 msgstr "Lock"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:266
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:271
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:274
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:279
 msgid "Lock slug"
 msgstr "Lock slug"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/lock.tsx:43
+#: apps/client/src/pages/dashboard/resumes/_dialogs/lock.tsx:47
 msgid "Locking a resume will prevent any further changes to it. This is useful when you have already shared your resume with someone and you don't want to accidentally make any changes to it."
 msgstr "Locking a resume will prevent any further changes to it. This is useful when you have already shared your resume with someone and you don't want to accidentally make any changes to it."
 
@@ -730,9 +757,13 @@ msgstr "March 2023 - Present"
 msgid "Margin"
 msgstr "Margin"
 
-#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:184
+#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:222
 msgid "Markdown"
 msgstr "Markdown"
+
+#: apps/client/src/pages/builder/_components/shortcuts.tsx:129
+msgid "Mouse wheel"
+msgstr "Mouse wheel"
 
 #: apps/client/src/pages/builder/sidebars/left/dialogs/certifications.tsx:37
 msgctxt "Name of the Certification"
@@ -758,7 +789,7 @@ msgstr "Network"
 msgid "No results found"
 msgstr "No results found"
 
-#: apps/client/src/pages/builder/_components/header.tsx:63
+#: apps/client/src/pages/builder/_components/header.tsx:74
 msgid "Not saved. Retry"
 msgstr "Not saved. Retry"
 
@@ -768,8 +799,8 @@ msgstr "Not saved. Retry"
 msgid "Notes"
 msgstr "Notes"
 
-#: apps/client/src/libs/axios.ts:24
-#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:232
+#: apps/client/src/libs/axios.ts:28
+#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:208
 #: apps/client/src/services/resume/print.tsx:26
 msgid "Oops, the server returned an error."
 msgstr "Oops, the server returned an error."
@@ -780,18 +811,26 @@ msgstr "Oops, the server returned an error."
 msgid "Open"
 msgstr "Open"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:299
+#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:275
 msgid "Open Local File"
 msgstr "Open Local File"
 
-#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:100
-#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:101
+#: apps/client/src/pages/builder/_components/shortcuts.tsx:123
+msgid "Open or close shortcut help"
+msgstr "Open or close shortcut help"
+
+#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:137
+#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:138
 msgid "Open PDF"
 msgstr "Open PDF"
 
-#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:98
+#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:135
 msgid "Open the PDF to download or print it."
 msgstr "Open the PDF to download or print it."
+
+#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:278
+msgid "OpenDocument (ODT)"
+msgstr "OpenDocument (ODT)"
 
 #: apps/client/src/pages/builder/sidebars/right/sections/page.tsx:133
 msgid "Options"
@@ -816,7 +855,11 @@ msgstr "Page"
 msgid "Page {pageNumber}"
 msgstr "Page {pageNumber}"
 
-#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:210
+#: apps/client/src/pages/builder/_components/shortcuts.tsx:131
+msgid "Pan or zoom according to the toolbar mode"
+msgstr "Pan or zoom according to the toolbar mode"
+
+#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:248
 msgid "PDF"
 msgstr "PDF"
 
@@ -824,7 +867,7 @@ msgstr "PDF"
 msgid "Phone"
 msgstr "Phone"
 
-#: apps/client/src/pages/builder/sidebars/left/sections/picture/section.tsx:69
+#: apps/client/src/pages/builder/sidebars/left/sections/picture/section.tsx:104
 msgid "Picture"
 msgstr "Picture"
 
@@ -832,11 +875,11 @@ msgstr "Picture"
 msgid "Please select a file and enter a font name"
 msgstr "Please select a file and enter a font name"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:269
+#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:245
 msgid "Please select a file type"
 msgstr "Please select a file type"
 
-#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:112
+#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:150
 msgid "Please try again."
 msgstr "Please try again."
 
@@ -878,10 +921,6 @@ msgstr "Primary Color"
 msgid "Profile"
 msgstr "Profile"
 
-#: apps/client/src/pages/dashboard/settings/_sections/account.tsx:85
-#~ msgid "Profile picture is not available in local mode."
-#~ msgstr "Profile picture is not available in local mode."
-
 #: apps/client/src/pages/builder/sidebars/left/dialogs/publications.tsx:51
 msgid "Publisher"
 msgstr "Publisher"
@@ -897,23 +936,23 @@ msgstr "Raise an issue"
 msgid "Reactive Resume"
 msgstr "Reactive Resume"
 
-#: apps/client/src/pages/builder/_components/recovery.tsx:97
+#: apps/client/src/pages/builder/_components/recovery.tsx:212
 msgid "Recover as a copy"
 msgstr "Recover as a copy"
 
-#: apps/client/src/pages/builder/_components/recovery.tsx:83
+#: apps/client/src/pages/builder/_components/recovery.tsx:177
 msgid "Recover unsaved changes?"
 msgstr "Recover unsaved changes?"
 
-#: apps/client/src/pages/builder/_components/header.tsx:72
+#: apps/client/src/pages/builder/_components/header.tsx:82
 msgid "Recovery draft unavailable. Keep this window open."
 msgstr "Recovery draft unavailable. Keep this window open."
 
-#: apps/client/src/pages/builder/page.tsx:105
+#: apps/client/src/pages/builder/page.tsx:112
 msgid "Recovery drafts could not be read. Keep any backup files before editing."
 msgstr "Recovery drafts could not be read. Keep any backup files before editing."
 
-#: apps/client/src/pages/builder/_components/toolbar.tsx:88
+#: apps/client/src/pages/builder/_components/toolbar.tsx:93
 msgid "Redo"
 msgstr "Redo"
 
@@ -922,7 +961,7 @@ msgid "Refresh Preview"
 msgstr "Refresh Preview"
 
 #: apps/client/src/pages/builder/sidebars/left/sections/shared/section-list-item.tsx:100
-#: apps/client/src/pages/builder/sidebars/left/sections/shared/section-options.tsx:157
+#: apps/client/src/pages/builder/sidebars/left/sections/shared/section-options.tsx:188
 msgid "Remove"
 msgstr "Remove"
 
@@ -934,7 +973,7 @@ msgstr "Remove keyword"
 msgid "Remove Page"
 msgstr "Remove Page"
 
-#: apps/client/src/pages/builder/sidebars/left/sections/shared/section-options.tsx:111
+#: apps/client/src/pages/builder/sidebars/left/sections/shared/section-options.tsx:142
 #: apps/client/src/pages/dashboard/resumes/_layouts/grid/_components/resume-card.tsx:125
 #: apps/client/src/pages/dashboard/resumes/_layouts/list/_components/resume-item.tsx:86
 #: apps/client/src/pages/dashboard/resumes/_layouts/list/_components/resume-item.tsx:152
@@ -945,7 +984,7 @@ msgstr "Rename"
 msgid "Reorder keyword"
 msgstr "Reorder keyword"
 
-#: apps/client/src/pages/builder/sidebars/left/sections/shared/section-options.tsx:152
+#: apps/client/src/pages/builder/sidebars/left/sections/shared/section-options.tsx:183
 msgid "Reset"
 msgstr "Reset"
 
@@ -957,7 +996,7 @@ msgstr "Reset Layout"
 msgid "Reset Local Data"
 msgstr "Reset Local Data"
 
-#: apps/client/src/pages/builder/_components/toolbar.tsx:123
+#: apps/client/src/pages/builder/_components/toolbar.tsx:128
 msgid "Reset Zoom"
 msgstr "Reset Zoom"
 
@@ -971,7 +1010,7 @@ msgstr "Resumes"
 msgid "Retry font download"
 msgstr "Retry font download"
 
-#: apps/client/src/providers/resume-saves.tsx:100
+#: apps/client/src/providers/resume-saves.tsx:104
 msgid "Retry saving"
 msgstr "Retry saving"
 
@@ -980,16 +1019,20 @@ msgid "Rounded"
 msgstr "Rounded"
 
 #: apps/client/src/pages/builder/sidebars/left/sections/shared/section-dialog.tsx:180
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:298
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:306
 #: apps/client/src/pages/dashboard/settings/_sections/profile.tsx:124
 msgid "Save Changes"
 msgstr "Save Changes"
+
+#: apps/client/src/pages/builder/_components/header.tsx:69
+msgid "Save conflict. Review"
+msgstr "Save conflict. Review"
 
 #: apps/client/src/pages/builder/_components/toolbar.tsx:49
 msgid "Save failed. Please retry before downloading a PDF."
 msgstr "Save failed. Please retry before downloading a PDF."
 
-#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:70
+#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:92
 msgid "Save your changes before exporting PDF."
 msgstr "Save your changes before exporting PDF."
 
@@ -997,7 +1040,7 @@ msgstr "Save your changes before exporting PDF."
 msgid "Saved"
 msgstr "Saved"
 
-#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:71
+#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:93
 msgid "Saving failed. Retry saving, then export the PDF again."
 msgstr "Saving failed. Retry saving, then export the PDF again."
 
@@ -1010,11 +1053,11 @@ msgstr "Saving…"
 msgid "Score"
 msgstr "Score"
 
-#: apps/client/src/pages/builder/_components/toolbar.tsx:103
+#: apps/client/src/pages/builder/_components/toolbar.tsx:108
 msgid "Scroll to Pan"
 msgstr "Scroll to Pan"
 
-#: apps/client/src/pages/builder/_components/toolbar.tsx:103
+#: apps/client/src/pages/builder/_components/toolbar.tsx:108
 msgid "Scroll to Zoom"
 msgstr "Scroll to Zoom"
 
@@ -1022,17 +1065,13 @@ msgstr "Scroll to Zoom"
 msgid "Search for a language"
 msgstr "Search for a language"
 
-#: apps/client/src/pages/dashboard/settings/_sections/security.tsx:7
-#~ msgid "Security"
-#~ msgstr "Security"
-
 #: apps/client/src/components/font-upload-dialog.tsx:199
 #: apps/client/src/components/font-upload-dialog.tsx:243
 #: apps/client/src/components/font-upload-dialog.tsx:244
 msgid "Select font file"
 msgstr "Select font file"
 
-#: apps/client/src/pages/builder/sidebars/left/sections/shared/section-options.tsx:97
+#: apps/client/src/pages/builder/sidebars/left/sections/shared/section-options.tsx:128
 msgid "Separate Links"
 msgstr "Separate Links"
 
@@ -1043,7 +1082,11 @@ msgstr "Separate Links"
 msgid "Settings"
 msgstr "Settings"
 
-#: apps/client/src/pages/builder/sidebars/left/sections/shared/section-options.tsx:106
+#: apps/client/src/pages/builder/_components/shortcuts.tsx:117
+msgid "Shortcuts stay out of the way while you type or use a dialog."
+msgstr "Shortcuts stay out of the way while you type or use a dialog."
+
+#: apps/client/src/pages/builder/sidebars/left/sections/shared/section-options.tsx:137
 msgid "Show"
 msgstr "Show"
 
@@ -1059,17 +1102,17 @@ msgstr "Show Page Numbers"
 msgid "Sidebar"
 msgstr "Sidebar"
 
-#: apps/client/src/pages/dashboard/settings/_sections/security.tsx:16
-#~ msgid "Since you're running in local mode, password changes and two-factor authentication are not available. Your data is stored locally and accessed directly without authentication."
-#~ msgstr "Since you're running in local mode, password changes and two-factor authentication are not available. Your data is stored locally and accessed directly without authentication."
-
 #: apps/client/src/pages/builder/sidebars/left/sections/picture/options.tsx:65
 msgid "Size (in px)"
 msgstr "Size (in px)"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:254
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:262
 msgid "Slug"
 msgstr "Slug"
+
+#: apps/client/src/pages/builder/sidebars/left/sections/shared/section-options.tsx:96
+msgid "Some dates could not be recognized. Those items were kept at the end in their original order."
+msgstr "Some dates could not be recognized. Those items were kept at the end in their original order."
 
 #: apps/client/src/services/errors/translate-error.ts:22
 msgid "Something went wrong while grabbing a preview your resume. Please try again later or raise an issue on GitHub."
@@ -1083,6 +1126,10 @@ msgstr "Something went wrong while printing your resume. Please try again later 
 msgid "Something went wrong while processing your request. Please try again later or raise an issue on GitHub."
 msgstr "Something went wrong while processing your request. Please try again later or raise an issue on GitHub."
 
+#: apps/client/src/pages/builder/sidebars/left/sections/shared/section-options.tsx:121
+msgid "Sort by date (newest first)"
+msgstr "Sort by date (newest first)"
+
 #: apps/client/src/pages/builder/sidebars/left/sections/picture/options.tsx:87
 #: apps/client/src/pages/builder/sidebars/left/sections/picture/options.tsx:132
 msgid "Square"
@@ -1093,11 +1140,11 @@ msgstr "Square"
 msgid "Start building from scratch"
 msgstr "Start building from scratch"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:211
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:219
 msgid "Start building your resume by giving it a name."
 msgstr "Start building your resume by giving it a name."
 
-#: apps/client/src/providers/resume-saves.tsx:93
+#: apps/client/src/providers/resume-saves.tsx:97
 msgid "Stay in editor"
 msgstr "Stay in editor"
 
@@ -1135,7 +1182,11 @@ msgstr "Template"
 msgid "Text Color"
 msgstr "Text Color"
 
-#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:61
+#: apps/client/src/pages/dashboard/resumes/_dialogs/lock.tsx:33
+msgid "The lock could not be changed. Open the resume to review any unsaved changes."
+msgstr "The lock could not be changed. Open the resume to review any unsaved changes."
+
+#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:83
 msgid "The open resume changed."
 msgstr "The open resume changed."
 
@@ -1147,19 +1198,20 @@ msgstr "The original font license could not be downloaded. Choose another font o
 msgid "The page you're looking for doesn't exist."
 msgstr "The page you're looking for doesn't exist."
 
-#: apps/client/src/pages/builder/_components/recovery.tsx:57
+#: apps/client/src/pages/builder/_components/recovery.tsx:156
 msgid "The recovery copy could not be saved. Your draft is still on this device."
 msgstr "The recovery copy could not be saved. Your draft is still on this device."
 
-#: apps/client/src/pages/builder/_components/recovery.tsx:34
+#: apps/client/src/pages/builder/_components/recovery.tsx:132
 msgid "The recovery draft could not be cleared. Please try again."
 msgstr "The recovery draft could not be cleared. Please try again."
 
-#: apps/client/src/pages/builder/_components/recovery.tsx:75
+#: apps/client/src/pages/builder/_components/recovery.tsx:78
+#: apps/client/src/pages/builder/_components/recovery.tsx:167
 msgid "The recovery draft could not be downloaded. Please try again."
 msgstr "The recovery draft could not be downloaded. Please try again."
 
-#: apps/client/src/providers/resume-saves.tsx:89
+#: apps/client/src/providers/resume-saves.tsx:83
 msgid "The recovery draft could not be saved. Keep this window open and retry."
 msgstr "The recovery draft could not be saved. Keep this window open and retry."
 
@@ -1171,13 +1223,13 @@ msgstr "The request was invalid."
 msgid "The resume you want to update is locked, please unlock if you wish to make any changes to it."
 msgstr "The resume you want to update is locked, please unlock if you wish to make any changes to it."
 
-#: apps/client/src/pages/builder/_components/recovery.tsx:86
+#: apps/client/src/pages/builder/_components/recovery.tsx:180
 msgid "The saved resume has changed since this draft. Recover a separate copy to keep both versions."
 msgstr "The saved resume has changed since this draft. Recover a separate copy to keep both versions."
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:108
-msgid "The selected file does not appear to be a valid Reactive Resume JSON."
-msgstr "The selected file does not appear to be a valid Reactive Resume JSON."
+#: apps/client/src/providers/resume-saves.tsx:85
+msgid "The saved version changed in another window. Stay in the editor to keep your changes as a copy, or leave with the recovery draft."
+msgstr "The saved version changed in another window. Stay in the editor to keep your changes as a copy, or leave with the recovery draft."
 
 #: apps/client/src/pages/builder/sidebars/right/index.tsx:83
 #: apps/client/src/pages/builder/sidebars/right/sections/theme.tsx:19
@@ -1194,11 +1246,11 @@ msgstr "There was an error connecting to the browser. Please make sure 'chrome' 
 msgid "This action can be reverted by clicking on the undo button in the floating toolbar."
 msgstr "This action can be reverted by clicking on the undo button in the floating toolbar."
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:177
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:185
 msgid "This action cannot be undone. This will permanently delete your resume and cannot be recovered."
 msgstr "This action cannot be undone. This will permanently delete your resume and cannot be recovered."
 
-#: apps/client/src/pages/builder/_components/recovery.tsx:87
+#: apps/client/src/pages/builder/_components/recovery.tsx:181
 msgid "This device has unsaved changes from an earlier session. Recover them as a copy, download them, or discard the draft."
 msgstr "This device has unsaved changes from an earlier session. Recover them as a copy, download them, or discard the draft."
 
@@ -1206,7 +1258,15 @@ msgstr "This device has unsaved changes from an earlier session. Recover them as
 msgid "This font's required styles are cached locally."
 msgstr "This font's required styles are cached locally."
 
-#: apps/client/src/pages/builder/_components/header.tsx:77
+#: apps/client/src/pages/builder/_components/recovery.tsx:86
+msgid "This resume changed in another window"
+msgstr "This resume changed in another window"
+
+#: apps/client/src/services/resume/update.tsx:98
+msgid "This resume changed in another window. Open it to keep your local changes as a copy."
+msgstr "This resume changed in another window. Open it to keep your local changes as a copy."
+
+#: apps/client/src/pages/builder/_components/header.tsx:87
 msgid "This resume is locked, please unlock to make further changes."
 msgstr "This resume is locked, please unlock to make further changes."
 
@@ -1218,7 +1278,7 @@ msgstr "This section is reserved for your personal notes specific to this resume
 msgid "Tip"
 msgstr "Tip"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:242
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:250
 msgid "Tip: You can name the resume referring to the position you are applying for."
 msgstr "Tip: You can name the resume referring to the position you are applying for."
 
@@ -1227,7 +1287,7 @@ msgctxt "Name of the Award"
 msgid "Title"
 msgstr "Title"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:222
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:230
 msgid "Title"
 msgstr "Title"
 
@@ -1235,11 +1295,11 @@ msgstr "Title"
 msgid "To reset all data, delete the 'local-resume.db' file in the application directory."
 msgstr "To reset all data, delete the 'local-resume.db' file in the application directory."
 
-#: apps/client/src/pages/builder/_components/toolbar.tsx:137
+#: apps/client/src/pages/builder/_components/toolbar.tsx:142
 msgid "Toggle Page Break Line"
 msgstr "Toggle Page Break Line"
 
-#: apps/client/src/pages/builder/_components/toolbar.tsx:149
+#: apps/client/src/pages/builder/_components/toolbar.tsx:154
 msgid "Toggle Page Numbers"
 msgstr "Toggle Page Numbers"
 
@@ -1258,27 +1318,28 @@ msgstr "Typography"
 msgid "Underline Links"
 msgstr "Underline Links"
 
-#: apps/client/src/pages/builder/_components/toolbar.tsx:75
+#: apps/client/src/pages/builder/_components/toolbar.tsx:80
 msgid "Undo"
 msgstr "Undo"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:116
+#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:94
+#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:163
 msgid "Unknown error occurred"
 msgstr "Unknown error occurred"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/lock.tsx:52
+#: apps/client/src/pages/dashboard/resumes/_dialogs/lock.tsx:56
 #: apps/client/src/pages/dashboard/resumes/_layouts/grid/_components/resume-card.tsx:138
 #: apps/client/src/pages/dashboard/resumes/_layouts/list/_components/resume-item.tsx:105
 #: apps/client/src/pages/dashboard/resumes/_layouts/list/_components/resume-item.tsx:161
 msgid "Unlock"
 msgstr "Unlock"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:266
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:271
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:274
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:279
 msgid "Unlock slug"
 msgstr "Unlock slug"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/lock.tsx:44
+#: apps/client/src/pages/dashboard/resumes/_dialogs/lock.tsx:48
 msgid "Unlocking a resume will allow you to make changes to it again."
 msgstr "Unlocking a resume will allow you to make changes to it again."
 
@@ -1286,11 +1347,11 @@ msgstr "Unlocking a resume will allow you to make changes to it again."
 msgid "Update an existing item"
 msgstr "Update an existing item"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:205
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:213
 msgid "Update an existing resume"
 msgstr "Update an existing resume"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:256
+#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:232
 msgid "Upload a file from one of the accepted sources to parse existing data and import it into Reactive Resume for easier editing."
 msgstr "Upload a file from one of the accepted sources to parse existing data and import it into Reactive Resume for easier editing."
 
@@ -1321,11 +1382,11 @@ msgstr "URL must start with https://"
 msgid "Username"
 msgstr "Username"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:357
+#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:332
 msgid "Validate"
 msgstr "Validate"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:375
+#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:350
 msgid "Validated"
 msgstr "Validated"
 
@@ -1363,6 +1424,10 @@ msgstr "Website"
 msgid "Width (mm)"
 msgstr "Width (mm)"
 
+#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:278
+msgid "Word (DOCX)"
+msgstr "Word (DOCX)"
+
 #: apps/client/src/pages/public/error.tsx:26
 msgid "You are not authorized to access this page."
 msgstr "You are not authorized to access this page."
@@ -1378,26 +1443,34 @@ msgstr "You can add multiple keywords by separating them with a comma or pressin
 msgid "You don't have permission to access this page."
 msgstr "You don't have permission to access this page."
 
-#: apps/client/src/pages/dashboard/settings/_sections/account.tsx:63
-#~ msgid "Your account information has been updated successfully."
-#~ msgstr "Your account information has been updated successfully."
-
-#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:78
+#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:100
 msgid "Your changes could not be saved. This download is a backup of the latest content on this device."
 msgstr "Your changes could not be saved. This download is a backup of the latest content on this device."
 
-#: apps/client/src/providers/resume-saves.tsx:85
+#: apps/client/src/providers/resume-saves.tsx:93
 msgid "Your latest changes are not saved yet"
 msgstr "Your latest changes are not saved yet"
 
-#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:97
+#: apps/client/src/pages/builder/_components/recovery.tsx:67
+msgid "Your latest local changes are still open. Keep this window open and try again."
+msgstr "Your latest local changes are still open. Keep this window open and try again."
+
+#: apps/client/src/pages/builder/_components/recovery.tsx:64
+msgid "Your local changes were saved as a separate copy: {copyTitle}"
+msgstr "Your local changes were saved as a separate copy: {copyTitle}"
+
+#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:134
 msgid "Your PDF is ready."
 msgstr "Your PDF is ready."
 
-#: apps/client/src/pages/builder/_components/toolbar.tsx:111
+#: apps/client/src/pages/builder/_components/shortcuts.tsx:127
+msgid "Zoom around the pointer on the canvas"
+msgstr "Zoom around the pointer on the canvas"
+
+#: apps/client/src/pages/builder/_components/toolbar.tsx:116
 msgid "Zoom In"
 msgstr "Zoom In"
 
-#: apps/client/src/pages/builder/_components/toolbar.tsx:117
+#: apps/client/src/pages/builder/_components/toolbar.tsx:122
 msgid "Zoom Out"
 msgstr "Zoom Out"

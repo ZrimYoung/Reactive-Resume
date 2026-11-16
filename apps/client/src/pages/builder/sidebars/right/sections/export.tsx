@@ -1,5 +1,5 @@
 import { t } from "@lingui/macro";
-import { CircleNotch, FileJs, FileMd, FilePdf } from "@phosphor-icons/react";
+import { CircleNotch, FileDoc, FileJs, FileMd, FilePdf, FileText } from "@phosphor-icons/react";
 import {
   buttonVariants,
   Card,
@@ -19,7 +19,7 @@ import { useResumeStore } from "@/client/stores/resume";
 
 import { SectionIcon } from "../shared/section-icon";
 
-type ExportFormat = "json" | "md" | "pdf";
+type ExportFormat = "json" | "md" | "pdf" | "docx" | "odt";
 
 const getDesktopDownload = () =>
   "electron" in window ? window.electron.downloadAndSave : undefined;
@@ -34,6 +34,28 @@ const saveTextFile = async (content: string, filename: string, mimeType: string)
     return;
   }
   saveAs(new Blob([content], { type: `${mimeType};charset=utf-8` }), filename);
+};
+
+const saveDocumentFile = async (bytes: Uint8Array, filename: string, mimeType: string) => {
+  const blob = new Blob([bytes], { type: mimeType });
+  const desktopDownload = getDesktopDownload();
+  if (!desktopDownload) {
+    saveAs(blob, filename);
+    return;
+  }
+  // The main process supports data URLs; a renderer-only blob URL cannot be read there.
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.addEventListener("load", () => {
+      if (typeof reader.result === "string") resolve(reader.result);
+      else reject(new Error("Could not read the exported document."));
+    });
+    reader.addEventListener("error", () => {
+      reject(new Error(reader.error?.message ?? "Could not read the exported document."));
+    });
+    reader.readAsDataURL(blob);
+  });
+  await desktopDownload(dataUrl, filename);
 };
 
 export const ExportSection = () => {
@@ -51,7 +73,7 @@ export const ExportSection = () => {
       try {
         saved = await flushResumeSaves(id);
       } catch {
-        // JSON and Markdown remain available as local backups if saving fails.
+        // Client-side formats remain available as local backups if saving fails.
       }
 
       const { resume } = useResumeStore.getState();
@@ -80,28 +102,44 @@ export const ExportSection = () => {
       }
 
       const filename = `reactive_resume-${id}.${format}`;
-      if (format === "json") {
-        await saveTextFile(JSON.stringify(resume.data, null, 2), filename, "application/json");
-      } else if (format === "md") {
-        await saveTextFile(buildResumeMarkdown(resume.data), filename, "text/markdown");
-      } else {
-        const { url } = await printResume({ id });
-        const desktopDownload = getDesktopDownload();
-        if (desktopDownload) {
-          await desktopDownload(url, filename);
-        } else {
-          const win = window.open(url, "_blank");
-          if (win) win.focus();
-          else {
-            toast({
-              title: t`Your PDF is ready.`,
-              description: t`Open the PDF to download or print it.`,
-              action: (
-                <ToastAction asChild altText={t`Open PDF`}>
-                  <a href={url} target="_blank" rel="noreferrer noopener">{t`Open PDF`}</a>
-                </ToastAction>
-              ),
-            });
+      switch (format) {
+        case "json": {
+          await saveTextFile(JSON.stringify(resume.data, null, 2), filename, "application/json");
+
+          break;
+        }
+        case "md": {
+          await saveTextFile(buildResumeMarkdown(resume.data), filename, "text/markdown");
+
+          break;
+        }
+        case "docx":
+        case "odt": {
+          const { buildEditableResume } = await import("@/client/libs/documents");
+          const { bytes, mimeType } = await buildEditableResume(resume.data, format);
+          await saveDocumentFile(bytes, filename, mimeType);
+
+          break;
+        }
+        default: {
+          const { url } = await printResume({ id });
+          const desktopDownload = getDesktopDownload();
+          if (desktopDownload) {
+            await desktopDownload(url, filename);
+          } else {
+            const win = window.open(url, "_blank");
+            if (win) win.focus();
+            else {
+              toast({
+                title: t`Your PDF is ready.`,
+                description: t`Open the PDF to download or print it.`,
+                action: (
+                  <ToastAction asChild altText={t`Open PDF`}>
+                    <a href={url} target="_blank" rel="noreferrer noopener">{t`Open PDF`}</a>
+                  </ToastAction>
+                ),
+              });
+            }
           }
         }
       }
@@ -213,6 +251,39 @@ export const ExportSection = () => {
             </CardDescription>
           </CardContent>
         </Card>
+
+        {(["docx", "odt"] as const).map((format) => {
+          const DocumentIcon = format === "docx" ? FileDoc : FileText;
+          return (
+            <Card
+              key={format}
+              className={cardClassName}
+              role="button"
+              tabIndex={0}
+              aria-disabled={exporting !== null}
+              onClick={() => {
+                void onExport(format);
+              }}
+              onKeyDown={(event) => {
+                exportKeyDown(event, format);
+              }}
+            >
+              {exporting === format ? (
+                <CircleNotch size={22} className="animate-spin" />
+              ) : (
+                <DocumentIcon size={22} />
+              )}
+              <CardContent className="flex-1">
+                <CardTitle className="text-sm">
+                  {format === "docx" ? t`Word (DOCX)` : t`OpenDocument (ODT)`}
+                </CardTitle>
+                <CardDescription className="font-normal">
+                  {t`Download an editable document offline. Layout is simplified and photos are excluded.`}
+                </CardDescription>
+              </CardContent>
+            </Card>
+          );
+        })}
       </main>
     </section>
   );

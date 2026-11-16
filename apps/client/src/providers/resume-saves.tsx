@@ -16,6 +16,7 @@ import {
   getResumeSaveExitState,
   hasPendingResumeSaves,
   resumeSaveQueue,
+  useResumeSaveState,
 } from "../services/resume/update";
 
 export const ResumeSaveProvider = ({ children }: { children: React.ReactNode }) => {
@@ -30,6 +31,7 @@ export const ResumeSaveProvider = ({ children }: { children: React.ReactNode }) 
   );
   const [saving, setSaving] = useState(false);
   const [durable, setDurable] = useState(false);
+  const save = useResumeSaveState(resumeId ?? "");
   const { state, proceed } = blocker;
 
   useEffect(() => {
@@ -76,6 +78,12 @@ export const ResumeSaveProvider = ({ children }: { children: React.ReactNode }) 
     else setDurable(resumeSaveQueue.persistAll());
   };
 
+  let recoveryDescription = durable
+    ? t`A recovery draft is saved on this device. Retry saving, or leave and recover it later.`
+    : t`The recovery draft could not be saved. Keep this window open and retry.`;
+  if (save.status === "conflict")
+    recoveryDescription = t`The saved version changed in another window. Stay in the editor to keep your changes as a copy, or leave with the recovery draft.`;
+
   return (
     <>
       {children}
@@ -83,11 +91,7 @@ export const ResumeSaveProvider = ({ children }: { children: React.ReactNode }) 
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{t`Your latest changes are not saved yet`}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {durable
-                ? t`A recovery draft is saved on this device. Retry saving, or leave and recover it later.`
-                : t`The recovery draft could not be saved. Keep this window open and retry.`}
-            </AlertDialogDescription>
+            <AlertDialogDescription>{recoveryDescription}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <Button variant="outline" onClick={() => blocker.reset?.()}>{t`Stay in editor`}</Button>
@@ -97,7 +101,7 @@ export const ResumeSaveProvider = ({ children }: { children: React.ReactNode }) 
                 onClick={() => blocker.proceed?.()}
               >{t`Leave with recovery draft`}</Button>
             )}
-            <Button onClick={retry}>{t`Retry saving`}</Button>
+            {save.status !== "conflict" && <Button onClick={retry}>{t`Retry saving`}</Button>}
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

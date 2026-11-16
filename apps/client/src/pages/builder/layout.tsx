@@ -19,6 +19,7 @@ import { Outlet } from "react-router";
 import { useBuilderStore } from "@/client/stores/builder";
 
 import { BuilderHeader } from "./_components/header";
+import { BuilderShortcuts } from "./_components/shortcuts";
 import { BuilderToolbar } from "./_components/toolbar";
 import { LeftSidebar } from "./sidebars/left";
 import { RightSidebar } from "./sidebars/right";
@@ -36,6 +37,7 @@ const OutletSlot = () => (
     </div>
 
     <BuilderToolbar />
+    <BuilderShortcuts />
   </>
 );
 

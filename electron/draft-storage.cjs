@@ -3,28 +3,39 @@ const path = require('node:path');
 const { randomUUID } = require('node:crypto');
 
 function createDraftStorage(directory) {
-  const filename = (id) => {
+  const filename = (id, sessionId) => {
     if (typeof id !== 'string' || !/^[a-z0-9_-]{1,128}$/i.test(id)) {
       throw new Error('Invalid resume ID');
     }
-    return path.join(directory, `${id}.json`);
+    if (sessionId !== undefined && (typeof sessionId !== 'string' || !/^[a-z0-9_-]{1,64}$/i.test(sessionId))) {
+      throw new Error('Invalid draft session ID');
+    }
+    return path.join(directory, `${id}${sessionId ? `--${sessionId}` : ''}.json`);
   };
-  const read = (id) => {
+  const list = (id) => {
+    filename(id);
     try {
-      const record = JSON.parse(fs.readFileSync(filename(id), 'utf8'));
-      if (record.id !== id || typeof record.token !== 'string' || !record.data) {
-        throw new Error('The local draft is invalid');
-      }
-      return record;
+      return fs.readdirSync(directory)
+        .filter((name) => name === `${id}.json` || (name.startsWith(`${id}--`) && name.endsWith('.json')))
+        .map((name) => {
+          const record = JSON.parse(fs.readFileSync(path.join(directory, name), 'utf8'));
+          if (record.id !== id || typeof record.token !== 'string' || !record.data ||
+              path.basename(filename(record.id, record.sessionId)) !== name) {
+            throw new Error('The local draft is invalid');
+          }
+          return record;
+        })
+        .sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
     } catch (error) {
-      if (error.code === 'ENOENT') return null;
+      if (error.code === 'ENOENT') return [];
       throw error;
     }
   };
+  const read = (id) => list(id)[0] ?? null;
   const write = (record) => {
     let temporary;
     try {
-      const destination = filename(record?.id);
+      const destination = filename(record?.id, record?.sessionId);
       if (
         typeof record.token !== 'string' || record.token.length > 128 || !record.token ||
         !record.data || typeof record.data !== 'object' ||
@@ -49,10 +60,11 @@ function createDraftStorage(directory) {
     }
   };
   const remove = (id, token) => {
-    const current = read(id);
-    if (current && current.token === token) fs.unlinkSync(filename(id));
+    for (const record of list(id)) {
+      if (record.token === token) fs.unlinkSync(filename(id, record.sessionId));
+    }
   };
-  return { read, write, remove };
+  return { read, list, write, remove };
 }
 
 module.exports = { createDraftStorage };

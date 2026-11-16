@@ -34,7 +34,7 @@ import {
   SelectValue,
 } from "@reactive-resume/ui";
 import { AnimatePresence } from "framer-motion";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z, ZodError } from "zod";
 
@@ -64,6 +64,8 @@ type ValidationResult =
   | {
       isValid: true;
       type: ImportType;
+      file: File;
+      generation: number;
       result: ResumeData | ReactiveResumeV3 | LinkedIn | JsonResume;
     };
 
@@ -73,44 +75,46 @@ export const ImportDialog = () => {
   const { importResume, loading } = useImportResume();
 
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
+  const generation = useRef(0);
+  const mounted = useRef(false);
+  const open = useRef(isOpen);
+  open.current = isOpen;
+  const invalidateValidation = useCallback(() => {
+    generation.current++;
+    setValidationResult(null);
+  }, []);
 
-  // Electron IPC Import Handler
-  useEffect(() => {
-    if (!('electron' in window)) return;
-    if (!isOpen) return;
-
-    // TODO: Add specific button for Electron import instead of overriding behavior?
-    // For now, let's just make the existing flow compatible if we click a button
-  }, [isOpen]);
+  const onClose = () => {
+    invalidateValidation();
+    close();
+  };
 
   const onElectronImport = async () => {
-    if (!('electron' in window)) return;
-    
+    if (!("electron" in window)) return;
+    const request = ++generation.current;
+    setValidationResult(null);
+    const { file, type } = form.getValues();
+    const current = () =>
+      mounted.current &&
+      open.current &&
+      request === generation.current &&
+      form.getValues("type") === type &&
+      form.getValues("file") === file;
     try {
       const result = await window.electron.openJson();
+      if (!current()) return;
       if (!result.canceled && result.content) {
-        // Validate the JSON content against the schema for Reactive Resume
-        // Currently only supporting Reactive Resume JSON for Electron direct import
-        const data = result.content as ResumeData;
-        
-        // Simple validation check (duck typing)
-        if (data.basics && data.sections) {
-          setValidationResult({
-            isValid: true,
-            type: ImportType["reactive-resume-json"],
-            result: data,
-          });
-          form.setValue("type", ImportType["reactive-resume-json"]);
-        } else {
-           toast({
-            variant: "error",
-            title: t`Invalid File`,
-            description: t`The selected file does not appear to be a valid Reactive Resume JSON.`,
-          });
-        }
+        // Use the selected parser for native and browser imports alike.
+        // Retain a real File so the validated import also passes the form schema.
+        form.setValue(
+          "file",
+          new File([JSON.stringify(result.content)], "resume.json", { type: "application/json" }),
+        );
+        await onValidate();
       }
     } catch (error) {
-       toast({
+      if (!current()) return;
+      toast({
         variant: "error",
         title: t`Import Failed`,
         description: error instanceof Error ? error.message : t`Unknown error occurred`,
@@ -127,12 +131,30 @@ export const ImportDialog = () => {
   const filetype = form.watch("type");
 
   useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      generation.current++;
+    };
+  }, []);
+
+  useEffect(() => {
+    const subscription = form.watch((_values, { name }) => {
+      if (name === "file" || name === "type") invalidateValidation();
+    });
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [form, invalidateValidation]);
+
+  useEffect(() => {
     if (isOpen) onReset();
+    else invalidateValidation();
   }, [isOpen]);
 
   useEffect(() => {
     form.reset({ file: undefined, type: filetype });
-    setValidationResult(null);
+    invalidateValidation();
   }, [filetype]);
 
   const accept = useMemo(() => {
@@ -142,6 +164,15 @@ export const ImportDialog = () => {
   }, [filetype]);
 
   const onValidate = async () => {
+    const request = ++generation.current;
+    const { file: selectedFile, type: selectedType } = form.getValues();
+    const current = () =>
+      mounted.current &&
+      open.current &&
+      request === generation.current &&
+      form.getValues("file") === selectedFile &&
+      form.getValues("type") === selectedType;
+    setValidationResult(null);
     try {
       const { file, type } = formSchema.parse(form.getValues());
 
@@ -150,7 +181,8 @@ export const ImportDialog = () => {
         const data = await parser.readFile(file);
         const result = parser.validate(data);
 
-        setValidationResult({ isValid: true, type, result });
+        if (current())
+          setValidationResult({ isValid: true, type, file, generation: request, result });
       }
 
       if (type === ImportType["reactive-resume-v3-json"]) {
@@ -158,7 +190,8 @@ export const ImportDialog = () => {
         const data = await parser.readFile(file);
         const result = parser.validate(data);
 
-        setValidationResult({ isValid: true, type, result });
+        if (current())
+          setValidationResult({ isValid: true, type, file, generation: request, result });
       }
 
       if (type === ImportType["json-resume-json"]) {
@@ -166,7 +199,8 @@ export const ImportDialog = () => {
         const data = await parser.readFile(file);
         const result = parser.validate(data);
 
-        setValidationResult({ isValid: true, type, result });
+        if (current())
+          setValidationResult({ isValid: true, type, file, generation: request, result });
       }
 
       if (type === ImportType["linkedin-data-export-zip"]) {
@@ -174,29 +208,40 @@ export const ImportDialog = () => {
         const data = await parser.readFile(file);
         const result = await parser.validate(data);
 
-        setValidationResult({ isValid: true, type, result });
+        if (current())
+          setValidationResult({ isValid: true, type, file, generation: request, result });
       }
     } catch (error) {
-      if (error instanceof ZodError) {
-        setValidationResult({
-          isValid: false,
-          errors: error.toString(),
-        });
-
-        toast({
-          variant: "error",
-          title: t`An error occurred while validating the file.`,
-        });
-      }
+      if (!current()) return;
+      setValidationResult({
+        isValid: false,
+        errors: JSON.stringify(
+          error instanceof ZodError
+            ? error.issues
+            : [{ message: error instanceof Error ? error.message : t`Unknown error occurred` }],
+        ),
+      });
+      toast({ variant: "error", title: t`An error occurred while validating the file.` });
     }
   };
 
   const onImport = async () => {
-    const { type } = formSchema.parse(form.getValues());
-
-    if (!validationResult?.isValid || validationResult.type !== type) return;
-
     try {
+      const { file, type } = formSchema.parse(form.getValues());
+      if (
+        !validationResult?.isValid ||
+        validationResult.type !== type ||
+        validationResult.file !== file ||
+        validationResult.generation !== generation.current ||
+        !open.current
+      )
+        return;
+      const request = generation.current;
+      const current = () =>
+        open.current &&
+        generation.current === request &&
+        form.getValues("file") === file &&
+        form.getValues("type") === type;
       if (type === ImportType["reactive-resume-json"]) {
         const parser = new ReactiveResumeParser();
         const data = parser.convert(validationResult.result as ResumeData);
@@ -225,7 +270,7 @@ export const ImportDialog = () => {
         await importResume({ data });
       }
 
-      close();
+      if (current()) onClose();
     } catch (error: unknown) {
       toast({
         variant: "error",
@@ -236,12 +281,12 @@ export const ImportDialog = () => {
   };
 
   const onReset = () => {
+    invalidateValidation();
     form.reset();
-    setValidationResult(null);
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={close}>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent>
         <Form {...form}>
           <form className="space-y-4">
@@ -291,22 +336,21 @@ export const ImportDialog = () => {
               )}
             />
 
-            {'electron' in window && (
+            {"electron" in window && filetype.includes("json") && (
               <div className="flex flex-col gap-y-2">
-                 <Label>Select File (Electron)</Label>
-                 <Button type="button" variant="outline" onClick={onElectronImport}>
-                    <DownloadSimple className="mr-2" />
-                    {t`Open Local File`}
-                 </Button>
-                 {validationResult?.isValid && (
-                    <p className="text-xs text-green-600 flex items-center mt-1">
-                      <Check className="mr-1" size={12} /> {t`File loaded and validated`}
-                    </p>
-                 )}
+                <Label>{t`Local JSON file`}</Label>
+                <Button type="button" variant="outline" onClick={onElectronImport}>
+                  <DownloadSimple className="mr-2" />
+                  {t`Open Local File`}
+                </Button>
+                {validationResult?.isValid && (
+                  <p className="mt-1 flex items-center text-xs text-green-600">
+                    <Check className="mr-1" size={12} /> {t`File loaded and validated`}
+                  </p>
+                )}
               </div>
             )}
 
-            {!('electron' in window) && (
             <FormField
               name="file"
               control={form.control}
@@ -321,6 +365,7 @@ export const ImportDialog = () => {
                       onChange={(event) => {
                         if (!event.target.files?.length) return;
                         field.onChange(event.target.files[0]);
+                        invalidateValidation();
                       }}
                     />
                   </FormControl>
@@ -337,7 +382,6 @@ export const ImportDialog = () => {
                 </FormItem>
               )}
             />
-            )}
 
             {validationResult?.isValid === false && (
               <div className="space-y-2">

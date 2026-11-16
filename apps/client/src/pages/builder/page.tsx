@@ -4,8 +4,8 @@ import { useCallback, useEffect, useRef } from "react";
 import { Helmet } from "react-helmet-async";
 import type { LoaderFunction } from "react-router";
 import { redirect } from "react-router";
-import { toast } from "sonner";
 
+import { toast } from "@/client/hooks/use-toast";
 import { queryClient } from "@/client/libs/query-client";
 import { findResumeById } from "@/client/services/resume";
 import { assessResumeDraft, resumeDraftStorage } from "@/client/services/resume/drafts";
@@ -94,15 +94,25 @@ export const builderLoader: LoaderFunction<ResumeDto> = async ({ params }) => {
     const inMemory = resumeSaveQueue.hasPending(id) ? resumeSaveQueue.getDraft(id) : undefined;
     resumeSaveQueue.register(resume);
     if (inMemory) {
-      loadResumeState(Object.assign({}, resume, { data: inMemory.data }));
+      loadResumeState(
+        Object.assign({}, resume, {
+          data: inMemory.data,
+          title: inMemory.title ?? resume.title,
+          slug: inMemory.slug ?? resume.slug,
+          locked: inMemory.locked ?? resume.locked,
+        }),
+      );
     } else {
       let recovery = null;
       try {
-        const stored = await resumeDraftStorage.read(id);
-        if (stored && assessResumeDraft(stored, resume).hasChanges) recovery = stored;
-        else if (stored) await resumeDraftStorage.remove(id, stored.token);
+        const stored = (await resumeDraftStorage.list?.(id)) ?? [];
+        // A different session owns its draft: an acknowledgement here must not remove it.
+        recovery = stored.filter((draft) => assessResumeDraft(draft, resume).hasChanges);
       } catch {
-        toast.error(t`Recovery drafts could not be read. Keep any backup files before editing.`);
+        toast({
+          variant: "error",
+          title: t`Recovery drafts could not be read. Keep any backup files before editing.`,
+        });
       }
       loadResumeState(resume, recovery);
     }

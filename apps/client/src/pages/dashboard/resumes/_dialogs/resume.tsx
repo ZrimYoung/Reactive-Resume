@@ -34,11 +34,12 @@ import {
   Input,
   Tooltip,
 } from "@reactive-resume/ui";
-import { cn, generateRandomName } from "@reactive-resume/utils";
+import { cn, generateRandomName, nextResumeCopy } from "@reactive-resume/utils";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
+import { queryClient } from "@/client/libs/query-client";
 import { useCreateResume, useDeleteResume, useUpdateResume } from "@/client/services/resume";
 import { useImportResume } from "@/client/services/resume/import";
 import { useDialog } from "@/client/stores/dialog";
@@ -70,6 +71,7 @@ export const ResumeDialog = () => {
   // 记录用户是否手动编辑过 slug
   const [slugLocked, setSlugLocked] = useState(false);
   const slugEditedRef = useRef(false);
+  const copyIdentity = useRef<{ title: string; slug: string }>();
 
   const unicodeSlugify = useMemo(() => {
     return (value: string) => {
@@ -82,21 +84,18 @@ export const ResumeDialog = () => {
     if (isOpen) onReset();
   }, [isOpen, payload]);
 
-  // 仅当 slug 为空、未锁定、且用户未手动修改过时，根据标题自动生成
+  // 创建时持续根据标题生成 slug，直到用户手动修改或锁定。
   useEffect(() => {
     const subscription = form.watch((value, ctx) => {
-      if (ctx.name === "title") {
-        const currentSlug = form.getValues("slug");
-        if (!currentSlug && !slugLocked && !slugEditedRef.current) {
-          const next = unicodeSlugify(value.title ?? "");
-          form.setValue("slug", next);
-        }
+      if (ctx.name === "title" && isCreate && !slugLocked && !slugEditedRef.current) {
+        const next = unicodeSlugify(value.title ?? "");
+        form.setValue("slug", next);
       }
     });
     return () => {
       subscription.unsubscribe();
     };
-  }, [form, slugLocked, unicodeSlugify]);
+  }, [form, isCreate, slugLocked, unicodeSlugify]);
 
   const onSubmit = async (values: FormValues) => {
     if (isCreate) {
@@ -110,6 +109,7 @@ export const ResumeDialog = () => {
         id: payload.item.id,
         title: values.title,
         slug: values.slug,
+        updatedAt: payload.item.updatedAt,
       });
     }
 
@@ -120,6 +120,8 @@ export const ResumeDialog = () => {
         title: values.title,
         slug: values.slug,
         data: payload.item.data,
+        autoNumber:
+          values.title === copyIdentity.current?.title && values.slug === copyIdentity.current.slug,
       });
     }
 
@@ -138,19 +140,17 @@ export const ResumeDialog = () => {
     if (isCreate) form.reset({ title: "", slug: "" });
     if (isUpdate)
       form.reset({ id: payload.item?.id, title: payload.item?.title, slug: payload.item?.slug });
-    if (isDuplicate)
-      form.reset({ title: `${payload.item?.title} (Copy)`, slug: `${payload.item?.slug}-copy` });
+    if (isDuplicate && payload.item) {
+      const existing = queryClient.getQueryData<ResumeDto[]>(["resumes"]) ?? [];
+      copyIdentity.current = nextResumeCopy(payload.item, [...existing, payload.item]);
+      form.reset(copyIdentity.current);
+    }
     if (isDelete)
       form.reset({ id: payload.item?.id, title: payload.item?.title, slug: payload.item?.slug });
   };
 
   const onGenerateRandomName = () => {
-    const name = generateRandomName();
-    form.setValue("title", name);
-    if (!slugLocked && !slugEditedRef.current && !form.getValues("slug")) {
-      const next = unicodeSlugify(name);
-      form.setValue("slug", next);
-    }
+    form.setValue("title", generateRandomName());
   };
 
   const onCreateSample = async () => {

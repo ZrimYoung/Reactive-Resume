@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  HttpException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -12,13 +13,15 @@ import {
   resumeDataSchema,
 } from "@reactive-resume/schema";
 import type { DeepPartial } from "@reactive-resume/utils";
-import { ErrorMessage, generateRandomName } from "@reactive-resume/utils";
+import { generateRandomName } from "@reactive-resume/utils";
 import deepmerge from "deepmerge";
 import { PrismaService } from "nestjs-prisma";
 
 import { PrinterService } from "@/server/printer/printer.service";
 
 import { StorageService } from "../storage/storage.service";
+import { createNumberedCopy } from "./numbered-copy";
+import { writeResumeRevision } from "./resume-revision";
 
 @Injectable()
 export class ResumeService {
@@ -32,7 +35,7 @@ export class ResumeService {
 
   private generateUnicodeSlug(input: string): string {
     // 允许 Unicode：保留字母与数字，空白转为连字符，移除其它符号
-    const normalized = (input ?? "").trim().toLowerCase();
+    const normalized = input.trim().toLowerCase();
     if (!normalized) return "";
     const dashed = normalized.replace(/\s+/g, "-");
     // 保留所有 Unicode 字母/数字/下划线/连字符
@@ -55,9 +58,9 @@ export class ResumeService {
         userId,
         title: createResumeDto.title,
         slug:
-          createResumeDto.slug ||
-          this.generateUnicodeSlug(createResumeDto.title) ||
-          this.generateUnicodeSlug(generateRandomName()),
+          createResumeDto.slug ??
+          (this.generateUnicodeSlug(createResumeDto.title) ||
+            this.generateUnicodeSlug(generateRandomName())),
       },
     });
 
@@ -107,17 +110,19 @@ export class ResumeService {
         })}`,
       );
 
-      const resume = await this.prisma.resume.create({
-        data: {
+      const resume = await createNumberedCopy(
+        this.prisma,
+        {
           userId,
           data: processedData,
           title: importResumeDto.title ?? randomTitle,
           slug:
-            importResumeDto.slug ||
-            this.generateUnicodeSlug(importResumeDto.title ?? randomTitle) ||
-            this.generateUnicodeSlug(randomTitle),
+            importResumeDto.slug ??
+            (this.generateUnicodeSlug(importResumeDto.title ?? randomTitle) ||
+              this.generateUnicodeSlug(randomTitle)),
         },
-      });
+        importResumeDto.autoNumber,
+      );
 
       return {
         ...resume,
@@ -158,13 +163,6 @@ export class ResumeService {
 
   async update(userId: string, id: string, updateResumeDto: UpdateResumeDto) {
     try {
-      const { locked } = await this.prisma.resume.findUniqueOrThrow({
-        where: { id },
-        select: { locked: true },
-      });
-
-      if (locked) throw new BadRequestException(ErrorMessage.ResumeLocked);
-
       // Validate and normalize data
       let processedData: string | undefined;
       if (updateResumeDto.data) {
@@ -235,13 +233,22 @@ export class ResumeService {
         }
       }
 
-      const updatedResume = await this.prisma.resume.update({
+      const lockOnly =
+        updateResumeDto.locked !== undefined &&
+        updateResumeDto.title === undefined &&
+        updateResumeDto.slug === undefined &&
+        updateResumeDto.data === undefined;
+      const updatedResume = await writeResumeRevision(this.prisma, {
+        id,
+        userId,
+        expectedUpdatedAt: updateResumeDto.expectedUpdatedAt,
+        allowLocked: lockOnly,
         data: {
           title: updateResumeDto.title,
           slug: updateResumeDto.slug,
+          locked: updateResumeDto.locked,
           ...(processedData && { data: processedData }),
         },
-        where: { userId_id: { userId, id } },
       });
 
       return {
@@ -262,7 +269,7 @@ export class ResumeService {
         throw new InternalServerErrorException("Resume does not exist or access denied");
       }
 
-      if (err instanceof BadRequestException) {
+      if (err instanceof HttpException) {
         throw err;
       }
 
@@ -270,11 +277,8 @@ export class ResumeService {
     }
   }
 
-  lock(userId: string, id: string, set: boolean) {
-    return this.prisma.resume.update({
-      data: { locked: set },
-      where: { userId_id: { userId, id } },
-    });
+  lock(userId: string, id: string, set: boolean, expectedUpdatedAt?: Date) {
+    return this.update(userId, id, { locked: set, expectedUpdatedAt });
   }
 
   async remove(userId: string, id: string) {

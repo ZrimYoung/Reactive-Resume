@@ -2,9 +2,20 @@ import { z } from "zod";
 
 const urlSchema = z.literal("").or(z.string().url()).optional();
 
+// JSON Resume exports commonly use an empty string for an unspecified date.
+// Adapted from upstream's blank-date handling; validate actual calendar dates too.
 const iso8601 = z
   .string()
-  .regex(/^([12]\d{3}-[01]\d-[0-3]\d|[12]\d{3}-[01]\d|[12]\d{3})$/, "ISO8601 Date Format");
+  .trim()
+  .refine((value) => {
+    if (!value) return true;
+    const match = /^([12]\d{3})(?:-(0[1-9]|1[0-2])(?:-(0[1-9]|[12]\d|3[01]))?)?$/.exec(value);
+    if (!match) return false;
+    if (!match[3]) return true;
+    return (
+      Number(match[3]) <= new Date(Date.UTC(Number(match[1]), Number(match[2]), 0)).getUTCDate()
+    );
+  }, "ISO8601 Date Format");
 
 const locationSchema = z.object({
   address: z.string().optional(),
@@ -35,6 +46,7 @@ const basicsSchema = z.object({
 const workSchema = z.object({
   name: z.string().optional(),
   position: z.string().optional(),
+  location: z.string().optional(),
   url: urlSchema,
   startDate: iso8601.optional(),
   endDate: iso8601.optional(),
@@ -64,6 +76,20 @@ const certificatesSchema = z.object({
   date: iso8601.optional(),
   issuer: z.string().optional(),
   summary: z.string().optional(),
+  url: urlSchema,
+});
+
+const projectsSchema = z.object({
+  name: z.string().optional(),
+  description: z.string().optional(),
+  highlights: z.array(z.string()).optional(),
+  keywords: z.array(z.string()).optional(),
+  roles: z.array(z.string()).optional(),
+  entity: z.string().optional(),
+  type: z.string().optional(),
+  startDate: iso8601.optional(),
+  endDate: iso8601.optional(),
+  url: urlSchema,
 });
 
 const educationSchema = z.object({
@@ -114,6 +140,7 @@ export const jsonResumeSchema = z.object({
   awards: z.array(awardsSchema).optional(),
   certificates: z.array(certificatesSchema).optional(),
   publications: z.array(publicationsSchema).optional(),
+  projects: z.array(projectsSchema).optional(),
   skills: z.array(skillsSchema).optional(),
   languages: z.array(languagesSchema).optional(),
   interests: z.array(interestsSchema).optional(),

@@ -8,6 +8,11 @@ import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
 import { MM_TO_PX, Page } from "../components/page";
 import { useArtboardStore } from "../store/artboard";
 import { getTemplate } from "../templates";
+import {
+  bindCanvasInteractions,
+  MAX_CANVAS_SCALE,
+  MIN_CANVAS_SCALE,
+} from "../utils/canvas-interactions";
 import { getPageDimensions } from "../utils/resume";
 
 export const BuilderLayout = () => {
@@ -24,7 +29,7 @@ export const BuilderLayout = () => {
 
   const fitView = useCallback(() => {
     const scale = Math.max(
-      0.1,
+      MIN_CANVAS_SCALE,
       Math.min(
         1,
         (window.innerWidth - 48) / contentWidth,
@@ -45,6 +50,8 @@ export const BuilderLayout = () => {
   const template = useArtboardStore((state) => state.resume.metadata.template || "rhyhorn");
 
   const Template = useMemo(() => getTemplate(template as Template), [template]);
+
+  useEffect(() => bindCanvasInteractions(() => transformRef.current), []);
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
@@ -72,8 +79,8 @@ export const BuilderLayout = () => {
   return (
     <TransformWrapper
       ref={transformRef}
-      maxScale={2}
-      minScale={0.1}
+      maxScale={MAX_CANVAS_SCALE}
+      minScale={MIN_CANVAS_SCALE}
       initialScale={1}
       limitToBounds={false}
       wheel={{ wheelDisabled: wheelPanning }}

@@ -8,9 +8,10 @@ import {
   List,
   PencilSimple,
   Plus,
+  SortDescending,
   TrashSimple,
 } from "@phosphor-icons/react";
-import type { SectionKey, SectionWithItem } from "@reactive-resume/schema";
+import type { SectionItem, SectionKey, SectionWithItem } from "@reactive-resume/schema";
 import { defaultSections } from "@reactive-resume/schema";
 import {
   Button,
@@ -28,9 +29,11 @@ import {
   DropdownMenuTrigger,
   Input,
 } from "@reactive-resume/ui";
+import { sortResumeItemsByDate } from "@reactive-resume/utils";
 import get from "lodash.get";
 import { useMemo } from "react";
 
+import { toast } from "@/client/hooks/use-toast";
 import { useDialog } from "@/client/stores/dialog";
 import { useResumeStore } from "@/client/stores/resume";
 
@@ -47,6 +50,17 @@ export const SectionOptions = ({ id }: Props) => {
 
   const hasItems = useMemo(() => "items" in section, [section]);
   const isCustomSection = useMemo(() => id.startsWith("custom"), [id]);
+  const canSortByDate =
+    isCustomSection ||
+    [
+      "awards",
+      "certifications",
+      "education",
+      "experience",
+      "projects",
+      "publications",
+      "volunteer",
+    ].includes(id);
 
   const onCreate = () => {
     open("create", { id });
@@ -72,6 +86,18 @@ export const SectionOptions = ({ id }: Props) => {
     setValue(`sections.${id}.items`, []);
   };
 
+  const onSortByDate = () => {
+    const result = sortResumeItemsByDate<SectionItem>(section.items, (item) =>
+      get(item, "date", ""),
+    );
+    if (result.changed) setValue(`sections.${id}.items`, result.items);
+    if (result.unparsedCount > 0)
+      toast({
+        variant: "info",
+        title: t`Some dates could not be recognized. Those items were kept at the end in their original order.`,
+      });
+  };
+
   const onRemove = () => {
     removeSection(id);
   };
@@ -90,6 +116,12 @@ export const SectionOptions = ({ id }: Props) => {
               <Plus />
               <span className="ml-2">{t`Add a new item`}</span>
             </DropdownMenuItem>
+            {canSortByDate && (
+              <DropdownMenuItem disabled={section.items.length < 2} onClick={onSortByDate}>
+                <SortDescending />
+                <span className="ml-2">{t`Sort by date (newest first)`}</span>
+              </DropdownMenuItem>
+            )}
             <DropdownMenuCheckboxItem
               checked={section.separateLinks}
               onCheckedChange={toggleSeperateLinks}

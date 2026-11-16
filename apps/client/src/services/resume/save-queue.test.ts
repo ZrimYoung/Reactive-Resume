@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { assessResumeDraft } from "./drafts";
 import type { DraftStorage, ResumeDraft } from "./save-queue";
-import { ResumeSaveQueue } from "./save-queue";
+import { ResumeConflictError, ResumeSaveQueue } from "./save-queue";
 
 const data = (name: string) => ({
   ...defaultResumeData,
@@ -98,6 +98,8 @@ describe("resume save queue", () => {
     await vi.advanceTimersByTimeAsync(0);
     expect(save).toHaveBeenCalledTimes(2);
     expect(save.mock.calls[1][0].data?.basics.name).toBe("Latest");
+    expect(save.mock.calls[0][0].expectedUpdatedAt).toEqual(resume("a", "", 0).updatedAt);
+    expect(save.mock.calls[1][0].expectedUpdatedAt).toEqual(resume("a", "", 1).updatedAt);
     expect(disk.get("a")?.token).toBe(latestToken);
     expect(disk.get("a")?.baseUpdatedAt).toBe(resume("a", "", 1).updatedAt.toISOString());
     expect(queue.hasPending("a")).toBe(true);
@@ -228,5 +230,53 @@ describe("recovery assessment", () => {
       baseChanged: true,
     });
     expect(current.data.basics.name).toBe("Saved text");
+  });
+});
+
+describe("conflicting saves", () => {
+  it("pauses autosave and explicit retries after a conflict while persisting continued local edits", async () => {
+    const { queue, save, disk } = fixture();
+    save.mockRejectedValueOnce(new ResumeConflictError());
+    queue.enqueue({ id: "a", data: data("Local first") });
+    expect(await queue.flush("a")).toBe(false);
+    expect(queue.getState("a").status).toBe("conflict");
+    queue.enqueue({ id: "a", data: data("Local latest") });
+    await vi.advanceTimersByTimeAsync(30_000);
+    expect(await queue.flush("a")).toBe(false);
+    expect(save).toHaveBeenCalledTimes(1);
+    expect(disk.get("a")?.data.basics.name).toBe("Local latest");
+    expect(queue.persistAll()).toBe(true);
+    const token = queue.getDraft("a")?.token;
+    await queue.acceptServer(resume("a", "Remote", 4), token);
+    expect(queue.getState("a").status).toBe("saved");
+    queue.enqueue({ id: "a", data: data("After explicit reload") });
+    expect(await queue.flush("a")).toBe(true);
+    expect(save.mock.calls[1][0].expectedUpdatedAt).toEqual(resume("a", "", 4).updatedAt);
+  });
+
+  it("cannot clear edits made while a recovered copy is being saved", async () => {
+    const { queue, save, disk } = fixture();
+    save.mockRejectedValueOnce(new ResumeConflictError());
+    queue.enqueue({ id: "a", data: data("Copy in progress") });
+    await queue.flush("a");
+    const oldToken = queue.getDraft("a")?.token;
+    queue.enqueue({ id: "a", data: data("Newer typing") });
+    await expect(queue.acceptServer(resume("a", "Remote", 3), oldToken)).rejects.toThrow();
+    expect(queue.getState("a").status).toBe("conflict");
+    expect(disk.get("a")?.data.basics.name).toBe("Newer typing");
+  });
+
+  it("never sends an unversioned body and never regresses an acknowledged revision to an old editor snapshot", async () => {
+    const { queue, save } = fixture();
+    queue.enqueue({ id: "unknown", data: data("Missing revision") });
+    expect(await queue.flush("unknown")).toBe(false);
+    expect(queue.getState("unknown").status).toBe("conflict");
+    expect(save).not.toHaveBeenCalled();
+    queue.enqueue({ id: "a", data: data("First") });
+    await queue.flush("a");
+    queue.register(resume("a", "Old snapshot", 0));
+    queue.enqueue({ id: "a", title: "Rename", updatedAt: resume("a", "", 0).updatedAt });
+    await queue.flush("a");
+    expect(save.mock.calls[1][0].expectedUpdatedAt).toEqual(resume("a", "", 1).updatedAt);
   });
 });

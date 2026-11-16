@@ -11,6 +11,7 @@ import {
   AlertDialogTitle,
 } from "@reactive-resume/ui";
 
+import { toast } from "@/client/hooks/use-toast";
 import { useLockResume } from "@/client/services/resume/lock";
 import { useDialog } from "@/client/stores/dialog";
 
@@ -25,9 +26,15 @@ export const LockDialog = () => {
   const onSubmit = async () => {
     if (!payload.item) return;
 
-    await lockResume({ id: payload.item.id, set: isLockMode });
-
-    close();
+    try {
+      await lockResume({ id: payload.item.id, set: isLockMode, updatedAt: payload.item.updatedAt });
+      close();
+    } catch {
+      toast({
+        variant: "error",
+        title: t`The lock could not be changed. Open the resume to review any unsaved changes.`,
+      });
+    }
   };
 
   return (

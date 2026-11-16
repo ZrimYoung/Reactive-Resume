@@ -12,9 +12,10 @@ import {
 } from "@reactive-resume/ui";
 import { cn } from "@reactive-resume/utils";
 import { motion } from "framer-motion";
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { z } from "zod";
 
+import { toast } from "@/client/hooks/use-toast";
 import { useUploadImage } from "@/client/services/storage";
 import { useResumeStore } from "@/client/stores/resume";
 
@@ -22,6 +23,7 @@ import { PictureOptions } from "./options";
 
 export const PictureSection = () => {
   const inputRef = useRef<HTMLInputElement>(null);
+  const uploadVersion = useRef(0);
   const { uploadImage } = useUploadImage();
 
   const setValue = useResumeStore((state) => state.setValue);
@@ -29,17 +31,50 @@ export const PictureSection = () => {
 
   const isValidUrl = useMemo(() => z.string().url().safeParse(picture.url).success, [picture.url]);
 
-  const onSelectImage = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files.length > 0) {
-      const file = event.target.files[0];
-      const response = await uploadImage(file);
-      const url = response.data;
+  useEffect(() => {
+    const unsubscribe = useResumeStore.subscribe((state, previous) => {
+      // A round trip through another resume must invalidate the old upload too.
+      if (
+        state.resume.id !== previous.resume.id ||
+        state.resume.data.basics.picture.url !== previous.resume.data.basics.picture.url
+      )
+        uploadVersion.current += 1;
+    });
+    return () => {
+      unsubscribe();
+      uploadVersion.current += 1;
+    };
+  }, []);
 
-      setValue("basics.picture.url", url);
+  const onSelectImage = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.currentTarget.files?.[0];
+    // Reset immediately, including on failure, so selecting the same file triggers change again.
+    event.currentTarget.value = "";
+    if (!file) return;
+
+    const version = ++uploadVersion.current;
+    const { id, locked, data } = useResumeStore.getState().resume;
+    const originalUrl = data.basics.picture.url;
+    if (locked) return;
+
+    try {
+      const response = await uploadImage(file);
+      const current = useResumeStore.getState().resume;
+      if (
+        version === uploadVersion.current &&
+        current.id === id &&
+        !current.locked &&
+        current.data.basics.picture.url === originalUrl
+      )
+        setValue("basics.picture.url", response.data);
+    } catch {
+      if (version === uploadVersion.current && useResumeStore.getState().resume.id === id)
+        toast({ variant: "error", title: t`Couldn't upload the picture. Please try again.` });
     }
   };
 
   const onAvatarClick = () => {
+    uploadVersion.current += 1;
     if (isValidUrl) {
       setValue("basics.picture.url", "");
     } else {
@@ -68,13 +103,14 @@ export const PictureSection = () => {
       <div className="flex w-full flex-col gap-y-1.5">
         <Label htmlFor="basics.picture.url">{t`Picture`}</Label>
         <div className="flex items-center gap-x-2">
-          <input ref={inputRef} hidden type="file" onChange={onSelectImage} />
+          <input ref={inputRef} hidden type="file" accept="image/*" onChange={onSelectImage} />
 
           <Input
             id="basics.picture.url"
             placeholder="https://..."
             value={picture.url}
             onChange={(event) => {
+              uploadVersion.current += 1;
               setValue("basics.picture.url", event.target.value);
             }}
           />

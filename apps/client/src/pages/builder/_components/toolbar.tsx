@@ -16,8 +16,8 @@ import {
 import { Button, Separator, Toggle, Tooltip } from "@reactive-resume/ui";
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { toast } from "sonner";
 
+import { toast } from "@/client/hooks/use-toast";
 import { printResume } from "@/client/services/resume";
 import { flushResumeSaves } from "@/client/services/resume/update";
 import { useBuilderStore } from "@/client/stores/builder";
@@ -46,7 +46,7 @@ export const BuilderToolbar = () => {
 
       const { id } = useResumeStore.getState().resume;
       if (!(await flushResumeSaves(id))) {
-        toast.error(t`Save failed. Please retry before downloading a PDF.`);
+        toast({ variant: "error", title: t`Save failed. Please retry before downloading a PDF.` });
         return;
       }
 
@@ -59,7 +59,7 @@ export const BuilderToolbar = () => {
         openInNewTab(url);
       }
     } catch {
-      toast.error(t`An error occurred while printing. Please try again.`);
+      toast({ variant: "error", title: t`An error occurred while printing. Please try again.` });
     } finally {
       setPrinting(false);
     }

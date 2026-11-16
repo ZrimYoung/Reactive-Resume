@@ -1,4 +1,5 @@
 import { createId } from "@paralleldrive/cuid2";
+import type { ResumeData } from "@reactive-resume/schema";
 import {
   defaultAward,
   defaultCertification,
@@ -7,6 +8,7 @@ import {
   defaultInterest,
   defaultLanguage,
   defaultProfile,
+  defaultProject,
   defaultPublication,
   defaultReference,
   defaultResumeData,
@@ -21,6 +23,33 @@ import type { JsonResume } from "./schema";
 import { jsonResumeSchema } from "./schema";
 
 export * from "./schema";
+
+const escapeHtml = (value: string) =>
+  value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+const dateRange = (start?: string, end?: string) => [start, end].filter(Boolean).join(" - ");
+
+/** JSON Resume descriptions and highlights are text, not trusted HTML. */
+function richText(summary?: string, highlights?: string[]) {
+  const paragraphs = summary?.trim()
+    ? summary
+        .trim()
+        .split(/\n\s*\n/)
+        .map((paragraph) => `<p>${escapeHtml(paragraph).replace(/\r?\n/g, "<br>")}</p>`)
+        .join("")
+    : "";
+  const items = highlights?.filter((item) => item.trim());
+  return (
+    paragraphs +
+    (items?.length
+      ? `<ul>${items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`
+      : "")
+  );
+}
 
 export class JsonResumeParser implements Parser<Json, JsonResume> {
   schema: Schema;
@@ -58,7 +87,7 @@ export class JsonResumeParser implements Parser<Json, JsonResume> {
   }
 
   convert(data: JsonResume) {
-    const result = JSON.parse(JSON.stringify(defaultResumeData));
+    const result = JSON.parse(JSON.stringify(defaultResumeData)) as ResumeData;
 
     // Basics
     result.basics.name = data.basics?.name ?? "";
@@ -66,9 +95,11 @@ export class JsonResumeParser implements Parser<Json, JsonResume> {
     result.basics.picture.url = data.basics?.image ?? "";
     result.basics.email = data.basics?.email ?? "";
     result.basics.phone = data.basics?.phone ?? "";
-    result.basics.location = data.basics?.location?.address ?? "";
+    result.basics.location = [
+      ...new Set(Object.values(data.basics?.location ?? {}).filter(Boolean)),
+    ].join(", ");
     result.basics.url.href = data.basics?.url ?? "";
-    result.sections.summary.content = data.basics?.summary ?? "";
+    result.sections.summary.content = richText(data.basics?.summary);
 
     // Profiles
     if (data.basics?.profiles) {
@@ -92,8 +123,9 @@ export class JsonResumeParser implements Parser<Json, JsonResume> {
           id: createId(),
           company: work.name ?? "",
           position: work.position ?? "",
-          summary: work.summary ?? "",
-          date: `${work.startDate} - ${work.endDate}`,
+          location: work.location ?? "",
+          summary: richText(work.summary, work.highlights),
+          date: dateRange(work.startDate, work.endDate),
           url: { ...defaultExperience.url, href: work.url ?? "" },
         });
       }
@@ -106,9 +138,9 @@ export class JsonResumeParser implements Parser<Json, JsonResume> {
           ...defaultVolunteer,
           id: createId(),
           organization: volunteer.organization ?? "",
-          date: `${volunteer.startDate} - ${volunteer.endDate}`,
+          date: dateRange(volunteer.startDate, volunteer.endDate),
           position: volunteer.position ?? "",
-          summary: volunteer.summary ?? "",
+          summary: richText(volunteer.summary, volunteer.highlights),
           url: { ...defaultVolunteer.url, href: volunteer.url ?? "" },
         });
       }
@@ -124,7 +156,8 @@ export class JsonResumeParser implements Parser<Json, JsonResume> {
           studyType: education.studyType ?? "",
           area: education.area ?? "",
           score: education.score ?? "",
-          date: `${education.startDate} - ${education.endDate}`,
+          date: dateRange(education.startDate, education.endDate),
+          summary: richText(undefined, education.courses),
           url: { ...defaultEducation.url, href: education.url ?? "" },
         });
       }
@@ -139,7 +172,7 @@ export class JsonResumeParser implements Parser<Json, JsonResume> {
           title: award.title ?? "",
           date: award.date ?? "",
           awarder: award.awarder ?? "",
-          summary: award.summary ?? "",
+          summary: richText(award.summary),
         });
       }
     }
@@ -153,7 +186,8 @@ export class JsonResumeParser implements Parser<Json, JsonResume> {
           name: certificate.name ?? "",
           date: certificate.date ?? "",
           issuer: certificate.issuer ?? "",
-          summary: certificate.summary ?? "",
+          summary: richText(certificate.summary),
+          url: { ...defaultCertification.url, href: certificate.url ?? "" },
         });
       }
     }
@@ -166,11 +200,29 @@ export class JsonResumeParser implements Parser<Json, JsonResume> {
           id: createId(),
           name: publication.name ?? "",
           publisher: publication.publisher ?? "",
-          summary: publication.summary ?? "",
+          summary: richText(publication.summary),
           date: publication.releaseDate ?? "",
           url: { ...defaultPublication.url, href: publication.url ?? "" },
         });
       }
+    }
+
+    // Preserve projects instead of stripping them during schema validation.
+    for (const project of data.projects ?? []) {
+      const name = project.name?.trim() ?? "";
+      const context = [project.entity, project.type, project.roles?.join(", ")]
+        .filter(Boolean)
+        .join(" · ");
+      result.sections.projects.items.push({
+        ...defaultProject,
+        id: createId(),
+        name: name.length > 0 ? name : "Untitled project",
+        description: project.description ?? "",
+        summary: richText(context, project.highlights),
+        date: dateRange(project.startDate, project.endDate),
+        keywords: [...(project.keywords ?? [])],
+        url: { ...defaultProject.url, href: project.url ?? "" },
+      });
     }
 
     // Skills
@@ -217,7 +269,7 @@ export class JsonResumeParser implements Parser<Json, JsonResume> {
           ...defaultReference,
           id: createId(),
           name: reference.name ?? "",
-          summary: reference.reference ?? "",
+          summary: richText(reference.reference),
         });
       }
     }

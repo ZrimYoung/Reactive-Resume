@@ -4,24 +4,39 @@ import { useMutation } from "@tanstack/react-query";
 import type { AxiosResponse } from "axios";
 import debounce from "lodash.debounce";
 import { useSyncExternalStore } from "react";
-import { toast } from "sonner";
 
+import { toast } from "@/client/hooks/use-toast";
 import { axios } from "@/client/libs/axios";
 import { queryClient } from "@/client/libs/query-client";
 
 import { resumeDraftStorage } from "./drafts";
 import { previewResume } from "./preview";
 import type { ResumeSaveRequest } from "./save-queue";
-import { ResumeSaveQueue } from "./save-queue";
+import { ResumeConflictError, ResumeSaveQueue } from "./save-queue";
 
 const sendResumeUpdate = async (data: UpdateResumeDto) => {
-  const response = await axios.patch<ResumeDto, AxiosResponse<ResumeDto>, UpdateResumeDto>(
-    `/resume/${data.id}`,
-    data,
-    { timeout: 10_000 },
-  );
+  const response = await axios
+    .patch<
+      ResumeDto,
+      AxiosResponse<ResumeDto>,
+      UpdateResumeDto
+    >(`/resume/${data.id}`, data, { timeout: 10_000 })
+    .catch((error: unknown) => {
+      const failure = error as {
+        response?: { status: number; data?: { code?: string; updatedAt?: string } };
+      };
+      const body = failure.response?.data;
+      if (failure.response?.status === 409 && body?.code?.startsWith("RESUME_VERSION_")) {
+        throw new ResumeConflictError(body.code, body.updatedAt);
+      }
+      throw error;
+    });
 
   queryClient.setQueryData<ResumeDto>(["resume", { id: response.data.id }], response.data);
+  // The list is inactive in the builder and does not refetch when it mounts again.
+  queryClient.setQueryData<ResumeDto[]>(["resumes"], (cache) =>
+    cache?.map((resume) => (resume.id === response.data.id ? response.data : resume)),
+  );
 
   // Invalidate the resume list query to refetch the updated data
   void queryClient.invalidateQueries({ queryKey: ["resumes"] });
@@ -38,6 +53,14 @@ export const resumeSaveQueue = new ResumeSaveQueue(sendResumeUpdate, resumeDraft
 
 export const updateResume = (data: UpdateResumeDto) => {
   if (!data.id) return Promise.reject(new Error("Missing resume ID"));
+  const cached =
+    queryClient.getQueryData<ResumeDto>(["resume", { id: data.id }]) ??
+    queryClient.getQueryData<ResumeDto[]>(["resumes"])?.find((resume) => resume.id === data.id);
+  // Use the revision the caller actually saw. A newer list fetch cannot certify its older edits.
+  if (cached)
+    resumeSaveQueue.register(
+      Object.assign({}, cached, { updatedAt: data.updatedAt ?? cached.updatedAt }),
+    );
   return resumeSaveQueue.saveNow(toSaveRequest(data, data.id));
 };
 
@@ -48,6 +71,7 @@ function toSaveRequest(data: UpdateResumeDto, id: string): ResumeSaveRequest {
   if (data.slug !== undefined) request.slug = data.slug;
   if (data.locked !== undefined) request.locked = data.locked;
   if (data.updatedAt !== undefined) request.updatedAt = data.updatedAt;
+  if (data.expectedUpdatedAt !== undefined) request.expectedUpdatedAt = data.expectedUpdatedAt;
   return request;
 }
 
@@ -70,10 +94,16 @@ export const useUpdateResume = () => {
   } = useMutation({
     mutationFn: updateResume,
     onSuccess: () => {
-      toast.success(t`Changes saved successfully.`);
+      toast({ variant: "success", title: t`Changes saved successfully.` });
     },
     onError: (error) => {
-      toast.error(error.message);
+      toast({
+        variant: "error",
+        title:
+          error instanceof ResumeConflictError
+            ? t`This resume changed in another window. Open it to keep your local changes as a copy.`
+            : error.message,
+      });
     },
   });
 

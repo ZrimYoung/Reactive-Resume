@@ -4,6 +4,7 @@
 import { i18n } from "@lingui/core";
 import type { ResumeData } from "@reactive-resume/schema";
 import { defaultResumeData } from "@reactive-resume/schema";
+import { strFromU8, unzipSync } from "fflate";
 import { act, createElement } from "react";
 import type { Root } from "react-dom/client";
 import { createRoot } from "react-dom/client";
@@ -93,6 +94,20 @@ const readBlob = (blob: Blob) =>
     });
     // eslint-disable-next-line unicorn/prefer-blob-reading-methods -- jsdom's Blob does not implement text().
     reader.readAsText(blob);
+  });
+
+const readArchive = (blob: Blob) =>
+  new Promise<Record<string, Uint8Array>>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.addEventListener("load", () => {
+      if (reader.result instanceof ArrayBuffer) resolve(unzipSync(new Uint8Array(reader.result)));
+      else reject(new Error("Expected a binary document"));
+    });
+    reader.addEventListener("error", () => {
+      reject(new Error("Could not read the document"));
+    });
+    // eslint-disable-next-line unicorn/prefer-blob-reading-methods -- jsdom's Blob does not implement arrayBuffer().
+    reader.readAsArrayBuffer(blob);
   });
 
 describe("export save boundaries", () => {
@@ -213,4 +228,91 @@ describe("export save boundaries", () => {
       expect.objectContaining({ variant: "warning" }),
     );
   });
+
+  it.each([
+    [3, "docx"],
+    [4, "odt"],
+  ] as const)(
+    "%s waits for saving and builds the latest %s document locally",
+    async (index, format) => {
+      let finish!: (saved: boolean) => void;
+      dependencies.flush.mockReturnValue(
+        new Promise<boolean>((resolve) => {
+          finish = resolve;
+        }),
+      );
+      await clickExport(index);
+      expect(dependencies.saveAs).not.toHaveBeenCalled();
+      dependencies.state.resume.data = structuredClone(dependencies.state.resume.data);
+      dependencies.state.resume.data.basics.name = "等待保存时修改的姓名";
+      await act(async () => {
+        finish(true);
+        await vi.waitFor(() => {
+          expect(dependencies.saveAs).toHaveBeenCalledTimes(1);
+        });
+      });
+      const [blob, filename] = dependencies.saveAs.mock.calls[0] as [Blob, string];
+      expect(filename).toBe(`reactive_resume-resume-1.${format}`);
+      const archive = await readArchive(blob);
+      expect(strFromU8(archive[format === "docx" ? "word/document.xml" : "content.xml"])).toContain(
+        "等待保存时修改的姓名",
+      );
+      expect(dependencies.print).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([
+    [3, "docx"],
+    [4, "odt"],
+  ] as const)(
+    "%s still exports a latest-device %s backup when saving fails",
+    async (index, format) => {
+      dependencies.flush.mockResolvedValue(false);
+      await clickExport(index);
+      await act(async () => {
+        await vi.waitFor(() => {
+          expect(dependencies.saveAs).toHaveBeenCalledTimes(1);
+        });
+      });
+      const [blob] = dependencies.saveAs.mock.calls[0] as [Blob, string];
+      const archive = await readArchive(blob);
+      expect(strFromU8(archive[format === "docx" ? "word/document.xml" : "content.xml"])).toContain(
+        "Latest local name",
+      );
+      expect(dependencies.toast).toHaveBeenCalledWith(
+        expect.objectContaining({ variant: "warning" }),
+      );
+    },
+  );
+
+  it.each([
+    [3, "docx"],
+    [4, "odt"],
+  ] as const)(
+    "%s sends a real %s archive through Electron's save dialog",
+    async (index, format) => {
+      Object.defineProperty(window, "electron", {
+        configurable: true,
+        value: { downloadAndSave: dependencies.download },
+      });
+      await clickExport(index);
+      await act(async () => {
+        await vi.waitFor(() => {
+          expect(dependencies.download).toHaveBeenCalledTimes(1);
+        });
+      });
+      const [url, filename] = dependencies.download.mock.calls[0] as [string, string];
+      expect(filename).toBe(`reactive_resume-resume-1.${format}`);
+      expect(url).toMatch(/^data:application\/.*;base64,/);
+      const bytes = Uint8Array.from(
+        atob(url.slice(url.indexOf(",") + 1)),
+        (character) => character.codePointAt(0) ?? 0,
+      );
+      const archive = unzipSync(bytes);
+      expect(strFromU8(archive[format === "docx" ? "word/document.xml" : "content.xml"])).toContain(
+        "Latest local name",
+      );
+      expect(dependencies.saveAs).not.toHaveBeenCalled();
+    },
+  );
 });

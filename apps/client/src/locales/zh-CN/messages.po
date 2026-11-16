@@ -18,15 +18,12 @@ msgstr ""
 "X-Crowdin-File: messages.po\n"
 "X-Crowdin-File-ID: 494\n"
 
-#: apps/client/src/pages/builder/_components/recovery.tsx:46
-#~ msgid "{0} (Recovered)"
-#~ msgstr "{0}（恢复副本）"
-
-#: apps/client/src/pages/builder/_components/recovery.tsx:47
+#: apps/client/src/pages/builder/_components/recovery.tsx:51
+#: apps/client/src/pages/builder/_components/recovery.tsx:145
 msgid "{title} (Recovered)"
 msgstr "{title}（恢复副本）"
 
-#: apps/client/src/pages/builder/sidebars/left/sections/shared/section-options.tsx:142
+#: apps/client/src/pages/builder/sidebars/left/sections/shared/section-options.tsx:173
 msgid "{value, plural, one {Column} other {Columns}}"
 msgstr "{value, plural, one {栏} other {栏}}"
 
@@ -46,7 +43,7 @@ msgstr "<0>社区花费了大量时间编写 Reactive Resume 的文档，我相�
 msgid "A passion project by <0>Amruth Pillai</0>"
 msgstr "<0>Amruth Pillai</0> 的热心项目"
 
-#: apps/client/src/providers/resume-saves.tsx:88
+#: apps/client/src/providers/resume-saves.tsx:82
 msgid "A recovery draft is saved on this device. Retry saving, or leave and recover it later."
 msgstr "恢复草稿已保存在本机。可以重试保存，或离开后再恢复。"
 
@@ -54,7 +51,7 @@ msgstr "恢复草稿已保存在本机。可以重试保存，或离开后再恢
 msgid "A resume with this slug already exists, please pick a different unique identifier."
 msgstr "带有此 标语 的简历已存在，请选择其他唯一标识符"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:283
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:291
 msgid "A unique identifier used in links or file names. Supports non-Latin characters and will not change automatically once edited or locked."
 msgstr "用于链接或文件名的唯一标识，支持非拉丁字符。一旦你手动编辑或锁定，它将不再被标题自动覆盖。"
 
@@ -67,13 +64,9 @@ msgid "A4"
 msgstr "A4"
 
 #. Helper text to let the user know what filetypes are accepted. {accept} can be .pdf or .json.
-#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:330
+#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:306
 msgid "Accepts only {accept} files"
 msgstr "仅接受 {accept} 文件"
-
-#: apps/client/src/pages/dashboard/settings/_sections/account.tsx:74
-#~ msgid "Account"
-#~ msgstr "账户"
 
 #: apps/client/src/pages/builder/sidebars/left/sections/custom/section.tsx:175
 msgid "Add a custom field"
@@ -85,7 +78,7 @@ msgctxt "For example, add a new work experience, or add a new profile."
 msgid "Add a new item"
 msgstr "增加一项"
 
-#: apps/client/src/pages/builder/sidebars/left/sections/shared/section-options.tsx:91
+#: apps/client/src/pages/builder/sidebars/left/sections/shared/section-options.tsx:116
 msgid "Add a new item"
 msgstr "增加一项"
 
@@ -98,11 +91,11 @@ msgstr "添加新章节"
 msgid "Add New Page"
 msgstr "添加新页面"
 
-#: apps/client/src/pages/builder/_components/toolbar.tsx:57
+#: apps/client/src/pages/builder/_components/toolbar.tsx:62
 msgid "An error occurred while printing. Please try again."
 msgstr "打印时发生错误。请重试。"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:188
+#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:166
 msgid "An error occurred while validating the file."
 msgstr "验证文件时发生错误。"
 
@@ -122,15 +115,15 @@ msgstr "应用自定义 CSS"
 msgid "Are you sure you want to delete this item?"
 msgstr "您确定要删除此项目吗？"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:175
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:183
 msgid "Are you sure you want to delete your resume?"
 msgstr "您确定要删除您的简历吗？"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/lock.tsx:38
+#: apps/client/src/pages/dashboard/resumes/_dialogs/lock.tsx:42
 msgid "Are you sure you want to lock this resume?"
 msgstr "您确定要锁定此简历吗？"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/lock.tsx:39
+#: apps/client/src/pages/dashboard/resumes/_dialogs/lock.tsx:43
 msgid "Are you sure you want to unlock this resume?"
 msgstr "您确定要解锁此简历吗？"
 
@@ -142,6 +135,10 @@ msgstr "学习领域"
 #: apps/client/src/pages/builder/sidebars/left/sections/picture/options.tsx:79
 msgid "Aspect Ratio"
 msgstr "宽高比"
+
+#: apps/client/src/pages/builder/_components/recovery.tsx:88
+msgid "Automatic saving is paused to keep both versions. Save your local changes as a separate copy, then load the saved version. You can also download your local changes."
+msgstr "自动保存已暂停，以保留两个版本。请将本机修改另存为副本，再加载已保存的版本；也可以下载本机修改。"
 
 #: apps/client/src/pages/builder/sidebars/left/dialogs/awards.tsx:51
 msgid "Awarder"
@@ -182,26 +179,30 @@ msgstr "来自社区，服务社区。"
 
 #: apps/client/src/components/font-upload-dialog.tsx:292
 #: apps/client/src/pages/builder/sidebars/left/sections/shared/section-dialog.tsx:135
-#: apps/client/src/pages/dashboard/resumes/_dialogs/lock.tsx:49
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:182
+#: apps/client/src/pages/dashboard/resumes/_dialogs/lock.tsx:53
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:190
 msgid "Cancel"
 msgstr "取消"
 
-#: apps/client/src/pages/builder/_components/toolbar.tsx:129
+#: apps/client/src/pages/builder/_components/toolbar.tsx:134
 msgid "Center Artboard"
 msgstr "中心画板"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:212
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:220
 msgid "Changed your mind about the name? Give it a new one."
 msgstr "想改名字了？取个新名字吧。"
 
-#: apps/client/src/services/resume/update.tsx:73
+#: apps/client/src/services/resume/update.tsx:93
 msgid "Changes saved successfully."
 msgstr "修改已成功保存。"
 
 #: apps/client/src/components/offline-font-preparation.tsx:68
 msgid "Checking offline font…"
 msgstr "正在检查离线字体……"
+
+#: apps/client/src/pages/builder/_components/recovery.tsx:186
+msgid "Choose a recovery draft"
+msgstr "选择要恢复的草稿"
 
 #: apps/client/src/pages/builder/sidebars/left/sections/picture/options.tsx:144
 msgid "Circle"
@@ -211,15 +212,19 @@ msgstr "圆"
 msgid "Click to choose or drag and drop a font file here"
 msgstr "点击选择或将字体文件拖拽到此处"
 
+#: apps/client/src/pages/builder/_components/shortcuts.tsx:135
+msgid "Close this dialog"
+msgstr "关闭此对话框"
+
 #: apps/client/src/pages/builder/sidebars/left/index.tsx:191
 msgid "Collapse all sections"
 msgstr "收起全部章节"
 
-#: apps/client/src/pages/builder/layout.tsx:109
+#: apps/client/src/pages/builder/layout.tsx:111
 msgid "Collapse Left Sidebar"
 msgstr "折叠左侧边栏"
 
-#: apps/client/src/pages/builder/layout.tsx:122
+#: apps/client/src/pages/builder/layout.tsx:124
 msgid "Collapse Right Sidebar"
 msgstr "折叠右侧边栏"
 
@@ -227,7 +232,7 @@ msgstr "折叠右侧边栏"
 msgid "Collapse section"
 msgstr "收起章节"
 
-#: apps/client/src/pages/builder/sidebars/left/sections/shared/section-options.tsx:136
+#: apps/client/src/pages/builder/sidebars/left/sections/shared/section-options.tsx:167
 msgid "Columns"
 msgstr "栏"
 
@@ -239,8 +244,12 @@ msgstr "公司"
 msgid "Copy"
 msgstr "复制"
 
+#: apps/client/src/pages/builder/sidebars/left/sections/picture/section.tsx:72
+msgid "Couldn't upload the picture. Please try again."
+msgstr "图片上传失败，请重试。"
+
 #: apps/client/src/pages/builder/sidebars/left/sections/shared/section-dialog.tsx:179
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:297
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:305
 msgid "Create"
 msgstr "创建"
 
@@ -248,15 +257,19 @@ msgstr "创建"
 msgid "Create a new item"
 msgstr "创建新条目"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:204
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:212
 #: apps/client/src/pages/dashboard/resumes/_layouts/grid/_components/create-card.tsx:28
 #: apps/client/src/pages/dashboard/resumes/_layouts/list/_components/create-item.tsx:18
 msgid "Create a new resume"
 msgstr "创建新简历"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:312
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:320
 msgid "Create Sample Resume"
 msgstr "创建简历样例"
+
+#: apps/client/src/pages/builder/_components/shortcuts.tsx:125
+msgid "Ctrl/Cmd + mouse wheel"
+msgstr "Ctrl/Cmd + 鼠标滚轮"
 
 #: apps/client/src/pages/builder/sidebars/right/index.tsx:90
 #: apps/client/src/pages/builder/sidebars/right/sections/css.tsx:27
@@ -264,7 +277,7 @@ msgstr "创建简历样例"
 msgid "Custom CSS"
 msgstr "自定义 CSS"
 
-#: apps/client/src/stores/resume.ts:56
+#: apps/client/src/stores/resume.ts:60
 msgid "Custom Section"
 msgstr "自定义章节"
 
@@ -295,7 +308,7 @@ msgid "Date or Date Range"
 msgstr "日期或日期范围"
 
 #: apps/client/src/pages/builder/sidebars/left/sections/shared/section-dialog.tsx:137
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:184
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:192
 #: apps/client/src/pages/dashboard/resumes/_layouts/grid/_components/resume-card.tsx:149
 #: apps/client/src/pages/dashboard/resumes/_layouts/list/_components/resume-item.tsx:127
 #: apps/client/src/pages/dashboard/resumes/_layouts/list/_components/resume-item.tsx:172
@@ -310,12 +323,12 @@ msgstr "删除"
 msgid "Description"
 msgstr "描述"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:363
+#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:338
 #: apps/client/src/pages/dashboard/settings/_sections/profile.tsx:135
 msgid "Discard"
 msgstr "丢弃"
 
-#: apps/client/src/pages/builder/_components/recovery.tsx:91
+#: apps/client/src/pages/builder/_components/recovery.tsx:206
 msgid "Discard draft"
 msgstr "丢弃草稿"
 
@@ -335,32 +348,41 @@ msgstr "没有看到您的语言？ <0>帮助翻译应用程序。</0>"
 msgid "Donate to Reactive Resume"
 msgstr "为 Reactive Resume 捐款"
 
-#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:161
+#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:199
 msgid "Download a JSON snapshot of your resume. This file can be used to import your resume in the future, or can even be shared with others to collaborate."
 msgstr "下载简历的 JSON 快照。该文件可用于您以后导入简历，甚至可以共享与其他人进行协作。"
 
-#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:212
+#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:250
 msgid "Download a PDF of your resume. This file can be used to print your resume, send it to recruiters, or upload on job portals."
 msgstr "下载您的 PDF 版本简历。该文件可用于您打印简历、发送给招聘人员或上传到招聘网站。"
 
-#: apps/client/src/pages/builder/_components/recovery.tsx:96
+#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:281
+msgid "Download an editable document offline. Layout is simplified and photos are excluded."
+msgstr "离线下载可编辑文档。采用简化排版，不包含照片。"
+
+#: apps/client/src/pages/builder/_components/recovery.tsx:103
+#: apps/client/src/pages/builder/_components/recovery.tsx:211
 msgid "Download draft"
 msgstr "下载草稿"
 
-#: apps/client/src/pages/builder/_components/toolbar.tsx:163
+#: apps/client/src/pages/builder/_components/toolbar.tsx:168
 msgid "Download PDF"
 msgstr "下载 PDF"
 
-#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:186
+#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:224
 msgid "Download the visible resume content as Markdown, preserving section order, links and lists."
 msgstr "将可见简历内容导出为 Markdown，保留章节顺序、链接和列表。"
+
+#: apps/client/src/pages/builder/_components/recovery.tsx:199
+msgid "Draft"
+msgstr "草稿"
 
 #: apps/client/src/pages/builder/sidebars/left/sections/shared/sortable-keywords.tsx:127
 msgid "Drag keywords to reorder, or focus a drag handle and use Alt + arrow keys."
 msgstr "拖动关键字调整顺序，也可以聚焦拖动手柄后按 Alt + 方向键。"
 
 #: apps/client/src/pages/builder/sidebars/left/sections/shared/section-dialog.tsx:181
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:299
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:307
 #: apps/client/src/pages/dashboard/resumes/_layouts/grid/_components/resume-card.tsx:129
 #: apps/client/src/pages/dashboard/resumes/_layouts/list/_components/resume-item.tsx:95
 #: apps/client/src/pages/dashboard/resumes/_layouts/list/_components/resume-item.tsx:156
@@ -371,7 +393,7 @@ msgstr "复制"
 msgid "Duplicate an existing item"
 msgstr "复制现有项目"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:206
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:214
 msgid "Duplicate an existing resume"
 msgstr "复制现有简历"
 
@@ -403,19 +425,23 @@ msgstr "输入 Phosphor 图标"
 msgid "Error {statusCode}"
 msgstr "错误 {statusCode}"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:344
+#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:319
 msgid "Errors"
 msgstr "错误"
+
+#: apps/client/src/pages/builder/_components/shortcuts.tsx:133
+msgid "Esc"
+msgstr "Esc"
 
 #: apps/client/src/pages/builder/sidebars/left/index.tsx:182
 msgid "Expand all sections"
 msgstr "展开全部章节"
 
-#: apps/client/src/pages/builder/layout.tsx:109
+#: apps/client/src/pages/builder/layout.tsx:111
 msgid "Expand Left Sidebar"
 msgstr "展开左侧边栏"
 
-#: apps/client/src/pages/builder/layout.tsx:122
+#: apps/client/src/pages/builder/layout.tsx:124
 msgid "Expand Right Sidebar"
 msgstr "展开右侧边栏"
 
@@ -424,28 +450,28 @@ msgid "Expand section"
 msgstr "展开章节"
 
 #: apps/client/src/pages/builder/sidebars/right/index.tsx:104
-#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:135
-#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:136
+#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:173
+#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:174
 msgid "Export"
 msgstr "导出"
 
-#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:62
+#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:84
 msgid "Export again from the resume you want to download."
 msgstr "请在要下载的简历中重新导出。"
 
-#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:111
+#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:149
 msgid "Export failed."
 msgstr "导出失败。"
 
-#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:77
+#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:99
 msgid "Exporting a local backup."
 msgstr "正在导出本机内容备份。"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:315
+#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:290
 msgid "File"
 msgstr "文件"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:303
+#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:279
 msgid "File loaded and validated"
 msgstr "文件已加载并通过验证"
 
@@ -453,7 +479,7 @@ msgstr "文件已加载并通过验证"
 msgid "File validation failed"
 msgstr "文件验证失败"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:265
+#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:241
 msgid "Filetype"
 msgstr "文件类型"
 
@@ -506,11 +532,11 @@ msgstr "发现了 Bug，或有新的功能想法？"
 msgid "Full Name"
 msgstr "全名"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:228
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:236
 msgid "Generate a random title for your resume"
 msgstr "为您的简历生成随机标题"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:213
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:221
 msgid "Give your old resume a new name."
 msgstr "给你的旧简历起一个新名字。"
 
@@ -534,10 +560,6 @@ msgstr "标题"
 msgid "Height (mm)"
 msgstr "高度（毫米）"
 
-#: apps/client/src/pages/dashboard/settings/_sections/account.tsx:76
-#~ msgid "Here, you can update your account information such as your name and username."
-#~ msgstr "在这里，您可以更新账户信息，如姓名与用户名。"
-
 #: apps/client/src/pages/dashboard/settings/_sections/profile.tsx:61
 msgid "Here, you can update your profile to customize and personalize your experience."
 msgstr "在这里，您可以更新个人资料，定制个性化的体验。"
@@ -548,7 +570,7 @@ msgstr "在这里，您可以更新个人资料，定制个性化的体验。"
 msgid "Hidden"
 msgstr "隐藏"
 
-#: apps/client/src/pages/builder/sidebars/left/sections/shared/section-options.tsx:106
+#: apps/client/src/pages/builder/sidebars/left/sections/shared/section-options.tsx:137
 msgid "Hide"
 msgstr "隐藏"
 
@@ -565,27 +587,23 @@ msgstr "横向"
 msgid "Icon"
 msgstr "图标"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:370
+#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:345
 msgid "Import"
 msgstr "导入"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:252
+#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:228
 #: apps/client/src/pages/dashboard/resumes/_layouts/grid/_components/import-card.tsx:28
 #: apps/client/src/pages/dashboard/resumes/_layouts/list/_components/import-item.tsx:17
 msgid "Import an existing resume"
 msgstr "导入现有简历"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:115
+#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:93
 msgid "Import Failed"
 msgstr "导入失败"
 
 #: apps/client/src/pages/dashboard/settings/_sections/danger.tsx:10
 msgid "In local mode, account data is stored locally on your device. To reset your data, you can delete the local database file."
 msgstr "在本地模式下，账户数据存储在您的设备上。要重置数据，可以删除本地数据库文件。"
-
-#: apps/client/src/pages/dashboard/settings/_sections/security.tsx:9
-#~ msgid "In local mode, authentication and security features are not needed."
-#~ msgstr "在本地模式下，不需要身份验证与安全功能。"
 
 #: apps/client/src/pages/builder/sidebars/right/index.tsx:118
 msgid "Information"
@@ -595,10 +613,6 @@ msgstr "信息"
 msgid "Institution"
 msgstr "机构"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:107
-msgid "Invalid File"
-msgstr "文件无效"
-
 #: apps/client/src/pages/builder/sidebars/left/dialogs/certifications.tsx:51
 msgid "Issuer"
 msgstr "签发机构"
@@ -607,9 +621,22 @@ msgstr "签发机构"
 msgid "It looks like the resume you're looking for doesn't exist."
 msgstr "您要查找的简历似乎不存在。"
 
-#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:159
+#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:197
 msgid "JSON"
 msgstr "JSON"
+
+#: apps/client/src/pages/builder/_components/recovery.tsx:104
+msgid "Keep a copy and reload"
+msgstr "保留副本并重新加载"
+
+#: apps/client/src/pages/builder/_components/recovery.tsx:98
+msgid "Keep editing locally"
+msgstr "继续在本机编辑"
+
+#: apps/client/src/pages/builder/_components/shortcuts.tsx:102
+#: apps/client/src/pages/builder/_components/shortcuts.tsx:116
+msgid "Keyboard shortcuts"
+msgstr "键盘快捷键"
 
 #: apps/client/src/pages/builder/sidebars/left/dialogs/custom-section.tsx:147
 #: apps/client/src/pages/builder/sidebars/left/dialogs/interests.tsx:61
@@ -643,7 +670,7 @@ msgstr "最后更新 {lastUpdated}"
 msgid "Layout"
 msgstr "布局"
 
-#: apps/client/src/providers/resume-saves.tsx:98
+#: apps/client/src/providers/resume-saves.tsx:102
 msgid "Leave with recovery draft"
 msgstr "保留草稿并离开"
 
@@ -677,13 +704,13 @@ msgstr "LinkedIn、JSON 简历等"
 msgid "List"
 msgstr "列表"
 
+#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:272
+msgid "Local JSON file"
+msgstr "本机 JSON 文件"
+
 #: apps/client/src/pages/dashboard/settings/_sections/danger.tsx:27
 msgid "Local Mode - Manual Reset Required"
 msgstr "本地模式 - 需要手动重置"
-
-#: apps/client/src/pages/dashboard/settings/_sections/security.tsx:14
-#~ msgid "Local Mode Information"
-#~ msgstr "本地模式信息"
 
 #: apps/client/src/pages/builder/sidebars/left/dialogs/custom-section.tsx:98
 #: apps/client/src/pages/builder/sidebars/left/dialogs/experience.tsx:84
@@ -692,19 +719,19 @@ msgstr "本地模式 - 需要手动重置"
 msgid "Location"
 msgstr "位置"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/lock.tsx:51
+#: apps/client/src/pages/dashboard/resumes/_dialogs/lock.tsx:55
 #: apps/client/src/pages/dashboard/resumes/_layouts/grid/_components/resume-card.tsx:143
 #: apps/client/src/pages/dashboard/resumes/_layouts/list/_components/resume-item.tsx:115
 #: apps/client/src/pages/dashboard/resumes/_layouts/list/_components/resume-item.tsx:166
 msgid "Lock"
 msgstr "锁定"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:266
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:271
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:274
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:279
 msgid "Lock slug"
 msgstr "锁定标识"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/lock.tsx:43
+#: apps/client/src/pages/dashboard/resumes/_dialogs/lock.tsx:47
 msgid "Locking a resume will prevent any further changes to it. This is useful when you have already shared your resume with someone and you don't want to accidentally make any changes to it."
 msgstr "锁定简历可防止后续的任何更改。尤其是您已经与某人分享简历并且不想出现意外更改的情况。"
 
@@ -730,9 +757,13 @@ msgstr "2023 年 3 月至今"
 msgid "Margin"
 msgstr "边距"
 
-#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:184
+#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:222
 msgid "Markdown"
 msgstr "Markdown"
+
+#: apps/client/src/pages/builder/_components/shortcuts.tsx:129
+msgid "Mouse wheel"
+msgstr "鼠标滚轮"
 
 #: apps/client/src/pages/builder/sidebars/left/dialogs/certifications.tsx:37
 msgctxt "Name of the Certification"
@@ -758,7 +789,7 @@ msgstr "网络"
 msgid "No results found"
 msgstr "没找到结果"
 
-#: apps/client/src/pages/builder/_components/header.tsx:63
+#: apps/client/src/pages/builder/_components/header.tsx:74
 msgid "Not saved. Retry"
 msgstr "未保存，点击重试"
 
@@ -768,8 +799,8 @@ msgstr "未保存，点击重试"
 msgid "Notes"
 msgstr "注释"
 
-#: apps/client/src/libs/axios.ts:24
-#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:232
+#: apps/client/src/libs/axios.ts:28
+#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:208
 #: apps/client/src/services/resume/print.tsx:26
 msgid "Oops, the server returned an error."
 msgstr "糟糕，服务器返回错误。"
@@ -780,18 +811,26 @@ msgstr "糟糕，服务器返回错误。"
 msgid "Open"
 msgstr "打开"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:299
+#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:275
 msgid "Open Local File"
 msgstr "打开本地文件"
 
-#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:100
-#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:101
+#: apps/client/src/pages/builder/_components/shortcuts.tsx:123
+msgid "Open or close shortcut help"
+msgstr "打开或关闭快捷键帮助"
+
+#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:137
+#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:138
 msgid "Open PDF"
 msgstr "打开 PDF"
 
-#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:98
+#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:135
 msgid "Open the PDF to download or print it."
 msgstr "打开 PDF 后可下载或打印。"
+
+#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:278
+msgid "OpenDocument (ODT)"
+msgstr "OpenDocument（ODT）"
 
 #: apps/client/src/pages/builder/sidebars/right/sections/page.tsx:133
 msgid "Options"
@@ -816,7 +855,11 @@ msgstr "页面"
 msgid "Page {pageNumber}"
 msgstr "页面 {pageNumber}"
 
-#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:210
+#: apps/client/src/pages/builder/_components/shortcuts.tsx:131
+msgid "Pan or zoom according to the toolbar mode"
+msgstr "按工具栏模式平移或缩放"
+
+#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:248
 msgid "PDF"
 msgstr "PDF"
 
@@ -824,7 +867,7 @@ msgstr "PDF"
 msgid "Phone"
 msgstr "电话"
 
-#: apps/client/src/pages/builder/sidebars/left/sections/picture/section.tsx:69
+#: apps/client/src/pages/builder/sidebars/left/sections/picture/section.tsx:104
 msgid "Picture"
 msgstr "图片"
 
@@ -832,11 +875,11 @@ msgstr "图片"
 msgid "Please select a file and enter a font name"
 msgstr "请选择文件并输入字体名称"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:269
+#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:245
 msgid "Please select a file type"
 msgstr "请选择文件类型"
 
-#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:112
+#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:150
 msgid "Please try again."
 msgstr "请重试。"
 
@@ -878,10 +921,6 @@ msgstr "主颜色"
 msgid "Profile"
 msgstr "个人资料"
 
-#: apps/client/src/pages/dashboard/settings/_sections/account.tsx:85
-#~ msgid "Profile picture is not available in local mode."
-#~ msgstr "本地模式下不支持个人头像。"
-
 #: apps/client/src/pages/builder/sidebars/left/dialogs/publications.tsx:51
 msgid "Publisher"
 msgstr "发布者"
@@ -897,23 +936,23 @@ msgstr "提出问题"
 msgid "Reactive Resume"
 msgstr "及时简历"
 
-#: apps/client/src/pages/builder/_components/recovery.tsx:97
+#: apps/client/src/pages/builder/_components/recovery.tsx:212
 msgid "Recover as a copy"
 msgstr "恢复为副本"
 
-#: apps/client/src/pages/builder/_components/recovery.tsx:83
+#: apps/client/src/pages/builder/_components/recovery.tsx:177
 msgid "Recover unsaved changes?"
 msgstr "恢复未保存的修改？"
 
-#: apps/client/src/pages/builder/_components/header.tsx:72
+#: apps/client/src/pages/builder/_components/header.tsx:82
 msgid "Recovery draft unavailable. Keep this window open."
 msgstr "恢复草稿未能保存，请保持此窗口打开。"
 
-#: apps/client/src/pages/builder/page.tsx:105
+#: apps/client/src/pages/builder/page.tsx:112
 msgid "Recovery drafts could not be read. Keep any backup files before editing."
 msgstr "无法读取恢复草稿，请保留备份文件后再编辑。"
 
-#: apps/client/src/pages/builder/_components/toolbar.tsx:88
+#: apps/client/src/pages/builder/_components/toolbar.tsx:93
 msgid "Redo"
 msgstr "恢复"
 
@@ -922,7 +961,7 @@ msgid "Refresh Preview"
 msgstr "刷新预览"
 
 #: apps/client/src/pages/builder/sidebars/left/sections/shared/section-list-item.tsx:100
-#: apps/client/src/pages/builder/sidebars/left/sections/shared/section-options.tsx:157
+#: apps/client/src/pages/builder/sidebars/left/sections/shared/section-options.tsx:188
 msgid "Remove"
 msgstr "移除"
 
@@ -934,7 +973,7 @@ msgstr "移除关键字"
 msgid "Remove Page"
 msgstr "删除页面"
 
-#: apps/client/src/pages/builder/sidebars/left/sections/shared/section-options.tsx:111
+#: apps/client/src/pages/builder/sidebars/left/sections/shared/section-options.tsx:142
 #: apps/client/src/pages/dashboard/resumes/_layouts/grid/_components/resume-card.tsx:125
 #: apps/client/src/pages/dashboard/resumes/_layouts/list/_components/resume-item.tsx:86
 #: apps/client/src/pages/dashboard/resumes/_layouts/list/_components/resume-item.tsx:152
@@ -945,7 +984,7 @@ msgstr "重命名"
 msgid "Reorder keyword"
 msgstr "调整关键字顺序"
 
-#: apps/client/src/pages/builder/sidebars/left/sections/shared/section-options.tsx:152
+#: apps/client/src/pages/builder/sidebars/left/sections/shared/section-options.tsx:183
 msgid "Reset"
 msgstr "重置"
 
@@ -957,7 +996,7 @@ msgstr "重置布局"
 msgid "Reset Local Data"
 msgstr "重置本地数据"
 
-#: apps/client/src/pages/builder/_components/toolbar.tsx:123
+#: apps/client/src/pages/builder/_components/toolbar.tsx:128
 msgid "Reset Zoom"
 msgstr "重置缩放"
 
@@ -971,7 +1010,7 @@ msgstr "简历"
 msgid "Retry font download"
 msgstr "重试下载字体"
 
-#: apps/client/src/providers/resume-saves.tsx:100
+#: apps/client/src/providers/resume-saves.tsx:104
 msgid "Retry saving"
 msgstr "重试保存"
 
@@ -980,16 +1019,20 @@ msgid "Rounded"
 msgstr "圆角"
 
 #: apps/client/src/pages/builder/sidebars/left/sections/shared/section-dialog.tsx:180
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:298
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:306
 #: apps/client/src/pages/dashboard/settings/_sections/profile.tsx:124
 msgid "Save Changes"
 msgstr "保存更改"
+
+#: apps/client/src/pages/builder/_components/header.tsx:69
+msgid "Save conflict. Review"
+msgstr "保存冲突，点击处理"
 
 #: apps/client/src/pages/builder/_components/toolbar.tsx:49
 msgid "Save failed. Please retry before downloading a PDF."
 msgstr "保存失败，请重试保存后再下载 PDF。"
 
-#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:70
+#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:92
 msgid "Save your changes before exporting PDF."
 msgstr "请先保存修改，再导出 PDF。"
 
@@ -997,7 +1040,7 @@ msgstr "请先保存修改，再导出 PDF。"
 msgid "Saved"
 msgstr "已保存"
 
-#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:71
+#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:93
 msgid "Saving failed. Retry saving, then export the PDF again."
 msgstr "保存失败。请重试保存后重新导出 PDF。"
 
@@ -1010,11 +1053,11 @@ msgstr "正在保存……"
 msgid "Score"
 msgstr "分数"
 
-#: apps/client/src/pages/builder/_components/toolbar.tsx:103
+#: apps/client/src/pages/builder/_components/toolbar.tsx:108
 msgid "Scroll to Pan"
 msgstr "滚动到平移"
 
-#: apps/client/src/pages/builder/_components/toolbar.tsx:103
+#: apps/client/src/pages/builder/_components/toolbar.tsx:108
 msgid "Scroll to Zoom"
 msgstr "滚动放大"
 
@@ -1022,17 +1065,13 @@ msgstr "滚动放大"
 msgid "Search for a language"
 msgstr "搜索语言"
 
-#: apps/client/src/pages/dashboard/settings/_sections/security.tsx:7
-#~ msgid "Security"
-#~ msgstr "安全"
-
 #: apps/client/src/components/font-upload-dialog.tsx:199
 #: apps/client/src/components/font-upload-dialog.tsx:243
 #: apps/client/src/components/font-upload-dialog.tsx:244
 msgid "Select font file"
 msgstr "选择字体文件"
 
-#: apps/client/src/pages/builder/sidebars/left/sections/shared/section-options.tsx:97
+#: apps/client/src/pages/builder/sidebars/left/sections/shared/section-options.tsx:128
 msgid "Separate Links"
 msgstr "分离链接"
 
@@ -1043,7 +1082,11 @@ msgstr "分离链接"
 msgid "Settings"
 msgstr "设置"
 
-#: apps/client/src/pages/builder/sidebars/left/sections/shared/section-options.tsx:106
+#: apps/client/src/pages/builder/_components/shortcuts.tsx:117
+msgid "Shortcuts stay out of the way while you type or use a dialog."
+msgstr "输入文字或使用其他对话框时，不触发快捷键帮助。"
+
+#: apps/client/src/pages/builder/sidebars/left/sections/shared/section-options.tsx:137
 msgid "Show"
 msgstr "显示"
 
@@ -1059,17 +1102,17 @@ msgstr "显示页码"
 msgid "Sidebar"
 msgstr "侧边栏"
 
-#: apps/client/src/pages/dashboard/settings/_sections/security.tsx:16
-#~ msgid "Since you're running in local mode, password changes and two-factor authentication are not available. Your data is stored locally and accessed directly without authentication."
-#~ msgstr "由于您在本地模式下运行，无法使用修改密码和双重身份验证。您的数据存储在本地，并在无认证情况下直接访问。"
-
 #: apps/client/src/pages/builder/sidebars/left/sections/picture/options.tsx:65
 msgid "Size (in px)"
 msgstr "尺寸（以像素为单位）"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:254
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:262
 msgid "Slug"
 msgstr "唯一标识"
+
+#: apps/client/src/pages/builder/sidebars/left/sections/shared/section-options.tsx:96
+msgid "Some dates could not be recognized. Those items were kept at the end in their original order."
+msgstr "部分日期无法识别，相关条目已按原顺序保留在末尾。"
 
 #: apps/client/src/services/errors/translate-error.ts:22
 msgid "Something went wrong while grabbing a preview your resume. Please try again later or raise an issue on GitHub."
@@ -1083,6 +1126,10 @@ msgstr "打印简历时出现问题。请稍后重试，或在 GitHub 上提出�
 msgid "Something went wrong while processing your request. Please try again later or raise an issue on GitHub."
 msgstr "处理您的请求时出现问题。请稍后重试，或在 GitHub 上提出问题。"
 
+#: apps/client/src/pages/builder/sidebars/left/sections/shared/section-options.tsx:121
+msgid "Sort by date (newest first)"
+msgstr "按日期排序（最新在前）"
+
 #: apps/client/src/pages/builder/sidebars/left/sections/picture/options.tsx:87
 #: apps/client/src/pages/builder/sidebars/left/sections/picture/options.tsx:132
 msgid "Square"
@@ -1093,11 +1140,11 @@ msgstr "方形"
 msgid "Start building from scratch"
 msgstr "从头开始构建"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:211
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:219
 msgid "Start building your resume by giving it a name."
 msgstr "从给简历命名开始构建你的简历。"
 
-#: apps/client/src/providers/resume-saves.tsx:93
+#: apps/client/src/providers/resume-saves.tsx:97
 msgid "Stay in editor"
 msgstr "继续编辑"
 
@@ -1135,7 +1182,11 @@ msgstr "模板"
 msgid "Text Color"
 msgstr "文本颜色"
 
-#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:61
+#: apps/client/src/pages/dashboard/resumes/_dialogs/lock.tsx:33
+msgid "The lock could not be changed. Open the resume to review any unsaved changes."
+msgstr "无法更改锁定状态，请打开简历查看尚未保存的修改。"
+
+#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:83
 msgid "The open resume changed."
 msgstr "当前打开的简历已切换。"
 
@@ -1147,19 +1198,20 @@ msgstr "无法下载此字体的原始许可证，请选择其他字体或上传
 msgid "The page you're looking for doesn't exist."
 msgstr "您访问的页面不存在。"
 
-#: apps/client/src/pages/builder/_components/recovery.tsx:57
+#: apps/client/src/pages/builder/_components/recovery.tsx:156
 msgid "The recovery copy could not be saved. Your draft is still on this device."
 msgstr "无法保存恢复副本，草稿仍保留在本机。"
 
-#: apps/client/src/pages/builder/_components/recovery.tsx:34
+#: apps/client/src/pages/builder/_components/recovery.tsx:132
 msgid "The recovery draft could not be cleared. Please try again."
 msgstr "无法清除恢复草稿，请重试。"
 
-#: apps/client/src/pages/builder/_components/recovery.tsx:75
+#: apps/client/src/pages/builder/_components/recovery.tsx:78
+#: apps/client/src/pages/builder/_components/recovery.tsx:167
 msgid "The recovery draft could not be downloaded. Please try again."
 msgstr "无法下载恢复草稿，请重试。"
 
-#: apps/client/src/providers/resume-saves.tsx:89
+#: apps/client/src/providers/resume-saves.tsx:83
 msgid "The recovery draft could not be saved. Keep this window open and retry."
 msgstr "无法保存恢复草稿，请保持此窗口打开并重试。"
 
@@ -1171,13 +1223,13 @@ msgstr "请求无效。"
 msgid "The resume you want to update is locked, please unlock if you wish to make any changes to it."
 msgstr "您要更新的简历已被锁定，如果您想对其进行更改，请解锁。"
 
-#: apps/client/src/pages/builder/_components/recovery.tsx:86
+#: apps/client/src/pages/builder/_components/recovery.tsx:180
 msgid "The saved resume has changed since this draft. Recover a separate copy to keep both versions."
 msgstr "已保存的简历比此草稿更新。请恢复为独立副本，以保留两个版本。"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:108
-msgid "The selected file does not appear to be a valid Reactive Resume JSON."
-msgstr "所选文件不是有效的 Reactive Resume JSON 文件。"
+#: apps/client/src/providers/resume-saves.tsx:85
+msgid "The saved version changed in another window. Stay in the editor to keep your changes as a copy, or leave with the recovery draft."
+msgstr "已保存版本在其他窗口发生了变化。可留在编辑器中将本机修改另存为副本，或保留恢复草稿后离开。"
 
 #: apps/client/src/pages/builder/sidebars/right/index.tsx:83
 #: apps/client/src/pages/builder/sidebars/right/sections/theme.tsx:19
@@ -1194,11 +1246,11 @@ msgstr "连接浏览器时出现错误。请确保谷歌浏览器正在运行并
 msgid "This action can be reverted by clicking on the undo button in the floating toolbar."
 msgstr "单击浮动工具栏中的撤消按钮即可恢复此操作。"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:177
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:185
 msgid "This action cannot be undone. This will permanently delete your resume and cannot be recovered."
 msgstr "此操作无法撤消。这将永久删除您的简历并且无法恢复。"
 
-#: apps/client/src/pages/builder/_components/recovery.tsx:87
+#: apps/client/src/pages/builder/_components/recovery.tsx:181
 msgid "This device has unsaved changes from an earlier session. Recover them as a copy, download them, or discard the draft."
 msgstr "本机保留了上次未保存的修改。可以恢复为副本、下载备份或丢弃草稿。"
 
@@ -1206,7 +1258,15 @@ msgstr "本机保留了上次未保存的修改。可以恢复为副本、下载
 msgid "This font's required styles are cached locally."
 msgstr "此字体所需的字重和样式已缓存到本机。"
 
-#: apps/client/src/pages/builder/_components/header.tsx:77
+#: apps/client/src/pages/builder/_components/recovery.tsx:86
+msgid "This resume changed in another window"
+msgstr "此简历在其他窗口发生了变化"
+
+#: apps/client/src/services/resume/update.tsx:98
+msgid "This resume changed in another window. Open it to keep your local changes as a copy."
+msgstr "此简历在其他窗口发生了变化，请打开它，将本机修改另存为副本。"
+
+#: apps/client/src/pages/builder/_components/header.tsx:87
 msgid "This resume is locked, please unlock to make further changes."
 msgstr "该简历已被锁定，请解锁再进行进一步更改。"
 
@@ -1218,7 +1278,7 @@ msgstr "此部分针对您对此简历的个人注释。这里的内容保持私
 msgid "Tip"
 msgstr "提示"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:242
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:250
 msgid "Tip: You can name the resume referring to the position you are applying for."
 msgstr "提示：您可以根据您要申请的职位来命名简历。"
 
@@ -1227,7 +1287,7 @@ msgctxt "Name of the Award"
 msgid "Title"
 msgstr "标题"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:222
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:230
 msgid "Title"
 msgstr "标题"
 
@@ -1235,11 +1295,11 @@ msgstr "标题"
 msgid "To reset all data, delete the 'local-resume.db' file in the application directory."
 msgstr "要重置所有数据，请删除应用目录中的 'local-resume.db' 文件。"
 
-#: apps/client/src/pages/builder/_components/toolbar.tsx:137
+#: apps/client/src/pages/builder/_components/toolbar.tsx:142
 msgid "Toggle Page Break Line"
 msgstr "切换分页线"
 
-#: apps/client/src/pages/builder/_components/toolbar.tsx:149
+#: apps/client/src/pages/builder/_components/toolbar.tsx:154
 msgid "Toggle Page Numbers"
 msgstr "切换页码"
 
@@ -1258,27 +1318,28 @@ msgstr "排版"
 msgid "Underline Links"
 msgstr "下划线链接"
 
-#: apps/client/src/pages/builder/_components/toolbar.tsx:75
+#: apps/client/src/pages/builder/_components/toolbar.tsx:80
 msgid "Undo"
 msgstr "撤销"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:116
+#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:94
+#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:163
 msgid "Unknown error occurred"
 msgstr "发生未知错误"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/lock.tsx:52
+#: apps/client/src/pages/dashboard/resumes/_dialogs/lock.tsx:56
 #: apps/client/src/pages/dashboard/resumes/_layouts/grid/_components/resume-card.tsx:138
 #: apps/client/src/pages/dashboard/resumes/_layouts/list/_components/resume-item.tsx:105
 #: apps/client/src/pages/dashboard/resumes/_layouts/list/_components/resume-item.tsx:161
 msgid "Unlock"
 msgstr "解锁"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:266
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:271
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:274
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:279
 msgid "Unlock slug"
 msgstr "解锁标识"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/lock.tsx:44
+#: apps/client/src/pages/dashboard/resumes/_dialogs/lock.tsx:48
 msgid "Unlocking a resume will allow you to make changes to it again."
 msgstr "解锁简历将允许您再次对其进行更改。"
 
@@ -1286,11 +1347,11 @@ msgstr "解锁简历将允许您再次对其进行更改。"
 msgid "Update an existing item"
 msgstr "更新现有项目"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:205
+#: apps/client/src/pages/dashboard/resumes/_dialogs/resume.tsx:213
 msgid "Update an existing resume"
 msgstr "更新现有简历"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:256
+#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:232
 msgid "Upload a file from one of the accepted sources to parse existing data and import it into Reactive Resume for easier editing."
 msgstr "从接受的来源之一上传文件并解析，并将其导入到 Reactive Resume 中以便于编辑。"
 
@@ -1321,11 +1382,11 @@ msgstr "URL 需要以 https:// 开头"
 msgid "Username"
 msgstr "用户名"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:357
+#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:332
 msgid "Validate"
 msgstr "验证"
 
-#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:375
+#: apps/client/src/pages/dashboard/resumes/_dialogs/import.tsx:350
 msgid "Validated"
 msgstr "已验证"
 
@@ -1363,6 +1424,10 @@ msgstr "网站"
 msgid "Width (mm)"
 msgstr "宽度（毫米）"
 
+#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:278
+msgid "Word (DOCX)"
+msgstr "Word（DOCX）"
+
 #: apps/client/src/pages/public/error.tsx:26
 msgid "You are not authorized to access this page."
 msgstr "您无权访问此页面。"
@@ -1378,26 +1443,34 @@ msgstr "您可以通过用逗号或回车分隔来添加多个关键字。"
 msgid "You don't have permission to access this page."
 msgstr "您没有权限访问此页面。"
 
-#: apps/client/src/pages/dashboard/settings/_sections/account.tsx:63
-#~ msgid "Your account information has been updated successfully."
-#~ msgstr "您的账户信息已成功更新。"
-
-#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:78
+#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:100
 msgid "Your changes could not be saved. This download is a backup of the latest content on this device."
 msgstr "修改未能保存，此下载文件是本机最新内容的备份。"
 
-#: apps/client/src/providers/resume-saves.tsx:85
+#: apps/client/src/providers/resume-saves.tsx:93
 msgid "Your latest changes are not saved yet"
 msgstr "最新修改尚未保存"
 
-#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:97
+#: apps/client/src/pages/builder/_components/recovery.tsx:67
+msgid "Your latest local changes are still open. Keep this window open and try again."
+msgstr "最新的本机修改仍保留在当前窗口，请保持窗口打开并重试。"
+
+#: apps/client/src/pages/builder/_components/recovery.tsx:64
+msgid "Your local changes were saved as a separate copy: {copyTitle}"
+msgstr "本机修改已另存为副本：{copyTitle}"
+
+#: apps/client/src/pages/builder/sidebars/right/sections/export.tsx:134
 msgid "Your PDF is ready."
 msgstr "PDF 已生成。"
 
-#: apps/client/src/pages/builder/_components/toolbar.tsx:111
+#: apps/client/src/pages/builder/_components/shortcuts.tsx:127
+msgid "Zoom around the pointer on the canvas"
+msgstr "以画布中的鼠标位置为中心缩放"
+
+#: apps/client/src/pages/builder/_components/toolbar.tsx:116
 msgid "Zoom In"
 msgstr "放大"
 
-#: apps/client/src/pages/builder/_components/toolbar.tsx:117
+#: apps/client/src/pages/builder/_components/toolbar.tsx:122
 msgid "Zoom Out"
 msgstr "缩小"

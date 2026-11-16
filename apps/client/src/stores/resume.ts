@@ -18,6 +18,8 @@ import type { ResumeDraft } from "../services/resume/save-queue";
 type ResumeStore = {
   resume: ResumeDto;
   recoveryDraft: ResumeDraft | null;
+  recoveryDrafts: ResumeDraft[];
+  reviewSaveConflict: boolean;
 
   // Actions
   setValue: (path: string, value: unknown) => void;
@@ -41,15 +43,19 @@ const defaultResume: ResumeDto = {
 
 export const useResumeStore = create<ResumeStore>()(
   temporal(
-    immer((set) => ({
+    immer((set, get) => ({
       resume: defaultResume,
       recoveryDraft: null,
+      recoveryDrafts: [],
+      reviewSaveConflict: false,
       setValue: (path, value) => {
+        if (get().resume.locked) return;
         set((state) => {
           state.resume.data = _set(state.resume.data, path, value);
         });
       },
       addSection: () => {
+        if (get().resume.locked) return;
         const section: CustomSectionGroup = {
           ...defaultSection,
           id: createId(),
@@ -65,6 +71,7 @@ export const useResumeStore = create<ResumeStore>()(
         });
       },
       removeSection: (sectionId: SectionKey) => {
+        if (get().resume.locked) return;
         if (sectionId.startsWith("custom.")) {
           const id = sectionId.split("custom.")[1];
 
@@ -88,12 +95,32 @@ export const useResumeStore = create<ResumeStore>()(
   ),
 );
 
+// Undo and redo replace snapshots directly instead of calling the guarded edit actions.
+const { undo, redo } = useResumeStore.temporal.getState();
+useResumeStore.temporal.setState({
+  undo: (steps) => {
+    if (!useResumeStore.getState().resume.locked) undo(steps);
+  },
+  redo: (steps) => {
+    if (!useResumeStore.getState().resume.locked) redo(steps);
+  },
+});
+
 let loadingResume = false;
 
-export const loadResumeState = (resume: ResumeDto, recoveryDraft: ResumeDraft | null = null) => {
+export const loadResumeState = (
+  resume: ResumeDto,
+  recovery: ResumeDraft | ResumeDraft[] | null = null,
+) => {
   loadingResume = true;
   try {
-    useResumeStore.setState({ resume, recoveryDraft });
+    const recoveryDrafts = recovery ? (Array.isArray(recovery) ? recovery : [recovery]) : [];
+    useResumeStore.setState({
+      resume,
+      recoveryDraft: recoveryDrafts[0] ?? null,
+      recoveryDrafts,
+      reviewSaveConflict: false,
+    });
     useResumeStore.temporal.getState().clear();
   } finally {
     loadingResume = false;
@@ -104,6 +131,7 @@ export const loadResumeState = (resume: ResumeDto, recoveryDraft: ResumeDraft | 
 useResumeStore.subscribe((state, previous) => {
   if (
     loadingResume ||
+    state.resume.locked ||
     state.resume.id === "temp" ||
     state.resume.id !== previous.resume.id ||
     state.resume.data === previous.resume.data

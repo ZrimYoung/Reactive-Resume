@@ -177,6 +177,10 @@ ipcMain.handle("resume-draft:read", (event, id) => {
   if (!isMainRenderer(event)) throw new Error("Unknown application window");
   return resumeDrafts.read(id);
 });
+ipcMain.handle("resume-draft:list", (event, id) => {
+  if (!isMainRenderer(event)) throw new Error("Unknown application window");
+  return resumeDrafts.list(id);
+});
 ipcMain.handle("resume-draft:remove", (event, id, token) => {
   if (!isMainRenderer(event)) throw new Error("Unknown application window");
   resumeDrafts.remove(id, token);
